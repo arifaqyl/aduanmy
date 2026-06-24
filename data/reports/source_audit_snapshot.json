@@ -1,24 +1,24 @@
 {
   "ingest": {
-    "written": 12,
+    "written": 13,
     "threads": 5,
-    "reddit": 3,
+    "reddit": 5,
     "x": 1,
-    "official": 9,
+    "official": 11,
     "timings": {
-      "reddit": 9.86,
-      "x": 10.59,
-      "threads": 26.61,
-      "official": 48.13
+      "x": 10.77,
+      "reddit": 24.95,
+      "official": 30.71,
+      "threads": 44.47
     },
     "categories": {
       "telco_internet": 4,
-      "transport": 8
+      "transport": 9
     }
   },
   "stored_by_source": {
-    "official": 3,
-    "reddit": 3,
+    "official": 2,
+    "reddit": 5,
     "threads": 5,
     "x": 1
   },
@@ -41,12 +41,12 @@
     {
       "category": "transport",
       "source_platform": "official",
-      "volume": 2
+      "volume": 1
     },
     {
       "category": "transport",
       "source_platform": "reddit",
-      "volume": 1
+      "volume": 3
     },
     {
       "category": "transport",

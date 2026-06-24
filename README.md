@@ -43,7 +43,7 @@ Current official reality:
 
 ## Verified Current State
 
-- tests: `97/97` passing
+- tests: `101/101` passing
 - live routes exist for refresh, overview, status, incidents, and incident detail
 - source freshness is tracked from event timestamps when available
 - official rows are separated from crowd signals in scoring logic

@@ -1,17 +1,17 @@
 {
-  "written": 14,
+  "written": 13,
   "threads": 5,
   "reddit": 5,
   "x": 1,
-  "official": 9,
+  "official": 11,
   "timings": {
-    "x": 11.71,
-    "reddit": 26.04,
-    "official": 33.26,
-    "threads": 36.43
+    "x": 10.77,
+    "reddit": 24.95,
+    "official": 30.71,
+    "threads": 44.47
   },
   "categories": {
     "telco_internet": 4,
-    "transport": 10
+    "transport": 9
   }
 }

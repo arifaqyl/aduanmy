@@ -41,6 +41,12 @@ def test_extract_location_supports_pasar_seni() -> None:
     assert extract_location("train at pasar seni station is being manually operated due to a door malfunction") == "Pasar Seni"
 
 
+def test_extract_location_supports_more_current_mrt_stations() -> None:
+    assert extract_location("mrt putrajaya problem guysss at kepong baru") == "Kepong Baru"
+    assert extract_location("MRT problem, everyone stuck in Semantan") == "Semantan"
+    assert extract_location("kena turun chan sow lin then tukar dekat masjid jamek") == "Masjid Jamek"
+
+
 def test_extract_location_does_not_treat_line_name_as_station() -> None:
     assert extract_location("Kemas Kini Laluan Ampang/Sri Petaling") == ""
 
@@ -105,9 +111,24 @@ def test_extract_issue_key_transport_technical_fault() -> None:
     assert extract_issue_key(text, "transport") == "technical_fault"
 
 
+def test_extract_issue_key_transport_delay_supports_rojak_stoppage_language() -> None:
+    text = "mrt kajang line problem ke? kenape tak gerak2 ni"
+    assert extract_issue_key(text, "transport") == "delay"
+
+
+def test_extract_issue_key_transport_delay_supports_having_problems_wording() -> None:
+    text = "LRT Kelana Jaya line having problems again this morning"
+    assert extract_issue_key(text, "transport") == "delay"
+
+
 def test_category_signal_ok_accepts_malay_transport_disruption_wording() -> None:
     text = "rapid kl masalah sistem kawalan tren automatik jejas perkhidmatan lrt laluan kelana jaya di kuala lumpur"
     assert category_signal_ok(text, "transport", "LRT")
+
+
+def test_category_signal_ok_accepts_current_rojak_mrt_delay_language() -> None:
+    text = "Korang Mrt Kajang line problem ke? kenape tak gerak2 ni..."
+    assert category_signal_ok(text, "transport", "Kajang Line")
 
 
 def test_build_cluster_id_prefers_entity_and_location() -> None:

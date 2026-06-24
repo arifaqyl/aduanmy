@@ -3,40 +3,40 @@
 Based on the latest verified local ingest.
 
 ## Source Reality
-- Full ingest loop now completes in about `48.13s` with parallel collectors.
+- Full ingest loop now completes in about `44.47s` with parallel collectors.
 - Threads is the strongest open discovery-style social source in the repo.
 - X works as a targeted service-account monitoring lane, not a broad search lane.
 - Reddit is usable but still noisier than Threads/X.
 - Official pages are grounding rails, not complaint-density rails.
 
 ## Current Counts
-- stored complaint rows: `12`
+- stored complaint rows: `13`
 - raw source rows:
   - Threads: `5`
-  - Reddit: `3`
+  - Reddit: `5`
   - X: `1`
-  - Official: `9`
+  - Official: `11`
 
 ## Current Category Shape
-- transport: 6
+- transport: 8
 - telco_internet: 3
 
 ## Scorecard
 - raw mix: transport | threads | volume=4
+- raw mix: transport | reddit | volume=3
 - raw mix: telco_internet | reddit | volume=2
-- raw mix: transport | official | volume=2
 - raw mix: telco_internet | official | volume=1
 - raw mix: telco_internet | threads | volume=1
-- raw mix: transport | reddit | volume=1
+- raw mix: transport | official | volume=1
 - raw mix: transport | x | volume=1
 
 ## Ranked Categories
 - `transport`
-  - density: `6`
+  - density: `8`
   - source_diversity: `3`
   - verification_potential: `2`
   - demo_value: `2`
-  - total: `15`
+  - total: `17`
 - `telco_internet`
   - density: `3`
   - source_diversity: `2`
