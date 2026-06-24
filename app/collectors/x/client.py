@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from urllib.parse import quote_plus
 
 from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
+from app.core.freshness import LIVE_WINDOW_DAYS
 from app.core.files import load_yaml
 from app.pipeline.extract import classify_category, is_complaint_signal
 
@@ -15,7 +16,7 @@ except Exception:  # pragma: no cover - optional runtime dependency
     sync_playwright = None
 
 
-RECENT_WINDOW_DAYS = 180
+RECENT_WINDOW_DAYS = LIVE_WINDOW_DAYS
 X_DISCOVERY_QUERIES = {
     "transport": [
         "askrapidkl delay",

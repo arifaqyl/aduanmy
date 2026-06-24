@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import html
 import re
+from datetime import UTC, datetime, timedelta
 from urllib.parse import quote_plus
 
 from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
+from app.core.freshness import LIVE_WINDOW_DAYS
 from app.core.files import load_yaml
 from app.pipeline.extract import classify_category, extract_entity, is_complaint_signal, transport_incident_signal_ok
 
@@ -12,6 +14,9 @@ try:
     from playwright.sync_api import sync_playwright
 except Exception:  # pragma: no cover - optional dependency at runtime
     sync_playwright = None
+
+
+RECENT_WINDOW_DAYS = LIVE_WINDOW_DAYS
 
 
 def _bing_result_urls(search_html: str) -> list[tuple[str, str]]:
@@ -150,6 +155,18 @@ def _fill_missing_created_at(rows: list[dict]) -> list[dict]:
     return rows
 
 
+def _is_recent_enough(created_at: str, *, max_age_days: int = RECENT_WINDOW_DAYS) -> bool:
+    if not created_at:
+        return False
+    try:
+        parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed >= datetime.now(UTC) - timedelta(days=max_age_days)
+
+
 def collect_threads_sample() -> list[dict]:
     rows: list[dict] = []
     seed_urls = load_yaml("seed_urls.yaml").get("threads", [])
@@ -249,4 +266,5 @@ def collect_threads_sample() -> list[dict]:
                         "seed_category": category,
                     }
                 )
-    return _fill_missing_created_at(rows)
+    rows = _fill_missing_created_at(rows)
+    return [row for row in rows if _is_recent_enough(row.get("created_at", ""))]

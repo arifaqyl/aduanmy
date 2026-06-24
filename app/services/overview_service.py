@@ -38,6 +38,15 @@ def _sort_transport_clusters(clusters: list[dict], sort_by: str) -> list[dict]:
     )
 
 
+def _top_incident_slice(clusters: list[dict], *, limit: int = 5) -> list[dict]:
+    quality_clusters = [
+        cluster for cluster in clusters if cluster.get("confidence_band") in {"strong", "reasonable"}
+    ]
+    if quality_clusters:
+        return quality_clusters[:limit]
+    return clusters[:limit]
+
+
 def get_trafficmy_incidents(
     *,
     sort_by: str = "strongest",
@@ -125,7 +134,7 @@ def get_trafficmy_overview(*, include_stale: bool = False) -> dict:
             "stale_hidden_count": stale_hidden_count,
             "include_stale": include_stale,
         },
-        "top_incidents": clusters[:5],
+        "top_incidents": _top_incident_slice(clusters),
         "transport_entities": transport_entities,
         "transport_locations": transport_locations,
     }

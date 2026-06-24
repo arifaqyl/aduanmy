@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
 import re
 from urllib.parse import quote_plus
 
 from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
+from app.core.freshness import LIVE_WINDOW_DAYS
 from app.core.files import load_yaml
 from app.pipeline.extract import category_signal_ok, extract_entity
 
@@ -111,6 +113,18 @@ ARTICLE_SENTENCE_HINTS = {
 }
 
 
+def _is_recent_enough(created_at: str, *, max_age_days: int = LIVE_WINDOW_DAYS) -> bool:
+    if not created_at:
+        return False
+    try:
+        parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed >= datetime.now(UTC) - timedelta(days=max_age_days)
+
+
 def _trim_reddit_boilerplate(text: str) -> str:
     markers = [
         "a subreddit about malaysia and all things malaysian",
@@ -215,6 +229,8 @@ def _curated_seed_rows() -> list[dict]:
                 text = combined
         if not _category_prefilter(text, seed["category"]):
             continue
+        if not _is_recent_enough(created_at):
+            continue
         rows.append(
             {
                 "source_platform": "reddit",
@@ -276,6 +292,8 @@ def collect_reddit_sample() -> list[dict]:
                     if not _matches_query(combined, query):
                         continue
                     if not _category_prefilter(combined, category):
+                        continue
+                    if not _is_recent_enough(created_at):
                         continue
                     seed = post_url or f"reddit:{query}:{title}"
                     post_id = make_post_id(seed)

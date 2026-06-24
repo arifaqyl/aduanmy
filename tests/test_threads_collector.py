@@ -1,5 +1,8 @@
+from datetime import UTC, datetime, timedelta
+
 from app.collectors.threads.client import (
     _fill_missing_created_at,
+    _is_recent_enough,
     _is_profile_discovery_candidate,
     _looks_like_pinned_preview,
 )
@@ -60,3 +63,12 @@ def test_transport_incident_signal_rejects_property_and_lifestyle_mentions():
     assert not transport_incident_signal_ok(
         "Located in Menara UOA Bangsar and connected with LRT Bangsar, serving really good pastries."
     )
+
+
+def test_threads_recent_filter_rejects_old_posts():
+    assert _is_recent_enough("2025-11-14T10:00:00Z") is False
+
+
+def test_threads_recent_filter_accepts_recent_posts():
+    recent = (datetime.now(UTC) - timedelta(days=5)).isoformat().replace("+00:00", "Z")
+    assert _is_recent_enough(recent) is True

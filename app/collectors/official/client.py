@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 import os
 import re
 from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 
 from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
+from app.core.freshness import LIVE_WINDOW_DAYS
 
 try:
     from playwright.sync_api import sync_playwright
@@ -52,33 +53,11 @@ MYRAPID_SEARCH_QUERIES = [
     'site:myrapid.com.my "kelewatan tren" myrapid',
     'site:myrapid.com.my "line update" "rapid kl"',
 ]
-MYRAPID_FALLBACK_ALERTS = [
-    {
-        "url": "https://myrapid.com.my/kemas-kini-laluan-ampang-sri-petaling-279/",
-        "title": "Kemas Kini Laluan Ampang/Sri Petaling",
-    },
-    {
-        "url": "https://myrapid.com.my/kemas-kini-laluan-kajang-stesen-pasar-seni-dan-bukit-bintang-6/",
-        "title": "Kemas Kini: Laluan Kajang (Stesen Pasar Seni dan Bukit Bintang)",
-    },
-    {
-        "url": "https://myrapid.com.my/kelewatan-bas-5-laluan-terjejas-33/",
-        "title": "Kelewatan Bas: 5 Laluan Terjejas",
-    },
-    {
-        "url": "https://myrapid.com.my/kelewatan-bas-5-laluan-terjejas-32/",
-        "title": "Kelewatan Bas : 4 Laluan Terjejas",
-    },
-    {
-        "url": "https://myrapid.com.my/info-gangguan-trafik-laluan-303-304-27/",
-        "title": "Info: Gangguan Trafik (Laluan 303 & 304)",
-    },
-]
-
 MYRAPID_NORMAL_STATUS_TERMS = (
     "normal service",
     "normal",
 )
+MYRAPID_RECENT_WINDOW_DAYS = LIVE_WINDOW_DAYS
 
 
 def _looks_like_myrapid_alert_link(text: str, href: str) -> bool:
@@ -151,6 +130,18 @@ def _parse_myrapid_date(text: str) -> str:
         except ValueError:
             continue
     return ""
+
+
+def _is_recent_enough(created_at: str, *, max_age_days: int = MYRAPID_RECENT_WINDOW_DAYS) -> bool:
+    if not created_at:
+        return False
+    try:
+        parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed >= datetime.now(UTC) - timedelta(days=max_age_days)
 
 
 def _bing_myrapid_results(search_html: str) -> list[dict]:
@@ -331,6 +322,8 @@ def _collect_myrapid_alerts_from_search(limit: int = 4) -> list[dict]:
             href = item["href"]
             if href in seen_urls:
                 continue
+            if not _is_recent_enough(item["created_at"]):
+                continue
             seen_urls.add(href)
             text = clean_text(f"{item['title']} {item['body']}")
             rows.append(
@@ -350,31 +343,11 @@ def _collect_myrapid_alerts_from_search(limit: int = 4) -> list[dict]:
     return rows
 
 
-def _curated_myrapid_fallback_rows(limit: int = 5) -> list[dict]:
-    rows: list[dict] = []
-    for item in MYRAPID_FALLBACK_ALERTS[:limit]:
-        rows.append(
-            {
-                "source_platform": "official",
-                "post_id": make_post_id(item["url"]),
-                "url": item["url"],
-                "author_handle": "official:myrapid",
-                "created_at": "",
-                "raw_text": item["title"],
-                "query": item["title"],
-                "seed_category": _myrapid_category(item["title"], ""),
-            }
-        )
-    return rows
-
-
 def collect_official_sample() -> list[dict]:
     rows: list[dict] = []
     rows.extend(_collect_myrapid_alerts())
     if not rows:
         rows.extend(_collect_myrapid_alerts_from_search())
-    if not rows:
-        rows.extend(_curated_myrapid_fallback_rows())
     for source in OFFICIAL_SOURCES:
         source_platform = source["source_platform"]
         url = source["url"]

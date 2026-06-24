@@ -1,8 +1,11 @@
+from datetime import UTC, datetime, timedelta
+
 from app.collectors.reddit.client import (
     _category_prefilter,
     _curated_seed_rows,
     _extract_external_article_excerpt,
     _extract_reddit_post_payload,
+    _is_recent_enough,
     _matches_query,
     _trim_reddit_boilerplate,
 )
@@ -51,11 +54,10 @@ def test_reddit_category_prefilter_rejects_flood_ghost_story_noise():
     assert not _category_prefilter(text, "flood_weather")
 
 
-def test_curated_seed_rows_include_real_telco_outage_fallbacks():
+def test_curated_seed_rows_drop_stale_telco_fallbacks():
     rows = _curated_seed_rows()
     telco_rows = [row for row in rows if row["seed_category"] == "telco_internet"]
-    assert len(telco_rows) >= 2
-    assert any("kelantan" in row["raw_text"].lower() or "24 hour" in row["raw_text"].lower() for row in telco_rows)
+    assert telco_rows == []
 
 
 def test_curated_seed_rows_include_current_transport_delay_seed():
@@ -115,3 +117,12 @@ def test_extract_external_article_excerpt_keeps_transport_paragraphs(monkeypatch
     excerpt = _extract_external_article_excerpt("https://example.com/article")
     assert "Kelana Jaya Line" in excerpt
     assert "Pasar Seni Station" in excerpt
+
+
+def test_reddit_recent_filter_rejects_old_posts():
+    assert _is_recent_enough("2026-05-01T03:35:05+00:00") is False
+
+
+def test_reddit_recent_filter_accepts_recent_posts():
+    recent = (datetime.now(UTC) - timedelta(days=2)).isoformat().replace("+00:00", "Z")
+    assert _is_recent_enough(recent) is True

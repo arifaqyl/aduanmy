@@ -301,3 +301,49 @@ def test_strongest_transport_sort_prefers_recent_over_older_when_confidence_band
 
     payload = get_trafficmy_overview()
     assert payload["top_incidents"][0]["cluster_id"] == "transport:Kelana Jaya Line:Pasar Seni:incident"
+
+
+def test_overview_top_incidents_prefers_reasonable_or_strong_over_weak_when_available():
+    reset_complaints()
+    upsert_complaints(
+        [
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="reasonable-1",
+                url="https://example.com/reasonable-1",
+                author_handle="u1",
+                created_at="2026-06-21T04:18:43Z",
+                raw_text="MRT fire alarm at Maluri",
+                normalized_text="mrt fire alarm at maluri",
+                detected_language_mix="en",
+                category="transport",
+                entity="MRT",
+                location="Maluri",
+                severity="high",
+                confidence=0.8,
+                cluster_id="transport:MRT:Maluri:incident",
+            ),
+            ComplaintSchema(
+                source_platform="x",
+                post_id="weak-1",
+                url="https://example.com/weak-1",
+                author_handle="askrapidkl",
+                created_at="2026-05-12T11:50:51Z",
+                raw_text="Kelana Jaya Line delay",
+                normalized_text="kelana jaya line delay",
+                detected_language_mix="en",
+                category="transport",
+                entity="Kelana Jaya Line",
+                location="Bangsar",
+                severity="medium",
+                confidence=0.6,
+                cluster_id="transport:Kelana Jaya Line:Bangsar:delay",
+            ),
+        ]
+    )
+
+    payload = get_trafficmy_overview(include_stale=True)
+    top_ids = [item["cluster_id"] for item in payload["top_incidents"]]
+
+    assert "transport:MRT:Maluri:incident" in top_ids
+    assert "transport:Kelana Jaya Line:Bangsar:delay" not in top_ids

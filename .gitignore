@@ -2,6 +2,7 @@
 __pycache__/
 .pytest_cache/
 .scratch/
+exports/
 *.db
 *.sqlite
 *.sqlite3

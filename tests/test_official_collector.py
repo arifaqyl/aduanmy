@@ -1,4 +1,6 @@
-from app.collectors.official.client import _bing_myrapid_results, _curated_myrapid_fallback_rows, _extract_page_focus, _looks_like_myrapid_alert_link, _myrapid_category, _parse_myrapid_date, _parse_myrapid_status_table_html
+from datetime import UTC, datetime, timedelta
+
+from app.collectors.official.client import _bing_myrapid_results, _extract_page_focus, _is_recent_enough, _looks_like_myrapid_alert_link, _myrapid_category, _parse_myrapid_date, _parse_myrapid_status_table_html
 from app.collectors.common import soup_from_html
 
 
@@ -91,10 +93,13 @@ def test_bing_myrapid_results_extracts_alert_title_snippet_and_date():
     assert "Chan Sow Lin" in results[0]["body"]
 
 
-def test_curated_myrapid_fallback_rows_preserve_known_alert_urls():
-    rows = _curated_myrapid_fallback_rows()
-    assert any("kemas-kini-laluan-ampang-sri-petaling" in row["url"] for row in rows)
-    assert any(row["raw_text"] == "Kemas Kini Laluan Ampang/Sri Petaling" for row in rows)
+def test_myrapid_recent_filter_rejects_old_alert_dates():
+    assert _is_recent_enough("2022-11-08") is False
+
+
+def test_myrapid_recent_filter_accepts_recent_alert_dates():
+    recent = (datetime.now(UTC) - timedelta(days=7)).date().isoformat()
+    assert _is_recent_enough(recent) is True
 
 
 def test_parse_myrapid_status_table_html_keeps_only_non_normal_rows():
