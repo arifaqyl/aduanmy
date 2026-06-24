@@ -1,0 +1,17 @@
+sources:
+  threads:
+    enabled: true
+    primary_method: public_post_fetch_plus_playwright_profile_discovery
+    fallback_method: logged_in_browser_search
+  reddit:
+    enabled: true
+    primary_method: old_reddit_html_search
+    fallback_method: oauth_or_managed_scraper
+  x:
+    enabled: true
+    primary_method: targeted_public_profile_discovery_plus_exact_status_fetch
+    fallback_method: session_backed_search_or_browser
+  official:
+    enabled: true
+    primary_method: structured_pages_and_open_data
+    fallback_method: generic_crawl

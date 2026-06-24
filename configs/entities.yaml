@@ -1,0 +1,34 @@
+entities:
+  transport:
+    - RapidKL
+    - KTM
+    - MRT
+    - LRT
+    - Ampang Line
+    - Sri Petaling Line
+    - Ampang/Sri Petaling Line
+    - Ampang and Sri Petaling LRT Lines
+    - Kelana Jaya Line
+    - KL Sentral
+  telco_internet:
+    - Unifi
+    - Maxis
+    - CelcomDigi
+  banking_payments:
+    - Maybank
+    - MAE
+    - DuitNow
+    - CIMB
+    - TNG eWallet
+  gov_portals:
+    - MyJPJ
+    - PTPTN
+    - KWSP
+    - Immigration
+    - MyGov
+  flood_weather:
+    - Kuala Lumpur
+    - Selangor
+    - Johor
+    - Penang
+    - Kelantan

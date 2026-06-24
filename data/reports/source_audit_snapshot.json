@@ -1,0 +1,62 @@
+{
+  "ingest": {
+    "written": 12,
+    "threads": 5,
+    "reddit": 3,
+    "x": 1,
+    "official": 9,
+    "timings": {
+      "reddit": 9.86,
+      "x": 10.59,
+      "threads": 26.61,
+      "official": 48.13
+    },
+    "categories": {
+      "telco_internet": 4,
+      "transport": 8
+    }
+  },
+  "stored_by_source": {
+    "official": 3,
+    "reddit": 3,
+    "threads": 5,
+    "x": 1
+  },
+  "stored_by_category": [
+    {
+      "category": "telco_internet",
+      "source_platform": "official",
+      "volume": 1
+    },
+    {
+      "category": "telco_internet",
+      "source_platform": "reddit",
+      "volume": 2
+    },
+    {
+      "category": "telco_internet",
+      "source_platform": "threads",
+      "volume": 1
+    },
+    {
+      "category": "transport",
+      "source_platform": "official",
+      "volume": 2
+    },
+    {
+      "category": "transport",
+      "source_platform": "reddit",
+      "volume": 1
+    },
+    {
+      "category": "transport",
+      "source_platform": "threads",
+      "volume": 4
+    },
+    {
+      "category": "transport",
+      "source_platform": "x",
+      "volume": 1
+    }
+  ]
+}

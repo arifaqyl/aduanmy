@@ -1,0 +1,1241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrafficMY — Live Public Transport Intelligence</title>
+  <meta name="description" content="TrafficMY turns messy public transport complaint signals into a live incident intelligence surface for Malaysia." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Design tokens ── */
+    :root {
+      --bg:        #0a0c10;
+      --bg-card:   #111318;
+      --bg-hover:  #16191f;
+      --border:    #1e2128;
+      --border-2:  #262b34;
+      --text:      #e8ecf0;
+      --text-2:    #8b9099;
+      --text-3:    #555b64;
+      --accent:    #3b82f6;
+      --accent-dim:#1e3a5f;
+      --green:     #22c55e;
+      --green-dim: #14532d;
+      --amber:     #f59e0b;
+      --amber-dim: #451a03;
+      --red:       #ef4444;
+      --red-dim:   #450a0a;
+      --radius:    10px;
+      --radius-sm: 6px;
+      --transition: 160ms ease;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { font-size: 16px; scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+    body.no-scroll { overflow: hidden; }
+
+    button:focus-visible,
+    a:focus-visible,
+    .chip:focus-visible,
+    .filter-btn:focus-visible,
+    .incident-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    /* ── Layout ── */
+    .shell { max-width: 960px; margin: 0 auto; padding: 0 16px; }
+
+    /* ── Top nav ── */
+    nav {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid var(--border);
+      background: rgba(10, 12, 16, 0.92);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      height: 52px;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+    .nav-mark {
+      width: 28px; height: 28px;
+      background: var(--accent);
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: -0.5px;
+      flex-shrink: 0;
+    }
+    .nav-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+    .nav-badge {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      padding: 1px 6px;
+      border-radius: 20px;
+      letter-spacing: 0.3px;
+      text-transform: uppercase;
+    }
+    .nav-spacer { flex: 1; }
+    .freshness-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: var(--text-2);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .dot-green { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    .dot-amber { background: var(--amber); box-shadow: 0 0 6px var(--amber); }
+    .dot-red   { background: var(--red);   box-shadow: 0 0 6px var(--red); }
+    .dot-grey  { background: var(--text-3); }
+
+    /* ── Section spacing ── */
+    section { padding: 28px 0; }
+    section + section { border-top: 1px solid var(--border); }
+
+    /* ── Hero ── */
+    .hero { padding: 36px 0 24px; }
+    .hero-eyebrow {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 10px;
+    }
+    h1 {
+      font-size: clamp(22px, 5vw, 34px);
+      font-weight: 700;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+      color: var(--text);
+    }
+    .hero-sub {
+      margin-top: 8px;
+      font-size: 14px;
+      color: var(--text-2);
+      max-width: 520px;
+    }
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .stat-chip {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      min-width: 90px;
+    }
+    .stat-val {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-lbl {
+      font-size: 11px;
+      color: var(--text-3);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Section header ── */
+    .sec-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      gap: 12px;
+    }
+    .sec-title {
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: var(--text-2);
+    }
+
+    /* ── Filter bar ── */
+    .filter-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+    .filter-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 5px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border-2);
+      background: var(--bg-card);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+    }
+    .filter-btn:hover { border-color: var(--accent); color: var(--text); }
+    .filter-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .filter-btn:disabled { opacity: 0.4; pointer-events: none; }
+
+    /* ── Incident card ── */
+    .incident-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      cursor: pointer;
+      transition: border-color var(--transition), background var(--transition);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+      text-align: left;
+      width: 100%;
+      font-family: 'Inter', sans-serif;
+    }
+    .incident-card:hover { background: var(--bg-hover); border-color: var(--border-2); }
+    .incident-card.active { border-color: var(--accent); background: var(--bg-hover); }
+
+    .inc-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+    .inc-id {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-3);
+      letter-spacing: 0.5px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 1px 5px;
+      border-radius: 3px;
+    }
+    .inc-entity {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+    }
+    .inc-text {
+      font-size: 12px;
+      color: var(--text-2);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .inc-footer {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+    .inc-meta { font-size: 11px; color: var(--text-3); }
+    .inc-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+    .card-list { display: flex; flex-direction: column; gap: 8px; }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 7px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+    }
+    .badge-strong  { background: var(--green-dim);  color: var(--green);  border: 1px solid var(--green); }
+    .badge-reasonable { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+    .badge-weak    { background: #1a1c20; color: var(--text-3); border: 1px solid var(--border); }
+    .badge-high    { background: var(--red-dim);   color: var(--red);    border: 1px solid var(--red); }
+    .badge-medium  { background: var(--amber-dim); color: var(--amber);  border: 1px solid var(--amber); }
+    .badge-low     { background: #1a1c20; color: var(--text-3); border: 1px solid var(--border); }
+    .badge-recent  { background: var(--green-dim); color: var(--green); border: 1px solid var(--green); }
+    .badge-aging   { background: var(--amber-dim); color: var(--amber); border: 1px solid var(--amber); }
+    .badge-stale   { background: #1a1c20; color: var(--text-3); border: 1px solid var(--border); }
+    .badge-unknown { background: #1a1c20; color: var(--text-3); border: 1px solid var(--border); }
+
+    /* ── Source pills ── */
+    .source-row { display: flex; gap: 4px; flex-wrap: wrap; }
+    .source-pill {
+      font-size: 10px;
+      font-weight: 500;
+      padding: 2px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+    .src-threads { background: #1a0a2e; color: #a78bfa; border: 1px solid #4c1d95; }
+    .src-reddit  { background: #1a0a00; color: #fb923c; border: 1px solid #7c2d12; }
+    .src-x       { background: #0a0e14; color: var(--text-2); border: 1px solid var(--border-2); }
+    .src-official{ background: #0a1a0a; color: var(--green); border: 1px solid var(--green-dim); }
+
+    /* ── Entity/location chips ── */
+    .chip-row { display: flex; gap: 6px; flex-wrap: wrap; }
+    .chip {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-2);
+      background: var(--bg-card);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: var(--transition);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chip:hover { border-color: var(--accent); color: var(--text); }
+    .chip.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .chip-count {
+      font-size: 10px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-3);
+    }
+
+    /* ── Drilldown panel ── */
+    #drilldown {
+      position: fixed;
+      top: 0; right: 0; bottom: 0;
+      width: min(460px, 100vw);
+      background: var(--bg-card);
+      border-left: 1px solid var(--border-2);
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+      z-index: 60;
+    }
+    #drilldown.open { transform: translateX(0); }
+
+    .drill-header {
+      position: sticky;
+      top: 0;
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      z-index: 1;
+    }
+    .drill-title { font-size: 14px; font-weight: 600; color: var(--text); }
+    .close-btn {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      border: 1px solid var(--border-2);
+      background: var(--bg);
+      color: var(--text-2);
+      cursor: pointer;
+      font-size: 16px;
+      display: grid;
+      place-items: center;
+      transition: var(--transition);
+      flex-shrink: 0;
+    }
+    .close-btn:hover { border-color: var(--border-2); color: var(--text); background: var(--bg-hover); }
+
+    .drill-body { padding: 16px; padding-bottom: 40px; }
+
+    .drill-kv {
+      display: grid;
+      grid-template-columns: 100px 1fr;
+      gap: 4px 12px;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    .drill-k { color: var(--text-3); }
+    .drill-v { color: var(--text-2); word-break: break-all; }
+    .drill-v a { color: var(--accent); text-decoration: none; }
+    .drill-v a:hover { text-decoration: underline; }
+
+    .evidence-list { display: flex; flex-direction: column; gap: 8px; }
+    .evidence-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 12px;
+    }
+    .ev-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; flex-wrap: wrap; }
+    .ev-text { font-size: 12px; color: var(--text-2); line-height: 1.5; }
+    .ev-link {
+      display: block;
+      margin-top: 6px;
+      font-size: 11px;
+      color: var(--accent);
+      text-decoration: none;
+      font-family: 'JetBrains Mono', monospace;
+      word-break: break-all;
+    }
+    .ev-link:hover { text-decoration: underline; }
+
+    .breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .breakdown-item {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      text-align: center;
+    }
+    .breakdown-count { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .breakdown-src { font-size: 10px; text-transform: uppercase; letter-spacing: 0.4px; color: var(--text-3); margin-top: 2px; }
+
+    /* ── Status block ── */
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px;
+    }
+    .status-item {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+    }
+    .status-lbl { font-size: 11px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 4px; }
+    .status-val { font-size: 14px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+    .status-sub { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+    /* ── Refresh banner ── */
+    .refresh-banner {
+      background: var(--accent-dim);
+      border: 1px solid var(--accent);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 16px;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--accent);
+    }
+    .refresh-banner.show { display: flex; }
+    .refresh-elapsed {
+      margin-left: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--text-2);
+    }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-3);
+    }
+    .empty-icon { font-size: 32px; margin-bottom: 8px; }
+    .empty-msg { font-size: 14px; }
+    .empty-sub { font-size: 12px; margin-top: 4px; color: var(--text-3); }
+
+    /* ── Skeleton loader ── */
+    .skel {
+      background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-hover) 50%, var(--bg-card) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: var(--radius-sm);
+    }
+    @keyframes shimmer {
+      0%   { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    .skel-card { height: 72px; margin-bottom: 8px; }
+    .skel-stat { height: 56px; flex: 1; min-width: 80px; }
+
+    /* ── Refresh button ── */
+    .refresh-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      padding: 6px 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-2);
+      background: var(--bg-card);
+      color: var(--text-2);
+      cursor: pointer;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .refresh-btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+    .refresh-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Overlay backdrop ── */
+    #backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 55;
+    }
+    #backdrop.show { display: block; }
+
+    /* ── Score bar ── */
+    .score-bar-wrap { margin-top: 4px; }
+    .score-bar-track {
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .score-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--accent);
+      transition: width 600ms ease;
+    }
+    .score-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text-3);
+      margin-top: 3px;
+    }
+
+    /* ── Disclaimer ── */
+    .disclaimer {
+      font-size: 11px;
+      color: var(--text-3);
+      margin-top: 16px;
+      padding: 8px 12px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      line-height: 1.6;
+    }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 20px 0;
+      font-size: 12px;
+      color: var(--text-3);
+    }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .hero-stats { gap: 8px; }
+      .stat-chip { min-width: 72px; padding: 8px 12px; }
+      .stat-val { font-size: 18px; }
+      #drilldown { width: 100vw; }
+      .filter-bar { gap: 5px; }
+      .drill-kv { grid-template-columns: 80px 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Top nav -->
+<nav>
+  <div class="shell">
+    <div class="nav-inner">
+      <a class="nav-logo" href="/">
+        <div class="nav-mark">T</div>
+        <span class="nav-name">TrafficMY</span>
+      </a>
+      <span class="nav-badge">Live</span>
+      <div class="nav-spacer"></div>
+      <div class="freshness-pill" id="freshnessPill">
+        <div class="dot dot-grey" id="freshnessDot"></div>
+        <span id="freshnessLabel">Loading…</span>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- Backdrop -->
+<div id="backdrop"></div>
+
+<!-- Drilldown panel -->
+<div id="drilldown" role="dialog" aria-modal="true" aria-labelledby="drillTitle" tabindex="-1">
+  <div class="drill-header">
+    <span class="drill-title" id="drillTitle">Incident Detail</span>
+    <button class="close-btn" id="closeDrillBtn" aria-label="Close panel">✕</button>
+  </div>
+  <div class="drill-body" id="drillBody">
+    <div class="empty">
+      <div class="empty-icon">📋</div>
+      <div class="empty-msg">Select an incident to inspect evidence</div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <!-- Hero / summary -->
+  <div class="shell">
+    <div class="hero">
+      <div class="hero-eyebrow">Malaysia Public Transport Intelligence</div>
+      <h1>Live incident signals<br>from real complaints</h1>
+      <p class="hero-sub">TrafficMY surfaces complaint patterns from Threads, Reddit, and X — scored, clustered, and evidence-backed.</p>
+      <div class="hero-stats" id="heroStats">
+        <div class="skel skel-stat"></div>
+        <div class="skel skel-stat"></div>
+        <div class="skel skel-stat"></div>
+        <div class="skel skel-stat"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Status row -->
+  <section>
+    <div class="shell">
+      <div class="sec-header">
+        <span class="sec-title">System Status</span>
+        <button class="refresh-btn" id="refreshBtn" disabled>
+          <span id="refreshIcon">↻</span>
+          <span id="refreshLabel">Refresh data</span>
+        </button>
+      </div>
+      <div class="refresh-banner" id="refreshBanner" role="status" aria-live="polite">
+        <span class="spin">↻</span>
+        <span id="refreshMsg">Refresh in progress — this usually takes 25–35 seconds</span>
+        <span class="refresh-elapsed" id="refreshElapsed">0s</span>
+      </div>
+      <div class="status-grid" id="statusGrid">
+        <div class="skel skel-card"></div>
+        <div class="skel skel-card"></div>
+        <div class="skel skel-card"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Transport entities + locations -->
+  <section id="entitiesSection" style="display:none">
+    <div class="shell">
+      <div class="sec-header"><span class="sec-title">Entities in signal</span></div>
+      <div class="chip-row" id="entityChips"></div>
+      <div class="sec-header" style="margin-top:16px"><span class="sec-title">Locations in signal</span></div>
+      <div class="chip-row" id="locationChips"></div>
+    </div>
+  </section>
+
+  <!-- Incidents list -->
+  <section>
+    <div class="shell">
+      <div class="sec-header">
+        <span class="sec-title">Transport Incidents</span>
+        <span class="inc-meta" id="incidentCount" style="color:var(--text-3); font-size:12px"></span>
+      </div>
+
+      <!-- Sort + filter -->
+      <div class="filter-bar" id="sortBar">
+        <button class="filter-btn active" data-sort="strongest">Strongest</button>
+        <button class="filter-btn" data-sort="freshest">Freshest</button>
+      </div>
+      <div class="filter-bar" id="bandBar">
+        <button class="filter-btn active" data-band="">All</button>
+        <button class="filter-btn" data-band="strong">Strong</button>
+        <button class="filter-btn" data-band="reasonable">Reasonable</button>
+        <button class="filter-btn" data-band="weak">Weak</button>
+      </div>
+      <div class="filter-bar" id="staleBar">
+        <button class="filter-btn active" data-stale="recent">Recent only</button>
+        <button class="filter-btn" data-stale="all">Include stale</button>
+      </div>
+
+      <div class="card-list" id="incidentList">
+        <div class="skel skel-card"></div>
+        <div class="skel skel-card"></div>
+        <div class="skel skel-card"></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="shell" style="display:flex; justify-content:space-between; align-items:center; width:100%; flex-wrap:wrap; gap:8px;">
+    <span>TrafficMY · social complaint signals, not verified reports</span>
+    <span id="footerTime"></span>
+  </div>
+</footer>
+
+<script>
+  /* ── State ── */
+  let currentSort = 'strongest';
+  let currentBand = '';
+  let currentIncludeStale = false;
+  let currentEntity = '';
+  let currentLocation = '';
+  let activeClusterId = null;
+  let isRefreshing = false;
+  let refreshTimerId = null;
+  let lastFocusedElement = null;
+
+  /* ── Helpers ── */
+  const $ = (id) => document.getElementById(id);
+  const $$ = (sel) => document.querySelectorAll(sel);
+
+  function fmt(ts) {
+    if (!ts) return '—';
+    const d = new Date(ts);
+    if (isNaN(d)) return ts;
+    return d.toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  function relTime(ts) {
+    if (!ts) return '';
+    const diff = Date.now() - new Date(ts).getTime();
+    const m = Math.floor(diff / 60000);
+    if (m < 1) return 'just now';
+    if (m < 60) return `${m}m ago`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}h ago`;
+    return `${Math.floor(h / 24)}d ago`;
+  }
+
+  function esc(s) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function sourcePill(src) {
+    const cls = { threads: 'src-threads', reddit: 'src-reddit', x: 'src-x', official: 'src-official' };
+    return `<span class="source-pill ${cls[src] || ''}">${esc(src)}</span>`;
+  }
+  function confidenceBadge(band) { return `<span class="badge badge-${band}">${band}</span>`; }
+  function severityBadge(sev)    { return `<span class="badge badge-${sev}">${sev}</span>`; }
+  function freshnessBadge(bucket) {
+    const label = { recent: 'recent', aging: 'aging', stale: 'stale', unknown: 'unknown' }[bucket] || 'unknown';
+    return `<span class="badge badge-${label}">${label}</span>`;
+  }
+
+  /* ── Load status ── */
+  async function loadStatus() {
+    try {
+      const r = await fetch('/api/trafficmy/status');
+      const d = await r.json();
+      const stale = d.freshness?.is_stale;
+      const latest = d.freshness?.latest_created_at || d.freshness?.latest_inserted_at;
+      const latestRelative = relTime(latest);
+
+      $('freshnessDot').className = `dot ${stale ? 'dot-amber' : 'dot-green'}`;
+      $('freshnessLabel').textContent = stale
+        ? `Stale · last ${latestRelative || 'unknown'}`
+        : latestRelative ? `Fresh · ${latestRelative}` : 'Fresh';
+
+      const ingest = d.ingest || {};
+      const sc = ingest.written ?? ingest.stored_count ?? '—';
+      const sources = [
+        ingest.threads != null ? `Threads ${ingest.threads}` : ingest.threads_count != null ? `Threads ${ingest.threads_count}` : null,
+        ingest.reddit  != null ? `Reddit ${ingest.reddit}` : ingest.reddit_count != null ? `Reddit ${ingest.reddit_count}` : null,
+        ingest.x       != null ? `X ${ingest.x}` : ingest.x_count != null ? `X ${ingest.x_count}` : null,
+        ingest.official != null ? `Official ${ingest.official}` : null,
+      ].filter(Boolean).join(' · ') || '—';
+
+      $('statusGrid').innerHTML = `
+        <div class="status-item">
+          <div class="status-lbl">Data freshness</div>
+          <div class="status-val" style="color:${stale ? 'var(--amber)' : 'var(--green)'}">${stale ? 'Stale' : 'Fresh'}</div>
+          <div class="status-sub">${fmt(latest)}</div>
+        </div>
+        <div class="status-item">
+          <div class="status-lbl">Complaints stored</div>
+          <div class="status-val">${d.totals?.complaints ?? '—'}</div>
+          <div class="status-sub">${d.totals?.transport_clusters ?? 0} transport clusters</div>
+        </div>
+        <div class="status-item">
+          <div class="status-lbl">Ingest snapshot</div>
+          <div class="status-val">${sc} rows</div>
+          <div class="status-sub">${sources}</div>
+        </div>
+        ${d.top_wedge ? `
+        <div class="status-item">
+          <div class="status-lbl">Top wedge score</div>
+          <div class="status-val">${d.top_wedge.total ?? d.top_wedge.score ?? d.top_wedge.density ?? '—'}</div>
+          <div class="status-sub">${d.top_wedge.category ?? ''}</div>
+        </div>` : ''}
+      `;
+      $('refreshBtn').disabled = isRefreshing;
+    } catch (e) {
+      $('statusGrid').innerHTML = `<div class="empty"><div class="empty-msg">Could not load status</div></div>`;
+    }
+  }
+
+  /* ── Load overview ── */
+  async function loadOverview() {
+    try {
+      const params = new URLSearchParams();
+      if (currentIncludeStale) params.set('include_stale', 'true');
+      const query = params.toString();
+      const r = await fetch(`/api/trafficmy/overview${query ? `?${query}` : ''}`);
+      const d = await r.json();
+      const s = d.summary || {};
+      const hidden = s.stale_hidden_count || 0;
+      const windowDays = s.live_window_days || 14;
+      const usingStale = Boolean(s.include_stale);
+
+      $('heroStats').innerHTML = `
+        <div class="stat-chip">
+          <div class="stat-val">${s.transport_cluster_count ?? 0}</div>
+          <div class="stat-lbl">Clusters</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-val">${s.strong_cluster_count ?? 0}</div>
+          <div class="stat-lbl">Strong</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-val">${s.reasonable_cluster_count ?? 0}</div>
+          <div class="stat-lbl">Reasonable</div>
+        </div>
+        <div class="stat-chip">
+          <div class="stat-val">${s.weak_cluster_count ?? 0}</div>
+          <div class="stat-lbl">Weak</div>
+        </div>
+      `;
+
+      const sub = document.querySelector('.hero-sub');
+      if (sub) {
+        sub.textContent = usingStale
+          ? `TrafficMY is showing recent plus older transport clusters. Freshness labels tell you whether a signal is recent, aging, or stale.`
+          : hidden
+          ? `TrafficMY surfaces recent complaint patterns from Threads, Reddit, and X. Showing last ${windowDays} days by default, with ${hidden} older cluster${hidden !== 1 ? 's' : ''} hidden.`
+          : `TrafficMY surfaces recent complaint patterns from Threads, Reddit, and X — scored, clustered, and evidence-backed.`;
+      }
+
+      // Entities + locations from live cluster data
+      const entities = d.transport_entities || [];
+      const locations = d.transport_locations || [];
+
+      if (entities.length || locations.length) {
+        $('entitiesSection').style.display = '';
+        $('entityChips').innerHTML = entities.map(e =>
+          `<button type="button" class="chip${currentEntity === e.name ? ' active' : ''}" data-entity="${esc(e.name)}" aria-pressed="${currentEntity === e.name ? 'true' : 'false'}">${esc(e.name)} <span class="chip-count">×${e.count}</span></button>`
+        ).join('');
+        $('locationChips').innerHTML = locations.map(l =>
+          `<button type="button" class="chip${currentLocation === l.name ? ' active' : ''}" data-location="${esc(l.name)}" aria-pressed="${currentLocation === l.name ? 'true' : 'false'}">${esc(l.name)} <span class="chip-count">×${l.count}</span></button>`
+        ).join('');
+      } else {
+        $('entitiesSection').style.display = 'none';
+        $('entityChips').innerHTML = '';
+        $('locationChips').innerHTML = '';
+      }
+    } catch (e) {
+      $('entitiesSection').style.display = 'none';
+      $('entityChips').innerHTML = '';
+      $('locationChips').innerHTML = '';
+      $('heroStats').innerHTML = `<div class="empty"><div class="empty-msg">Could not load overview</div></div>`;
+    }
+  }
+
+  /* ── Load incidents ── */
+  async function loadIncidents() {
+    const list = $('incidentList');
+    list.innerHTML = `<div class="skel skel-card"></div><div class="skel skel-card"></div><div class="skel skel-card"></div>`;
+
+    const params = new URLSearchParams({ sort_by: currentSort });
+    if (currentBand) params.set('confidence_band', currentBand);
+    if (currentEntity) params.set('entity', currentEntity);
+    if (currentLocation) params.set('location', currentLocation);
+    if (currentIncludeStale) params.set('include_stale', 'true');
+
+    try {
+      const r = await fetch(`/api/trafficmy/incidents?${params}`);
+      const d = await r.json();
+      const items = d.items || [];
+      const hidden = d.stale_hidden_count || 0;
+      const windowDays = d.live_window_days || 14;
+
+      // Build filter summary
+      let filterTag = '';
+      if (currentEntity) filterTag += ` · entity: ${currentEntity}`;
+      if (currentLocation) filterTag += ` · location: ${currentLocation}`;
+      const hiddenTag = currentIncludeStale
+        ? ` · stale included`
+        : hidden ? ` · ${hidden} older hidden (${windowDays}d window)` : '';
+      $('incidentCount').textContent = `${items.length} incident${items.length !== 1 ? 's' : ''}${filterTag}${hiddenTag}`;
+
+      if (!items.length) {
+        const noStrongMsg = currentBand === 'strong'
+          ? 'No strong incidents currently. This is honest — the data does not yet support high-confidence clusters.'
+          : `No incidents match this filter.`;
+        list.innerHTML = `
+          <div class="empty">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-msg">${noStrongMsg}</div>
+            <div class="empty-sub">Try a broader filter or run a data refresh</div>
+          </div>`;
+        return;
+      }
+      renderIncidentCards(items, list);
+    } catch (e) {
+      list.innerHTML = `<div class="empty"><div class="empty-msg">Failed to load incidents</div></div>`;
+    }
+  }
+
+  function renderIncidentCards(items, container) {
+    container.innerHTML = items.map(inc => {
+      const sources = (inc.sources || '').split(',').filter(Boolean);
+      const srcs = sources.map(s => sourcePill(s.trim())).join('');
+      const loc = inc.location ? `<span class="inc-meta">📍 ${esc(inc.location)}</span>` : '';
+      const ent = inc.entity ? `<span class="inc-entity">${esc(inc.entity)}</span>` : '';
+      const score = typeof inc.confidence_score === 'number'
+        ? `<span class="inc-meta" style="font-family:'JetBrains Mono',monospace">${inc.confidence_score.toFixed(1)}</span>`
+        : '';
+      const freshness = freshnessBadge(inc.freshness_bucket || 'unknown');
+      const isActive = inc.cluster_id === activeClusterId ? ' active' : '';
+      return `
+        <button class="incident-card${isActive}" data-cluster="${esc(inc.cluster_id)}" data-label="${esc(inc.entity || inc.cluster_id)}">
+          <div class="inc-main">
+            <div class="inc-header">
+              <span class="inc-id">${esc(inc.cluster_id)}</span>
+              ${ent}
+            </div>
+            <div class="inc-text">${esc(inc.example_text || 'No summary available')}</div>
+            <div class="inc-footer">
+              <div class="source-row">${srcs}</div>
+              ${loc}
+              <span class="inc-meta">×${inc.volume}</span>
+              ${score}
+            </div>
+          </div>
+          <div class="inc-right">
+            ${freshness}
+            ${confidenceBadge(inc.confidence_band)}
+            ${severityBadge(inc.severity)}
+            <span class="inc-meta">${relTime(inc.last_seen_at)}</span>
+          </div>
+        </button>`;
+    }).join('');
+  }
+
+  /* ── Drilldown ── */
+  function isDrilldownOpen() {
+    return $('drilldown').classList.contains('open');
+  }
+
+  async function openDrilldown(clusterId, label) {
+    lastFocusedElement = document.activeElement;
+    activeClusterId = clusterId;
+    $$('.incident-card').forEach(c => c.classList.toggle('active', c.dataset.cluster === clusterId));
+
+    $('drillTitle').textContent = label || 'Incident Detail';
+    $('drillBody').innerHTML = `
+      <div class="skel skel-card" style="height:120px; margin-bottom:8px"></div>
+      <div class="skel skel-card" style="height:80px; margin-bottom:8px"></div>
+      <div class="skel skel-card" style="height:100px"></div>
+    `;
+
+    $('drilldown').classList.add('open');
+    $('backdrop').classList.add('show');
+    document.body.classList.add('no-scroll');
+    $('closeDrillBtn').focus();
+
+    try {
+      const r = await fetch(`/api/trafficmy/incidents/${encodeURIComponent(clusterId)}`);
+      if (!r.ok) throw new Error('Not found');
+      const d = await r.json();
+      const inc = d.incident || {};
+      const items = d.items || [];
+      const breakdown = d.source_breakdown || {};
+
+      const bkdHtml = Object.entries(breakdown).map(([src, cnt]) => `
+        <div class="breakdown-item">
+          <div class="breakdown-count">${cnt}</div>
+          <div class="breakdown-src">${esc(src)}</div>
+        </div>
+      `).join('');
+
+      const scoreVal = inc.confidence_score ?? 0;
+      const scorePct = Math.min(100, (scoreVal / 10) * 100).toFixed(0);
+
+      const evHtml = items.map(ev => {
+        const linkEl = ev.url ? `<a class="ev-link" href="${esc(ev.url)}" target="_blank" rel="noopener">${esc(ev.url)}</a>` : '';
+        return `
+          <div class="evidence-item">
+            <div class="ev-header">
+              ${sourcePill(ev.source_platform)}
+              ${ev.author_handle ? `<span class="inc-meta">@${esc(ev.author_handle)}</span>` : ''}
+              <span class="inc-meta" style="margin-left:auto">${fmt(ev.created_at)}</span>
+            </div>
+            <div class="ev-text">${esc(ev.normalized_text || ev.raw_text || '—')}</div>
+            ${linkEl}
+          </div>`;
+      }).join('');
+
+      $('drillBody').innerHTML = `
+        <div style="margin-bottom:16px">
+          <div class="drill-kv">
+            <span class="drill-k">Cluster ID</span>
+            <span class="drill-v" style="font-family:'JetBrains Mono',monospace; font-size:11px">${esc(inc.cluster_id || clusterId)}</span>
+            <span class="drill-k">Entity</span>
+            <span class="drill-v">${esc(inc.entity || '—')}</span>
+            <span class="drill-k">Location</span>
+            <span class="drill-v">${esc(inc.location || '—')}</span>
+            <span class="drill-k">Severity</span>
+            <span class="drill-v">${severityBadge(inc.severity || 'low')}</span>
+            <span class="drill-k">Confidence</span>
+            <span class="drill-v">${confidenceBadge(inc.confidence_band || 'weak')}</span>
+            <span class="drill-k">Freshness</span>
+            <span class="drill-v">${freshnessBadge(inc.freshness_bucket || 'unknown')}${inc.age_days != null ? ` <span class="inc-meta">· ${inc.age_days}d old</span>` : ''}</span>
+            <span class="drill-k">First seen</span>
+            <span class="drill-v">${fmt(inc.first_seen_at)}</span>
+            <span class="drill-k">Last seen</span>
+            <span class="drill-v">${fmt(inc.last_seen_at)}</span>
+            ${inc.corroborated_by_official ? `<span class="drill-k">Official</span><span class="drill-v" style="color:var(--green)">✓ Corroborated by official source</span>` : ''}
+          </div>
+
+          <div class="score-bar-wrap">
+            <div class="score-bar-track"><div class="score-bar-fill" style="width:${scorePct}%"></div></div>
+            <div class="score-label"><span>Confidence score</span><span>${scoreVal.toFixed(2)} / 10</span></div>
+          </div>
+        </div>
+
+        <div class="sec-title" style="margin-bottom:10px">Source breakdown</div>
+        <div class="breakdown-grid">${bkdHtml || '<div style="font-size:12px;color:var(--text-3)">No breakdown</div>'}</div>
+
+        <div class="sec-title" style="margin-bottom:10px">Evidence (${items.length} complaint${items.length !== 1 ? 's' : ''})</div>
+        <div class="evidence-list">${evHtml || '<div style="font-size:12px;color:var(--text-3)">No evidence rows</div>'}</div>
+
+        <div class="disclaimer">
+          Evidence is sourced from public social media complaints. These are unverified public signals, not official incident reports.
+        </div>
+      `;
+    } catch (e) {
+      $('drillBody').innerHTML = `
+        <div class="empty">
+          <div class="empty-icon">⚠️</div>
+          <div class="empty-msg">Could not load incident detail</div>
+        </div>`;
+    }
+  }
+
+  function closeDrilldown() {
+    $('drilldown').classList.remove('open');
+    $('backdrop').classList.remove('show');
+    document.body.classList.remove('no-scroll');
+    $$('.incident-card').forEach(c => c.classList.remove('active'));
+    activeClusterId = null;
+    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+      lastFocusedElement.focus();
+    }
+  }
+
+  /* ── Sort / filter ── */
+  function setSort(val) {
+    currentSort = val;
+    $$('#sortBar .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.sort === val));
+    loadIncidents();
+  }
+
+  function setBand(val) {
+    currentBand = val;
+    $$('#bandBar .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.band === val));
+    loadIncidents();
+  }
+
+  function setStaleMode(mode) {
+    currentIncludeStale = mode === 'all';
+    $$('#staleBar .filter-btn').forEach(b => b.classList.toggle('active', b.dataset.stale === mode));
+    Promise.all([loadOverview(), loadIncidents()]);
+  }
+
+  function setEntity(name) {
+    if (currentEntity === name) {
+      currentEntity = '';
+    } else {
+      currentEntity = name;
+      currentLocation = '';
+      $$('#locationChips .chip').forEach(c => {
+        c.classList.remove('active');
+        c.setAttribute('aria-pressed', 'false');
+      });
+    }
+    $$('#entityChips .chip').forEach(c => {
+      const active = c.dataset.entity === currentEntity;
+      c.classList.toggle('active', active);
+      c.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    loadIncidents();
+  }
+
+  function setLocation(name) {
+    if (currentLocation === name) {
+      currentLocation = '';
+    } else {
+      currentLocation = name;
+      currentEntity = '';
+      $$('#entityChips .chip').forEach(c => {
+        c.classList.remove('active');
+        c.setAttribute('aria-pressed', 'false');
+      });
+    }
+    $$('#locationChips .chip').forEach(c => {
+      const active = c.dataset.location === currentLocation;
+      c.classList.toggle('active', active);
+      c.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+    loadIncidents();
+  }
+
+  /* ── Refresh ── */
+  function setFilterControlsEnabled(enabled) {
+    $$('#sortBar .filter-btn, #bandBar .filter-btn, #staleBar .filter-btn').forEach(b => b.disabled = !enabled);
+    $$('#entityChips .chip, #locationChips .chip').forEach(c => c.disabled = !enabled);
+  }
+
+  async function triggerRefresh() {
+    if (isRefreshing) return;
+    isRefreshing = true;
+
+    const btn = $('refreshBtn');
+    const icon = $('refreshIcon');
+    const label = $('refreshLabel');
+    const banner = $('refreshBanner');
+    const elapsed = $('refreshElapsed');
+
+    btn.disabled = true;
+    icon.innerHTML = '<span class="spin">↻</span>';
+    label.textContent = 'Refreshing…';
+    banner.classList.add('show');
+    setFilterControlsEnabled(false);
+
+    let seconds = 0;
+    elapsed.textContent = '0s';
+    refreshTimerId = setInterval(() => {
+      seconds++;
+      elapsed.textContent = `${seconds}s`;
+    }, 1000);
+
+    try {
+      const r = await fetch('/api/refresh', { method: 'POST' });
+      const d = await r.json();
+      clearInterval(refreshTimerId);
+
+      if (d.status === 'ok') {
+        $('refreshMsg').textContent = `Done — ${d.cluster_count ?? '?'} clusters`;
+        elapsed.textContent = `${seconds}s`;
+        await Promise.all([loadStatus(), loadOverview(), loadIncidents()]);
+      } else {
+        $('refreshMsg').textContent = 'Refresh returned an error';
+      }
+    } catch (e) {
+      clearInterval(refreshTimerId);
+      $('refreshMsg').textContent = 'Refresh failed — check server logs';
+      console.error('Refresh failed', e);
+    } finally {
+      isRefreshing = false;
+      btn.disabled = false;
+      icon.textContent = '↻';
+      label.textContent = 'Refresh data';
+      setFilterControlsEnabled(true);
+      setTimeout(() => banner.classList.remove('show'), 3000);
+    }
+  }
+
+  /* ── Event delegation ── */
+  document.addEventListener('click', (e) => {
+    const card = e.target.closest('.incident-card');
+    if (card) {
+      openDrilldown(card.dataset.cluster, card.dataset.label);
+      return;
+    }
+
+    const sortBtn = e.target.closest('#sortBar .filter-btn');
+    if (sortBtn) { setSort(sortBtn.dataset.sort); return; }
+
+    const bandBtn = e.target.closest('#bandBar .filter-btn');
+    if (bandBtn) { setBand(bandBtn.dataset.band); return; }
+
+    const staleBtn = e.target.closest('#staleBar .filter-btn');
+    if (staleBtn) { setStaleMode(staleBtn.dataset.stale); return; }
+
+    const entityChip = e.target.closest('[data-entity]');
+    if (entityChip) { setEntity(entityChip.dataset.entity); return; }
+
+    const locationChip = e.target.closest('[data-location]');
+    if (locationChip) { setLocation(locationChip.dataset.location); return; }
+  });
+
+  $('refreshBtn').addEventListener('click', triggerRefresh);
+  $('closeDrillBtn').addEventListener('click', closeDrilldown);
+  $('backdrop').addEventListener('click', closeDrilldown);
+
+  /* ── Keyboard ── */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && isDrilldownOpen()) {
+      closeDrilldown();
+    }
+  });
+
+  /* ── Footer time ── */
+  function updateFooterTime() {
+    const el = $('footerTime');
+    if (el) el.textContent = new Date().toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' });
+  }
+
+  /* ── Init ── */
+  async function init() {
+    updateFooterTime();
+    setInterval(updateFooterTime, 30000);
+    await Promise.all([loadStatus(), loadOverview(), loadIncidents()]);
+  }
+
+  document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

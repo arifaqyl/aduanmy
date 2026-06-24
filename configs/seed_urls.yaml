@@ -1,0 +1,29 @@
+threads:
+  - category: telco_internet
+    url: https://www.threads.com/@afifah.hgm/post/DVyhpZ6kVKO/unifi-ni-sampai-hari-takde-internet-kat-rumah-ye-complaint-pun-takde-tindakan
+    discover_profile: false
+  - category: transport
+    url: https://www.threads.com/@transit.taste.trail/post/DZ1ZHDQGo_p
+    discover_profile: true
+  - category: transport
+    url: https://www.threads.com/@thesundaily/video/DZL8i1Cj83R
+    discover_profile: false
+  - category: transport
+    url: https://www.threads.com/@thestaronline/post/DY3aL9xjtLQ
+    discover_profile: false
+  - category: transport
+    url: https://www.threads.com/@thesundaily/video/DYdmVoxiOw_
+    discover_profile: false
+x:
+  - category: transport
+    url: https://x.com/askrapidkl/status/1396814564151504898
+    fallback_text: "Ask Rapid KL Kelana Jaya Line Update: LRT Kelana Jaya line is experiencing an incident, specifically trains number 40 and 81. Help and rescue assistance is mobilising."
+  - category: transport
+    url: https://x.com/askrapidkl/status/1733450921043189994
+    fallback_text: "Ask Rapid KL Maaf atas kelewatan. Next bas akan gerak jam 2040. Pada masa ini hanya sebuah bas beroperasi."
+  - category: transport
+    url: https://x.com/myrapidkl/status/1589847935327817728
+    fallback_text: "Rapid KL masalah sistem kawalan tren automatik jejas perkhidmatan LRT Laluan Kelana Jaya di Kuala Lumpur."
+  - category: transport
+    url: https://x.com/askrapidkl/status/2054167417925026265
+    fallback_text: "Kelewatan Tren: Laluan Kelana Jaya / Train Delays: Kelana Jaya Line. Perkhidmatan bas perantara ulang-alik percuma disediakan di antara Bangsar dan KL Gateway."

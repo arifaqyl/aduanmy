@@ -1,0 +1,2 @@
+Generate a short cluster label for a group of related Malaysian complaint posts.
+

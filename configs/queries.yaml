@@ -1,0 +1,30 @@
+query_groups:
+  transport:
+    - kelana jaya line delay
+    - ampang sri petaling delay
+    - rapidkl delay
+    - mrt kajang delay
+    - lrt rosak
+    - kl sentral jam
+    - ktm lambat
+  telco_internet:
+    - unifi down
+    - unifi tak boleh
+    - maxis outage
+    - celcomdigi line problem
+    - time internet down
+  banking_payments:
+    - duitnow pending
+    - mae problem
+    - maybank error
+    - cimb transfer pending
+    - tng ewallet issue
+  gov_portals:
+    - myjpj error
+    - ptptn problem
+    - kwsp app down
+    - immigration portal issue
+  flood_weather:
+    - banjir kl
+    - road closure flood
+    - hujan lebat jalan tutup

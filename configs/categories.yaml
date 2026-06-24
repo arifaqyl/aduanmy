@@ -1,0 +1,29 @@
+categories:
+  - key: transport
+    label: Transport
+    description: Rail, bus, traffic, station and commute complaints.
+  - key: telco_internet
+    label: Telco / Internet
+    description: Broadband, mobile network, support, and outage complaints.
+  - key: banking_payments
+    label: Banking / Payments
+    description: Banking apps, DuitNow, card, transfer and payment issues.
+  - key: gov_portals
+    label: Government Portals / Apps
+    description: Public service digital failures, delays, and access issues.
+  - key: flood_weather
+    label: Flood / Weather / Local Disruption
+    description: Flooding, road closure, heavy rain, local disruption.
+  - key: healthcare
+    label: Healthcare
+    description: Queues, staffing, medicine cost, public hospital complaints.
+  - key: cost_of_living
+    label: Cost of Living
+    description: Price spikes, grocery pain, fuel, rent and day-to-day pressure.
+  - key: housing_city
+    label: Housing / City Issues
+    description: Walkability, local council problems, housing and urban friction.
+  - key: education
+    label: Education / University
+    description: Student, campus, system, and education access complaints.
+
