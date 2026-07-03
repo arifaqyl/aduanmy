@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from scripts.deploy_do import should_skip
+from scripts.deploy_packaging import should_skip
 
 
 def test_dockerfile_uses_production_collection_defaults():
