@@ -1,0 +1,18 @@
+{
+  "source": "MyRapid cashless fare structure (public summary)",
+  "disclaimer": "Estimate only. Actual fare depends on zones, concessions, and operator. Does not cover KTM or KLIA Ekspres.",
+  "currency": "MYR",
+  "rapid_kl": {
+    "cashless_min": 1.0,
+    "cashless_max": 6.4,
+    "typical_commute": 2.5,
+    "per_transfer_surcharge": 0.0,
+    "notes": "Rapid KL LRT/MRT/Monorail/BRT cashless fares typically RM1.00–RM6.40 by distance."
+  },
+  "estimate_rules": {
+    "base": 1.2,
+    "per_ride_leg": 1.8,
+    "per_transfer": 0.5,
+    "walk_no_charge": true
+  }
+}

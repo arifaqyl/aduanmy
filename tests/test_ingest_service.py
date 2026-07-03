@@ -1,4 +1,146 @@
-from app.services.ingest_service import transform_rows
+from app.db.session import connect, init_db, upsert_complaints
+from app.schemas.complaint import ComplaintSchema
+from app.services.ingest_service import _collector_due, prune_rejected_threads_complaints, transform_rows
+
+
+def test_gtfs_anomaly_collection_is_disabled_by_default():
+    due, reason = _collector_due("gtfs", respect_cadence=False)
+    assert due is False
+    assert reason == "reference_only"
+
+
+def test_transform_rows_rejects_future_opening_sabotage_as_live_disruption():
+    rows = transform_rows(
+        {
+            "threads": [
+                {
+                    "source_platform": "threads",
+                    "post_id": "future-lrt3",
+                    "url": "https://threads.example/future-lrt3",
+                    "author_handle": "test",
+                    "created_at": "2026-06-15T16:29:06Z",
+                    "raw_text": "I am going to steal LRT Shah Alam cable just to delay their opening again wish me luck",
+                    "query": "lrt delay",
+                    "seed_category": "transport",
+                }
+            ]
+        }
+    )
+    assert rows == []
+
+
+def test_prune_rejected_threads_complaints_removes_legacy_noise():
+    init_db()
+    upsert_complaints(
+        [
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="valid",
+                url="https://threads.example/valid",
+                author_handle="rider",
+                created_at="2026-07-01T00:00:00Z",
+                raw_text="LRT Kelana Jaya delay again, waiting 25 minutes at Bangsar",
+                normalized_text="lrt kelana jaya delay again, waiting 25 minutes at bangsar",
+                detected_language_mix="en",
+                category="transport",
+                subcategory="rail",
+                entity="Kelana Jaya Line",
+                location="Bangsar",
+                state="Wilayah Persekutuan",
+                severity="medium",
+                confidence=0.5,
+                engagement="",
+                cluster_id="transport:Kelana Jaya Line:Bangsar:delay",
+            ),
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="football",
+                url="https://threads.example/football",
+                author_handle="sports",
+                created_at="2026-07-01T00:00:00Z",
+                raw_text="Mbappe could just delay his run, like every other striker.",
+                normalized_text="mbappe could just delay his run like every other striker",
+                detected_language_mix="en",
+                category="transport",
+                subcategory="rail",
+                entity="",
+                location="",
+                state="",
+                severity="medium",
+                confidence=0.5,
+                engagement="",
+                cluster_id="transport:delay",
+            ),
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="telco",
+                url="https://threads.example/telco",
+                author_handle="legacy",
+                created_at="2026-07-01T00:00:00Z",
+                raw_text="Unifi down in Shah Alam",
+                normalized_text="unifi down in shah alam",
+                detected_language_mix="en",
+                category="telco_internet",
+                subcategory="outage",
+                entity="Unifi",
+                location="Shah Alam",
+                state="Selangor",
+                severity="high",
+                confidence=0.5,
+                engagement="",
+                cluster_id="telco_internet:Unifi:Shah Alam:outage",
+            ),
+        ]
+    )
+
+    assert prune_rejected_threads_complaints() == 2
+
+    with connect() as conn:
+        rows = conn.execute("SELECT post_id FROM complaints ORDER BY post_id").fetchall()
+    assert [row["post_id"] for row in rows] == ["valid"]
+
+
+def test_transform_rows_does_not_treat_duration_as_bus_route():
+    rows = transform_rows(
+        {
+            "threads": [
+                {
+                    "source_platform": "threads",
+                    "post_id": "duration",
+                    "url": "https://threads.example/duration",
+                    "author_handle": "test",
+                    "created_at": "2026-06-21T09:58:02Z",
+                    "raw_text": "RapidKL delay again, waited 1 hour 11 minutes for the van today",
+                    "query": "rapidkl delay",
+                    "seed_category": "transport",
+                }
+            ]
+        }
+    )
+    assert len(rows) == 1
+    assert rows[0].entity != "11"
+
+
+def test_transform_rows_assigns_state_for_jb_sentral():
+    rows = transform_rows(
+        {
+            "reddit": [
+                {
+                    "source_platform": "reddit",
+                    "post_id": "r-jb",
+                    "url": "https://old.reddit.com/r/johor/comments/example",
+                    "author_handle": "reddit:test",
+                    "created_at": "2026-06-21T04:18:43+00:00",
+                    "raw_text": "KTM komuter delay at JB Sentral again this morning, train stuck for 40 minutes",
+                    "query": "jb sentral train",
+                    "seed_category": "transport",
+                }
+            ]
+        }
+    )
+    assert len(rows) == 1
+    assert rows[0].location == "JB Sentral"
+    assert rows[0].state == "Johor"
 
 
 def test_transform_rows_forces_official_grounding_to_low_severity():
@@ -54,7 +196,7 @@ def test_transform_rows_rejects_generic_official_reference_pages():
     assert rows == []
 
 
-def test_transform_rows_rejects_route_less_official_transport_titles():
+def test_transform_rows_accepts_official_bus_mass_alert():
     rows = transform_rows(
         {
             "official": [
@@ -72,7 +214,10 @@ def test_transform_rows_rejects_route_less_official_transport_titles():
         }
     )
 
-    assert rows == []
+    assert len(rows) == 1
+    assert rows[0].entity == "RapidKL Bus"
+    assert rows[0].subcategory == "bus"
+    assert rows[0].severity == "medium"
 
 
 def test_transform_rows_keeps_specific_myrapid_line_update_titles_as_official_grounding():

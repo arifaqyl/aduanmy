@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Method · TrafficMY Pulse</title>
+  <meta name="description" content="How TrafficMY collects and presents Malaysia transport signals." />
+  <meta name="theme-color" content="#121212" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="static/css/app.css" />
+  <link rel="stylesheet" href="static/css/components.css" />
+  <style>
+    .tm-doc { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
+    .tm-doc h1 { font-family: var(--font-mono); font-size: 22px; margin-bottom: 8px; letter-spacing: -0.02em; }
+    .tm-doc p, .tm-doc li { font-size: 15px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 12px; }
+    .tm-doc h2 { font-family: var(--font-mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; margin: 24px 0 8px; color: var(--accent-red); }
+    .tm-doc a.back { font-size: 14px; font-weight: 600; font-family: var(--font-mono); }
+  </style>
+</head>
+<body class="tm-app">
+  <div class="tm-doc">
+    <p><a class="back" href="/">← TrafficMY Pulse</a></p>
+    <h1>Method &amp; scope</h1>
+    <p>TrafficMY is not an official RapidKL, Prasarana, or KTMB site. It aggregates recent public signals and presents cautious summaries with evidence links.</p>
+    <h2>How it works</h2>
+    <p>Recent public rider signals are filtered for Malaysia transport relevance, current observable impact, and duplicate reports before they become incident summaries.</p>
+    <h2>Sources</h2>
+    <ul>
+      <li>Threads (primary rider lane when session available)</li>
+      <li>Reddit, news RSS, operator notices</li>
+      <li>GTFS for map reference and journey planning</li>
+    </ul>
+    <h2>Status rules</h2>
+    <ul>
+      <li>24-hour window for line status; longer history for evidence only</li>
+      <li>Quiet means no qualifying recent signal, not confirmed normal service</li>
+      <li>Raw posts and usernames are not republished</li>
+    </ul>
+  </div>
+</body>
+</html>

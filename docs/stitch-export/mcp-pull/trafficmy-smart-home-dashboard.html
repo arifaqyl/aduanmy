@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TrafficMY - Smart Home Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-surface": "#1b1c1c",
+                      "line-monorail": "#8DC63F",
+                      "surface-soft": "#F7F7F7",
+                      "primary": "#2b6c00",
+                      "secondary": "#006590",
+                      "line-ampang": "#F7941D",
+                      "on-error": "#ffffff",
+                      "surface-container-lowest": "#ffffff",
+                      "outline-variant": "#becbb1",
+                      "tertiary": "#8c5000",
+                      "secondary-fixed-dim": "#88ceff",
+                      "surface-dim": "#dcd9d9",
+                      "on-surface-variant": "#3f4a36",
+                      "error-container": "#ffdad6",
+                      "on-secondary-container": "#004666",
+                      "surface-container-low": "#f5f3f2",
+                      "on-secondary-fixed": "#001e2e",
+                      "on-primary-container": "#1e5000",
+                      "status-critical-dark": "#EA2B2B",
+                      "background": "#fbf9f8",
+                      "inverse-on-surface": "#f3f0f0",
+                      "surface-variant": "#e4e2e1",
+                      "tertiary-fixed-dim": "#ffb872",
+                      "secondary-fixed": "#c8e6ff",
+                      "surface-container-high": "#eae8e7",
+                      "line-kajang": "#007A33",
+                      "surface-container": "#f0eded",
+                      "on-background": "#1b1c1c",
+                      "primary-fixed-dim": "#6be026",
+                      "inverse-primary": "#6be026",
+                      "surface": "#fbf9f8",
+                      "tertiary-fixed": "#ffdcbf",
+                      "success-soft": "#D7FFB8",
+                      "status-critical": "#FF4B4B",
+                      "on-tertiary-fixed": "#2d1600",
+                      "inverse-surface": "#303030",
+                      "surface-tint": "#2b6c00",
+                      "on-primary": "#ffffff",
+                      "line-kelana": "#E31837",
+                      "tertiary-container": "#ff9c27",
+                      "on-primary-fixed-variant": "#1f5100",
+                      "error": "#ba1a1a",
+                      "surface-container-highest": "#e4e2e1",
+                      "on-tertiary": "#ffffff",
+                      "on-secondary-fixed-variant": "#004c6e",
+                      "on-tertiary-container": "#683a00",
+                      "line-putrajaya": "#F4C300",
+                      "primary-container": "#58cc02",
+                      "secondary-container": "#2fb8ff",
+                      "surface-bright": "#fbf9f8",
+                      "line-ktm": "#0066B3",
+                      "outline": "#6f7b64",
+                      "on-error-container": "#93000a",
+                      "on-secondary": "#ffffff",
+                      "on-tertiary-fixed-variant": "#6a3b00",
+                      "primary-fixed": "#87fe45",
+                      "on-primary-fixed": "#082100",
+                      "ink-secondary": "#777777"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "unit": "4px",
+                      "gap-lg": "16px",
+                      "gap-sm": "8px",
+                      "gap-md": "12px",
+                      "gap-xs": "4px",
+                      "touch-target-min": "44px",
+                      "page-margin": "16px"
+              },
+              "fontFamily": {
+                      "title-section": ["Nunito Sans"],
+                      "timestamp": ["Nunito Sans"],
+                      "micro-tag": ["Nunito Sans"],
+                      "caption": ["Nunito Sans"],
+                      "body-main": ["Nunito Sans"],
+                      "headline-card-mobile": ["Nunito Sans"],
+                      "display-logo": ["Nunito Sans"],
+                      "label-action": ["Nunito Sans"],
+                      "headline-card": ["Nunito Sans"],
+                      "body-bold": ["Nunito Sans"],
+                      "label-small": ["Nunito Sans"]
+              },
+              "fontSize": {
+                      "title-section": ["17px", {"lineHeight": "1.3", "fontWeight": "900"}],
+                      "timestamp": ["11px", {"lineHeight": "1.1", "fontWeight": "700"}],
+                      "micro-tag": ["10px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "900"}],
+                      "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                      "body-main": ["15px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                      "headline-card-mobile": ["18px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                      "display-logo": ["20px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                      "label-action": ["14px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                      "headline-card": ["20px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                      "body-bold": ["15px", {"lineHeight": "1.4", "fontWeight": "900"}],
+                      "label-small": ["13px", {"lineHeight": "1.1", "fontWeight": "800"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body {
+            background-color: #fbf9f8;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .card-shadow {
+            box-shadow: 0 4px 0 0 rgba(0,0,0,0.1);
+        }
+        .active-shadow {
+            box-shadow: 0 4px 0 0 #004c6e;
+        }
+        .vibrant-gradient {
+            background: linear-gradient(135deg, #FF9C27 0%, #FF4B4B 100%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .custom-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="font-body-main text-on-surface">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-container-high border-b-2 border-on-surface-variant shadow-[0_4px_0_0_#3f4a36]">
+<div class="flex justify-between items-center h-touch-target-min px-page-margin max-w-[420px] mx-auto">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed">sensors</span>
+<h1 class="font-display-logo text-display-logo text-primary-container dark:text-primary-fixed-dim">TrafficMY</h1>
+</div>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed hover:bg-surface-container-highest transition-colors active:translate-y-1 active:shadow-none p-1 rounded-lg">refresh</button>
+</div>
+</header>
+<main class="pt-[72px] pb-[100px] max-w-[420px] mx-auto px-page-margin space-y-gap-lg">
+<!-- Section 1: Rush Hour Survival -->
+<section>
+<div class="vibrant-gradient border-2 border-on-surface-variant rounded-xl p-gap-lg shadow-[0_4px_0_0_#683a00] flex flex-col gap-md text-white relative overflow-hidden">
+<div class="flex justify-between items-start z-10">
+<div class="space-y-unit">
+<span class="font-micro-tag text-micro-tag bg-white/20 px-2 py-1 rounded-full uppercase">Rush Hour Survival / Mod Mandiri</span>
+<h2 class="font-headline-card-mobile text-headline-card-mobile">Current Stress Level: High / Stress Tinggi</h2>
+</div>
+</div>
+<div class="flex items-center gap-md z-10">
+<div class="w-24 h-24 bg-white/10 rounded-full flex items-center justify-center border-2 border-white/20">
+<img alt="Worried mascot illustration" class="w-20 h-20 object-contain drop-shadow-lg" src="https://lh3.googleusercontent.com/aida/AP1WRLud88Q67svag7tpX9SBPrqT46flyfpRD18k83qAliVJffTNZNrtdv1_PN0Efnw5v67Gy3At-fWt_Rb_rBxCy_hO4wpH19QAerPE6Xw_7yjoH70GmNKlwVO4KE79LQ406nZpNECiGQKILPwVYPdn2fkER6Yaox0c2pjboUwmV5_ZzvEMBp-K46wl5pM8TlefwNgWhe4jIUqlhWYSYdAFd5rlUvdwWRXVTykfmD-6gEDwAS0YadEH54lpI_jZ"/>
+</div>
+<div class="flex-1 space-y-unit">
+<p class="font-body-bold text-body-bold">Heavy delays on Kelana Jaya Line! / Kelambatan teruk di Laluan Kelana Jaya!</p>
+<button class="mt-gap-sm w-full bg-primary-container text-on-primary-container font-label-action text-label-action py-2 px-gap-lg rounded-lg border-2 border-on-primary-fixed-variant shadow-[0_4px_0_0_#1f5100] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-xs">
+<span class="material-symbols-outlined text-[18px]">route</span>
+                            Safe Route Found / Laluan Selamat
+                        </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Live Crowd Intensity -->
+<section class="space-y-gap-sm">
+<h3 class="font-title-section text-title-section px-unit flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary">groups</span>
+                Live Crowd / Kepadatan Langsung
+            </h3>
+<div class="flex overflow-x-auto gap-gap-md custom-scrollbar pb-gap-sm">
+<!-- KL Sentral -->
+<div class="flex-shrink-0 w-[160px] bg-white border-2 border-on-surface-variant rounded-xl p-gap-md shadow-[0_3px_0_0_#f0eded]">
+<div class="flex justify-between items-center mb-gap-sm">
+<span class="font-micro-tag text-micro-tag text-ink-secondary">TRANSIT HUB</span>
+<span class="material-symbols-outlined text-status-critical text-[16px]">trending_up</span>
+</div>
+<p class="font-body-bold text-body-bold mb-gap-xs">KL Sentral</p>
+<div class="w-full bg-surface-container h-3 rounded-full overflow-hidden border-2 border-on-surface-variant">
+<div class="bg-status-critical h-full w-[85%]"></div>
+</div>
+<p class="font-caption text-caption mt-unit text-status-critical">High / Tinggi</p>
+</div>
+<!-- Masjid Jamek -->
+<div class="flex-shrink-0 w-[160px] bg-white border-2 border-on-surface-variant rounded-xl p-gap-md shadow-[0_3px_0_0_#f0eded]">
+<div class="flex justify-between items-center mb-gap-sm">
+<span class="font-micro-tag text-micro-tag text-ink-secondary">INTERCHANGE</span>
+<span class="material-symbols-outlined text-line-ampang text-[16px]">sync</span>
+</div>
+<p class="font-body-bold text-body-bold mb-gap-xs">Masjid Jamek</p>
+<div class="w-full bg-surface-container h-3 rounded-full overflow-hidden border-2 border-on-surface-variant">
+<div class="bg-line-ampang h-full w-[45%]"></div>
+</div>
+<p class="font-caption text-caption mt-unit text-tertiary">Mid / Sederhana</p>
+</div>
+<!-- Pasar Seni -->
+<div class="flex-shrink-0 w-[160px] bg-white border-2 border-on-surface-variant rounded-xl p-gap-md shadow-[0_3px_0_0_#f0eded]">
+<div class="flex justify-between items-center mb-gap-sm">
+<span class="font-micro-tag text-micro-tag text-ink-secondary">TOURIST HUB</span>
+<span class="material-symbols-outlined text-line-kajang text-[16px]">check_circle</span>
+</div>
+<p class="font-body-bold text-body-bold mb-gap-xs">Pasar Seni</p>
+<div class="w-full bg-surface-container h-3 rounded-full overflow-hidden border-2 border-on-surface-variant">
+<div class="bg-primary-container h-full w-[20%]"></div>
+</div>
+<p class="font-caption text-caption mt-unit text-primary">Low / Rendah</p>
+</div>
+</div>
+</section>
+<!-- Section 3: Digital Transit Pass -->
+<section class="space-y-gap-sm">
+<h3 class="font-title-section text-title-section px-unit flex items-center gap-xs">
+<span class="material-symbols-outlined text-secondary">contactless</span>
+                My Pass / Pas Saya
+            </h3>
+<div class="bg-secondary-container border-2 border-on-secondary-fixed-variant rounded-2xl p-gap-lg shadow-[0_4px_0_0_#004c6e] flex items-center gap-gap-lg">
+<div class="bg-white p-2 rounded-lg border-2 border-on-surface-variant shadow-[0_2px_0_0_rgba(0,0,0,0.1)]">
+<img class="w-16 h-16 object-cover" data-alt="A clean, minimalist QR code with a subtle blue digital glow effect, centered on a white card background with rounded corners, modern vector art style for a transit app." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxOkyhYGubvqChSN28oKT-Wu6rDrJONdVr9gH48vt62l9gX4mzSySWm7KHYGmXqWKLFSGHaZsrji0m0JIHl-3x6j6HOEJfg5-lWLGzOo8ZGLTt--cTgtXeNOw_7pTw5eNRl3f0MEoyqCvV-ArMPobRN4POer7Sd1b8TXJile4XtSh1940FHXARhKnlNigYuF43jOdGfaFQR1n74l06xE9ZsTZNuQKDkbk-rwuclr8QDBd8mbZWqN7Snv43SOJ1MwMtalKoSRd5wxH5"/>
+</div>
+<div class="flex-1 space-y-unit">
+<div class="flex items-center gap-xs">
+<span class="font-headline-card text-headline-card text-on-secondary-container">My50 Pass</span>
+<span class="bg-success-soft text-primary font-micro-tag text-[10px] px-2 py-0.5 rounded-full border border-primary">ACTIVE</span>
+</div>
+<p class="font-body-main text-body-main text-on-secondary-container/80">12 Days Left / Hari Berbaki</p>
+<div class="w-full h-1.5 bg-on-secondary-container/20 rounded-full mt-gap-xs overflow-hidden">
+<div class="bg-white h-full w-[40%]"></div>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-secondary-container text-[32px] opacity-40">qr_code_scanner</span>
+</div>
+</section>
+<!-- Section 4: Smart Commute -->
+<section class="space-y-gap-sm">
+<h3 class="font-title-section text-title-section px-unit flex items-center gap-xs">
+<span class="material-symbols-outlined text-tertiary">auto_awesome</span>
+                Smart Commute / Perjalanan Pintar
+            </h3>
+<div class="bg-white border-2 border-on-surface-variant rounded-xl p-gap-lg shadow-[0_4px_0_0_#eae8e7] flex items-start gap-md border-l-8 border-l-line-kajang">
+<div class="mt-1">
+<span class="material-symbols-outlined text-line-kajang text-[28px]">directions_subway</span>
+</div>
+<div class="space-y-unit">
+<p class="font-body-bold text-body-bold">Better Alternative Found! / Alternatif Lebih Baik!</p>
+<p class="font-body-main text-body-main text-on-surface-variant">
+                        Take <span class="text-line-kajang font-bold">MRT Kajang</span> instead of Kelana Jaya to avoid the <span class="text-status-critical font-bold">20m delay</span> at Bangsar.
+                    </p>
+<div class="flex items-center gap-xs mt-gap-sm">
+<span class="font-timestamp text-timestamp text-ink-secondary">Updated 2m ago</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Shell -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface rounded-t-xl border-t-2 border-on-surface-variant shadow-[0_-4px_0_0_rgba(0,0,0,0.05)]">
+<div class="flex justify-around items-center h-[72px] px-page-margin max-w-[420px] mx-auto bg-surface">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-gap-lg py-1 border-2 border-on-secondary-fixed-variant shadow-[0_4px_0_0_#004c6e] active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-small text-label-small">Home/Utama</span>
+</a>
+<!-- Map -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:bg-surface-soft active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="font-label-small text-label-small">Map/Peta</span>
+</a>
+<!-- Travel -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:bg-surface-soft active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined">directions_transit</span>
+<span class="font-label-small text-label-small">Travel/Perjalanan</span>
+</a>
+</div>
+</nav>
+<script>
+        // Micro-interaction for feedback
+        document.querySelectorAll('button, a').forEach(elem => {
+            elem.addEventListener('click', (e) => {
+                // Prevent default for anchor tags for demo
+                if(elem.tagName === 'A' && elem.getAttribute('href') === '#') e.preventDefault();
+                
+                // Add a small bounce effect if not already handled by tailwind 'active'
+                elem.classList.add('scale-95');
+                setTimeout(() => elem.classList.remove('scale-95'), 100);
+            });
+        });
+    </script>
+</body></html>

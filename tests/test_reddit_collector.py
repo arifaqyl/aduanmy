@@ -38,6 +38,20 @@ def test_reddit_category_prefilter_rejects_celcomdigi_ekyc_rant():
     assert not _category_prefilter(text, "telco_internet")
 
 
+def test_reddit_category_prefilter_rejects_telco_port_in_rant():
+    text = (
+        "Maxis app keeps failing when I try to port in my number from Digi. MNP request stuck for 3 days."
+    )
+    assert not _category_prefilter(text, "telco_internet")
+
+
+def test_reddit_category_prefilter_rejects_telco_plan_upgrade_rant():
+    text = (
+        "Unifi TV app crashes every time I try to upgrade plan and change my postpaid package price."
+    )
+    assert not _category_prefilter(text, "telco_internet")
+
+
 def test_reddit_category_prefilter_rejects_transport_history_discussion():
     text = (
         "Bus routes in Kuala Lumpur and Selangor before 1998. I am compiling a list of operators "
@@ -60,13 +74,11 @@ def test_curated_seed_rows_drop_stale_telco_fallbacks():
     assert telco_rows == []
 
 
-def test_curated_seed_rows_include_current_transport_delay_seed():
+def test_curated_seed_rows_reject_forward_looking_delay_advisory(monkeypatch):
+    monkeypatch.setattr("app.collectors.reddit.client._extract_reddit_post_payload", lambda _url: None)
     rows = _curated_seed_rows()
     transport_rows = [row for row in rows if row["seed_category"] == "transport"]
-    assert any("kelana jaya line can expect delays" in row["raw_text"].lower() for row in transport_rows)
-    current = next(row for row in transport_rows if "can expect delays" in row["raw_text"].lower())
-    assert current["created_at"] == "2026-06-24T03:35:05+00:00"
-    assert current["author_handle"] == "MajlisPerbandaranKL"
+    assert not any("can expect delays" in row["raw_text"].lower() for row in transport_rows)
 
 
 def test_trim_reddit_boilerplate_removes_subreddit_furniture():

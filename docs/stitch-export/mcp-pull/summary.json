@@ -1,0 +1,115 @@
+{
+  "projectId": "15704224234350283213",
+  "pulledAt": "2026-07-02T20:44:47.528Z",
+  "screenCount": 18,
+  "screens": [
+    {
+      "id": "08cfcbbf0a6f4ca9a8229166c4c590bf",
+      "title": "TrafficMY - Live Map",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Live Map TrafficMY Last Update / Kemaskini 2m ago refresh warning Reports / Laporan train LRT subway MRT directions_railway KTM report warning directions_bus Kelana Jaya Line 2 Reports Today / Laporan Hari In"
+    },
+    {
+      "id": "7bf00f42dc9b47eb9faf24e83507875a",
+      "title": "TrafficMY | Advanced Map Explorer",
+      "htmlUrl": true,
+      "textSample": "TrafficMY | Advanced Map Explorer search mic group Crowds warning Reports directions_bus Bus GPS train Rail Status train Masjid Jamek photo_camera Report Issue / Lapor Isu Masjid Jamek Station Interchange: Ampang &amp; K"
+    },
+    {
+      "id": "7f47e1e523db47eba92f1c94d09765dc",
+      "title": "",
+      "htmlUrl": false,
+      "textSample": ""
+    },
+    {
+      "id": "8be0c82d554d4bcfb84366bac85ac3dc",
+      "title": "TrafficMY - Smart Home Dashboard",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Smart Home Dashboard sensors TrafficMY refresh Rush Hour Survival / Mod Mandiri Current Stress Level: High / Stress Tinggi Heavy delays on Kelana Jaya Line! / Kelambatan teruk di Laluan Kelana Jaya! route Saf"
+    },
+    {
+      "id": "15156581818966453018",
+      "title": "TrafficMY — UI reference for Stitch",
+      "htmlUrl": true,
+      "textSample": "TrafficMY — UI reference for Stitch TrafficMY Updated 2m ago ↻ Refresh Home Map Travel Stitch: redesign this screen. Sample data below. See STITCH_BRIEF.md for rules. 😟 2 lines need attention Kelana Jaya · KTM Komuter —"
+    },
+    {
+      "id": "8d69c1f5d6234f4ba5461e24b979b2d1",
+      "title": "TrafficMY - Live Transit Updates",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Live Transit Updates sensors TrafficMY Updated 2m ago refresh 😟 2 lines need attention Kelana Jaya · KTM Komuter — rider reports today Live today (Utama hari ini) 3 signals · MYT Resets midnight MYT. RIDING "
+    },
+    {
+      "id": "eb82a535531f44d28acf0b1ad4609afe",
+      "title": "TrafficMY - Travel",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Travel sensors TrafficMY Updated 2m ago refresh Travel / Perjalanan LIVE STATUS directions_subway Plan route (Rancang perjalanan) FROM / DARI my_location swap_vert TO / KE location_on route Plan route / Ranca"
+    },
+    {
+      "id": "35d92b84b7f1476199fc0b2b1c99d1da",
+      "title": "TrafficMY - Travel",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Travel sensors TrafficMY Updated 2m ago refresh Travel / Perjalanan LIVE STATUS Transport Modes train MRT subway LRT tram MONORAIL directions_railway KTM directions_bus BUS Plan route (Rancang perjalanan) FRO"
+    },
+    {
+      "id": "580f1e49af5c4834a4a10126dd4a4d79",
+      "title": "TrafficMY - Live Map",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Live Map sensors TrafficMY Last Update / Kemaskini 2m ago refresh warning Reports / Laporan train LRT subway MRT directions_railway KTM report warning directions_bus Kelana Jaya Line 2 Reports Today / Laporan"
+    },
+    {
+      "id": "ac7d76ae1d5c4153b62487ca519b860a",
+      "title": "",
+      "htmlUrl": false,
+      "textSample": ""
+    },
+    {
+      "id": "18fc64540196490991fbe8e06c46d281",
+      "title": "TrafficMY - Travel Rewards",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Travel Rewards sensors Travel Rewards refresh Commuter Streaks / Rentetan Komuter local_fire_department 5 Day Streak! Next Reward: RM5 Voucher 80% Ride 2 more days to reach the next milestone! / Tunggu 2 hari"
+    },
+    {
+      "id": "a0ad1fefccbf4dc19fd281788d22c79c",
+      "title": "TrafficMY - Live Transit Updates",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Live Transit Updates sensors TrafficMY Updated 2m ago refresh Alamak! 2 lines need attention Kelana Jaya · KTM Komuter — rider reports today Live today (Utama hari ini) 3 signals · MYT Resets midnight MYT. RI"
+    },
+    {
+      "id": "53e22f684e3f40b3aaeb002412ab4632",
+      "title": "TrafficMY - Live Transit Updates",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Live Transit Updates sensors TrafficMY Updated 2m ago refresh Alamak! 2 lines need attention Kelana Jaya · KTM Komuter — rider reports today LRT MRT KTM BUS Live today (Utama hari ini) 3 signals · MYT Resets "
+    },
+    {
+      "id": "15156581818966453464",
+      "title": "",
+      "htmlUrl": true,
+      "textSample": "# TrafficMY — Stitch redesign brief Upload **this file** + **`trafficmy-ui.html`** to Stitch (HTML and MD only — no zip). **Live app:** https://arifaqyl.me/traffic/ **Audience:** Malaysian commuters on phone, one hand, r"
+    },
+    {
+      "id": "395e93ca35a949468d1a60d9c52e942c",
+      "title": "TrafficMY - Travel",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Travel sensors TrafficMY Updated 2m ago refresh Travel / Perjalanan LIVE STATUS Plan route (Rancang perjalanan) FROM / DARI my_location swap_vert TO / KE location_on route Plan route / Rancang confirmation_nu"
+    },
+    {
+      "id": "d76f8309bdb64d3c88656ba9a5923615",
+      "title": "TrafficMY - Live Map",
+      "htmlUrl": true,
+      "textSample": "TrafficMY - Live Map TrafficMY Last Update / Kemaskini 2m ago refresh warning Reports / Laporan train LRT subway MRT tram Monorail directions_railway KTM directions_bus Bus GPS directions_bus search GO Kelana Jaya Line 2"
+    },
+    {
+      "id": "15156581818966452572",
+      "title": "",
+      "htmlUrl": true,
+      "textSample": "# Scraper accuracy — context for Stitch UI Feed sometimes showed **old** or **unrelated** posts — not riders **on the train right now**. ## What belongs in \"Live today\" ✅ Stuck, waiting X minutes, doors won't open, fire "
+    },
+    {
+      "id": "cc05f85f5dd747b58fb5f9baa416f18d",
+      "title": "",
+      "htmlUrl": false,
+      "textSample": ""
+    }
+  ]
+}

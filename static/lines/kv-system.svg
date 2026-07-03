@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 172" role="img" aria-label="Klang Valley rail schematic">
+  <title>Klang Valley rail schematic</title>
+  <rect width="360" height="172" rx="12" fill="#f7f7f7"/>
+
+  <!-- LRT3 (Purple) -->
+  <path class="schem-line" data-line-id="lrt3" d="M80,36 V136" fill="none" stroke="#7b2d8e" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Kajang Line (Green) -->
+  <path class="schem-line" data-line-id="kajang" d="M160,36 V136" fill="none" stroke="#007a33" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- KL Monorail -->
+  <path class="schem-line" data-line-id="monorail" d="M200,36 V136" fill="none" stroke="#8dc63f" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Putrajaya Line -->
+  <path class="schem-line" data-line-id="putrajaya" d="M240,36 V136" fill="none" stroke="#f4c300" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Kelana Jaya Line -->
+  <path class="schem-line" data-line-id="kelana-jaya" d="M40,56 H320" fill="none" stroke="#e31837" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Ampang / Sri Petaling -->
+  <path class="schem-line" data-line-id="ampang-sri-petaling" d="M40,96 H320" fill="none" stroke="#f7941d" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- KTM Komuter -->
+  <path class="schem-line" data-line-id="ktm-komuter" d="M40,136 H320" fill="none" stroke="#0066b3" stroke-width="6" stroke-linecap="round"/>
+
+  <!-- Walkway connectors -->
+  <path class="schem-connector" data-lines="kelana-jaya,ampang-sri-petaling" d="M120,56 V96" fill="none" stroke="#becbb1" stroke-width="2" stroke-dasharray="4,3"/>
+  <path class="schem-connector" data-lines="kelana-jaya,ktm-komuter" d="M284,56 V136" fill="none" stroke="#becbb1" stroke-width="2" stroke-dasharray="4,3"/>
+
+  <!-- Interchange stations -->
+  <g class="schem-station" data-lines="lrt3,kelana-jaya" transform="translate(80,56)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+  <g class="schem-station" data-lines="kajang,kelana-jaya" transform="translate(160,56)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+  <g class="schem-station" data-lines="kajang,ampang-sri-petaling" transform="translate(160,96)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+  <g class="schem-station" data-lines="monorail,ampang-sri-petaling" transform="translate(200,96)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+  <g class="schem-station" data-lines="kelana-jaya,ampang-sri-petaling" transform="translate(120,56)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+  <g class="schem-station" data-lines="kelana-jaya,ampang-sri-petaling" transform="translate(120,96)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+  <g class="schem-station" data-lines="kelana-jaya,ktm-komuter" transform="translate(284,56)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+  <g class="schem-station" data-lines="kelana-jaya,ktm-komuter" transform="translate(284,136)">
+    <circle r="7" fill="#fff" stroke="#3f4a36" stroke-width="2"/>
+    <circle r="3.5" fill="#f7f7f7"/>
+  </g>
+
+  <!-- Line labels -->
+  <text class="schem-label" data-line-id="kelana-jaya" x="326" y="54" fill="#e31837" font-size="8" font-family="Nunito Sans,sans-serif" font-weight="800">Kelana</text>
+  <text class="schem-label" data-line-id="ampang-sri-petaling" x="326" y="94" fill="#f7941d" font-size="8" font-family="Nunito Sans,sans-serif" font-weight="800">Ampang/SP</text>
+  <text class="schem-label" data-line-id="ktm-komuter" x="326" y="134" fill="#0066b3" font-size="8" font-family="Nunito Sans,sans-serif" font-weight="800">KTM</text>
+  <text class="schem-label" data-line-id="lrt3" x="80" y="28" fill="#7b2d8e" font-size="8" font-family="Nunito Sans,sans-serif" font-weight="800" text-anchor="middle">LRT3</text>
+  <text class="schem-label" data-line-id="kajang" x="160" y="28" fill="#007a33" font-size="8" font-family="Nunito Sans,sans-serif" font-weight="800" text-anchor="middle">Kajang</text>
+  <text class="schem-label" data-line-id="monorail" x="200" y="28" fill="#5a8f2a" font-size="8" font-family="Nunito Sans,sans-serif" font-weight="800" text-anchor="middle">Mono</text>
+  <text class="schem-label" data-line-id="putrajaya" x="240" y="28" fill="#c9a000" font-size="8" font-family="Nunito Sans,sans-serif" font-weight="800" text-anchor="middle">PYL</text>
+
+  <text class="schem-foot" x="180" y="166" fill="#777" font-size="7" font-family="Nunito Sans,sans-serif" font-weight="700" text-anchor="middle">Tap a line · Not to scale</text>
+</svg>

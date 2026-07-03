@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TrafficMY - Travel Rewards</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-surface": "#1b1c1c",
+                    "line-monorail": "#8DC63F",
+                    "surface-soft": "#F7F7F7",
+                    "primary": "#2b6c00",
+                    "secondary": "#006590",
+                    "line-ampang": "#F7941D",
+                    "on-error": "#ffffff",
+                    "surface-container-lowest": "#ffffff",
+                    "outline-variant": "#becbb1",
+                    "tertiary": "#8c5000",
+                    "secondary-fixed-dim": "#88ceff",
+                    "surface-dim": "#dcd9d9",
+                    "on-surface-variant": "#3f4a36",
+                    "error-container": "#ffdad6",
+                    "on-secondary-container": "#004666",
+                    "surface-container-low": "#f5f3f2",
+                    "on-secondary-fixed": "#001e2e",
+                    "on-primary-container": "#1e5000",
+                    "status-critical-dark": "#EA2B2B",
+                    "background": "#fbf9f8",
+                    "inverse-on-surface": "#f3f0f0",
+                    "surface-variant": "#e4e2e1",
+                    "tertiary-fixed-dim": "#ffb872",
+                    "secondary-fixed": "#c8e6ff",
+                    "surface-container-high": "#eae8e7",
+                    "line-kajang": "#007A33",
+                    "surface-container": "#f0eded",
+                    "on-background": "#1b1c1c",
+                    "primary-fixed-dim": "#6be026",
+                    "inverse-primary": "#6be026",
+                    "surface": "#fbf9f8",
+                    "tertiary-fixed": "#ffdcbf",
+                    "success-soft": "#D7FFB8",
+                    "status-critical": "#FF4B4B",
+                    "on-tertiary-fixed": "#2d1600",
+                    "inverse-surface": "#303030",
+                    "surface-tint": "#2b6c00",
+                    "on-primary": "#ffffff",
+                    "line-kelana": "#E31837",
+                    "tertiary-container": "#ff9c27",
+                    "on-primary-fixed-variant": "#1f5100",
+                    "error": "#ba1a1a",
+                    "surface-container-highest": "#e4e2e1",
+                    "on-tertiary": "#ffffff",
+                    "on-secondary-fixed-variant": "#004c6e",
+                    "on-tertiary-container": "#683a00",
+                    "line-putrajaya": "#F4C300",
+                    "primary-container": "#58cc02",
+                    "secondary-container": "#2fb8ff",
+                    "surface-bright": "#fbf9f8",
+                    "line-ktm": "#0066B3",
+                    "outline": "#6f7b64",
+                    "on-error-container": "#93000a",
+                    "on-secondary": "#ffffff",
+                    "on-tertiary-fixed-variant": "#6a3b00",
+                    "primary-fixed": "#87fe45",
+                    "on-primary-fixed": "#082100",
+                    "ink-secondary": "#777777"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "gap-lg": "16px",
+                    "gap-sm": "8px",
+                    "gap-md": "12px",
+                    "gap-xs": "4px",
+                    "touch-target-min": "44px",
+                    "page-margin": "16px"
+            },
+            "fontFamily": {
+                    "title-section": ["Nunito Sans"],
+                    "timestamp": ["Nunito Sans"],
+                    "micro-tag": ["Nunito Sans"],
+                    "caption": ["Nunito Sans"],
+                    "body-main": ["Nunito Sans"],
+                    "headline-card-mobile": ["Nunito Sans"],
+                    "display-logo": ["Nunito Sans"],
+                    "label-action": ["Nunito Sans"],
+                    "headline-card": ["Nunito Sans"],
+                    "body-bold": ["Nunito Sans"],
+                    "label-small": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "title-section": ["17px", {"lineHeight": "1.3", "fontWeight": "900"}],
+                    "timestamp": ["11px", {"lineHeight": "1.1", "fontWeight": "700"}],
+                    "micro-tag": ["10px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "900"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "body-main": ["15px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "headline-card-mobile": ["18px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                    "display-logo": ["20px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "label-action": ["14px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "headline-card": ["20px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                    "body-bold": ["15px", {"lineHeight": "1.4", "fontWeight": "900"}],
+                    "label-small": ["13px", {"lineHeight": "1.1", "fontWeight": "800"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Nunito Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+        .custom-scrollbar::-webkit-scrollbar { display: none; }
+        .pressed-effect:active {
+            transform: translateY(2px);
+            box-shadow: 0 0 0 0 transparent !important;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface selection:bg-primary-container selection:text-on-primary-container">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-container-high border-b-2 border-on-surface-variant shadow-[0_4px_0_0_#3f4a36] max-w-[420px] left-1/2 -translate-x-1/2">
+<div class="flex justify-between items-center h-touch-target-min px-page-margin">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="sensors">sensors</span>
+<span class="font-display-logo text-display-logo text-primary-container dark:text-primary-fixed-dim">Travel Rewards</span>
+</div>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed hover:bg-surface-container-highest transition-colors p-2 rounded-full" data-icon="refresh">refresh</button>
+</div>
+</header>
+<main class="max-w-[420px] mx-auto pt-[60px] pb-[100px] px-page-margin">
+<!-- Commuter Streaks -->
+<section class="mt-gap-lg">
+<div class="bg-surface-container-lowest border-2 border-on-surface-variant rounded-xl p-gap-lg shadow-[0_4px_0_0_#3f4a36] flex flex-col gap-md relative overflow-hidden">
+<div class="flex justify-between items-start">
+<div class="z-10">
+<h2 class="font-title-section text-title-section">Commuter Streaks / Rentetan Komuter</h2>
+<div class="flex items-center gap-xs mt-unit">
+<span class="material-symbols-outlined text-status-critical" data-icon="local_fire_department" style="font-variation-settings: 'FILL' 1;">local_fire_department</span>
+<span class="font-headline-card-mobile text-headline-card-mobile text-status-critical-dark">5 Day Streak!</span>
+</div>
+</div>
+<img alt="Happy mascot" class="w-24 h-24 absolute -right-2 -top-2 animate-bounce" src="https://lh3.googleusercontent.com/aida/AP1WRLu1s9X3WZO41sGVjc3s9k2NJCwbokvGY4WuL0ajxmx14WVRarnuRHc9Nwj-502FZAaqCa-vFqe9E74dX8_2mD7bYNjIklou1dtnCiVpAMMP0iOYj48s8S0cigCQwcXhBkltD6-M3BDE7z12UQCxyvi8n9fAVfccChwgUVt6dAmss8nD_Uf_Hv9wMjUXqYHJGxMhByvkeYuKjP8fCEoEsxtNmhJeJljocSCkQcpjh4Q2xgsAaSzkjIslHJzt" style="animation-duration: 3s;"/>
+</div>
+<div class="mt-unit">
+<div class="flex justify-between font-label-small text-label-small mb-unit">
+<span>Next Reward: RM5 Voucher</span>
+<span>80%</span>
+</div>
+<div class="h-4 w-full bg-surface-container border-2 border-on-surface-variant rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[80%] border-r-2 border-on-surface-variant"></div>
+</div>
+</div>
+<p class="font-caption text-caption text-ink-secondary">Ride 2 more days to reach the next milestone! / Tunggu 2 hari lagi!</p>
+</div>
+</section>
+<!-- Exclusive Transit Deals -->
+<section class="mt-gap-lg">
+<h3 class="font-title-section text-title-section mb-gap-sm">Exclusive Deals / Tawaran Eksklusif</h3>
+<div class="flex overflow-x-auto gap-md custom-scrollbar pb-2">
+<!-- Deal 1 -->
+<div class="min-w-[240px] flex-shrink-0 bg-surface border-2 border-on-surface-variant rounded-xl overflow-hidden shadow-[0_3px_0_0_#eae8e7] pressed-effect transition-all">
+<div class="h-28 w-full bg-secondary-container flex items-center justify-center p-4">
+<span class="material-symbols-outlined text-[48px] text-on-secondary-container" data-icon="coffee">coffee</span>
+</div>
+<div class="p-gap-md">
+<h4 class="font-headline-card-mobile text-headline-card-mobile leading-tight">Free Coffee / Kopi Percuma</h4>
+<p class="font-caption text-caption text-ink-secondary mt-unit">KL Sentral - Level 1</p>
+<div class="flex items-center gap-xs mt-gap-sm bg-surface-container-low px-2 py-1 rounded border-2 border-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="timer">timer</span>
+<span class="font-micro-tag text-micro-tag">EXPIRES IN 02:45:12</span>
+</div>
+</div>
+</div>
+<!-- Deal 2 -->
+<div class="min-w-[240px] flex-shrink-0 bg-surface border-2 border-on-surface-variant rounded-xl overflow-hidden shadow-[0_3px_0_0_#eae8e7] pressed-effect transition-all">
+<div class="h-28 w-full bg-tertiary-container flex items-center justify-center p-4">
+<span class="material-symbols-outlined text-[48px] text-on-tertiary-container" data-icon="shopping_basket">shopping_basket</span>
+</div>
+<div class="p-gap-md">
+<h4 class="font-headline-card-mobile text-headline-card-mobile leading-tight">RM2 Off FamilyMart</h4>
+<p class="font-caption text-caption text-ink-secondary mt-unit">All LRT Stations</p>
+<div class="flex items-center gap-xs mt-gap-sm bg-surface-container-low px-2 py-1 rounded border-2 border-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="timer">timer</span>
+<span class="font-micro-tag text-micro-tag">EXPIRES IN 05:12:33</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Community Leaderboard -->
+<section class="mt-gap-lg">
+<div class="bg-surface border-2 border-on-surface-variant rounded-xl p-gap-lg shadow-[0_4px_0_0_#eae8e7]">
+<div class="flex justify-between items-center mb-gap-md">
+<h3 class="font-title-section text-title-section">Community Leaderboard</h3>
+<button class="text-primary font-label-action text-label-action">See All</button>
+</div>
+<div class="space-y-gap-sm">
+<!-- Rank 1 -->
+<div class="flex items-center justify-between p-gap-sm bg-success-soft border-2 border-primary rounded-lg">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-primary border-2 border-on-primary flex items-center justify-center text-on-primary font-body-bold">1</div>
+<div>
+<p class="font-body-bold text-body-bold">Ahmad Razali</p>
+<span class="bg-primary text-on-primary px-2 py-0.5 rounded-full font-micro-tag text-micro-tag uppercase">Transit Hero</span>
+</div>
+</div>
+<p class="font-label-small text-label-small">1,240 pts</p>
+</div>
+<!-- Rank 2 -->
+<div class="flex items-center justify-between p-gap-sm bg-white border-2 border-on-surface-variant rounded-lg">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-secondary border-2 border-on-secondary flex items-center justify-center text-on-secondary font-body-bold">2</div>
+<div>
+<p class="font-body-bold text-body-bold">Sarah Lim</p>
+<span class="bg-secondary text-on-secondary px-2 py-0.5 rounded-full font-micro-tag text-micro-tag uppercase">Morning Owl</span>
+</div>
+</div>
+<p class="font-label-small text-label-small">985 pts</p>
+</div>
+<!-- Rank 3 -->
+<div class="flex items-center justify-between p-gap-sm bg-white border-2 border-on-surface-variant rounded-lg opacity-70">
+<div class="flex items-center gap-md">
+<div class="w-8 h-8 rounded-full bg-on-surface-variant border-2 border-surface flex items-center justify-center text-surface font-body-bold">3</div>
+<div>
+<p class="font-body-bold text-body-bold">Danish Z.</p>
+<span class="bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded-full font-micro-tag text-micro-tag uppercase">Steady Rider</span>
+</div>
+</div>
+<p class="font-label-small text-label-small">820 pts</p>
+</div>
+</div>
+</div>
+</section>
+<!-- My History / CO2 Saved -->
+<section class="mt-gap-lg">
+<div class="bg-on-primary-container text-white border-2 border-on-surface-variant rounded-xl p-gap-lg shadow-[0_4px_0_0_#3f4a36]">
+<div class="flex items-center gap-sm mb-unit">
+<span class="material-symbols-outlined text-primary-fixed" data-icon="eco">eco</span>
+<h3 class="font-title-section text-title-section text-primary-fixed">My Green Impact</h3>
+</div>
+<div class="grid grid-cols-2 gap-md mt-gap-sm">
+<div class="bg-primary/20 p-gap-md rounded-lg border border-primary-fixed/30">
+<p class="font-micro-tag text-micro-tag uppercase text-primary-fixed">CO2 Saved</p>
+<p class="font-headline-card text-headline-card">12.5 kg</p>
+</div>
+<div class="bg-primary/20 p-gap-md rounded-lg border border-primary-fixed/30">
+<p class="font-micro-tag text-micro-tag uppercase text-primary-fixed">Transit Rides</p>
+<p class="font-headline-card text-headline-card">48 total</p>
+</div>
+</div>
+<p class="font-caption text-caption mt-gap-sm text-primary-fixed/80 italic">Equivalent to planting 1.5 trees this month! 🌳</p>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface border-t-2 border-on-surface-variant shadow-[0_-4px_0_0_rgba(0,0,0,0.05)] max-w-[420px] left-1/2 -translate-x-1/2 rounded-t-xl h-[72px]">
+<div class="flex justify-around items-center h-full px-page-margin">
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:bg-surface-soft transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-small text-label-small">Home/Utama</span>
+</button>
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:bg-surface-soft transition-colors active:scale-95 duration-100">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-label-small text-label-small">Map/Peta</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-gap-lg py-1 border-2 border-on-secondary-fixed-variant shadow-[0_4px_0_0_#004c6e] active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="directions_transit">directions_transit</span>
+<span class="font-label-small text-label-small">Travel/Perjalanan</span>
+</button>
+</div>
+</nav>
+<!-- Floating Action Button (FAB) - Suppression Logic applied as this is a sub-destination -->
+<script>
+        // Simple countdown timer logic for demonstration
+        function updateTimers() {
+            const tags = document.querySelectorAll('.font-micro-tag');
+            tags.forEach(tag => {
+                if (tag.textContent.includes('EXPIRES IN')) {
+                    // Static update for visual effect without full logic
+                    let time = tag.textContent.split(' ')[2];
+                    let parts = time.split(':');
+                    let totalSeconds = (+parts[0]) * 3600 + (+parts[1]) * 60 + (+parts[2]);
+                    totalSeconds--;
+                    
+                    let h = Math.floor(totalSeconds / 3600).toString().padStart(2, '0');
+                    let m = Math.floor((totalSeconds % 3600) / 60).toString().padStart(2, '0');
+                    let s = Math.floor(totalSeconds % 60).toString().padStart(2, '0');
+                    
+                    tag.textContent = `EXPIRES IN ${h}:${m}:${s}`;
+                }
+            });
+        }
+        setInterval(updateTimers, 1000);
+    </script>
+</body></html>

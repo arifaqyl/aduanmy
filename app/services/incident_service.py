@@ -1,19 +1,23 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
-from app.core.freshness import classify_freshness, parse_dt
+from app.core.freshness import LIVE_WINDOW_DAYS, classify_freshness, is_inside_live_window, parse_dt
+from app.core.transport_lines import is_official_grounding_row, match_transport_line
 from app.db.session import connect, init_db
 
 SOURCE_WEIGHTS = {
     "x": 0.9,
     "threads": 0.85,
     "reddit": 0.8,
+    "rss": 0.75,
+    "gtfs_rt": 0.85,
     "official": 1.0,
 }
 
 GENERIC_TRANSPORT_ENTITIES = {"rapidkl", "lrt", "mrt", "ktm"}
 MEDIA_HANDLES = {"thesundaily", "thestaronline", "themalaymail", "theedgemalaysia"}
+OFFICIAL_CORROBORATION_WINDOW = timedelta(hours=24)
 
 SEVERITY_BONUS = {
     "high": 1.5,
@@ -36,7 +40,7 @@ def list_complaints(limit: int = 100) -> list[dict]:
             """
             SELECT source_platform, post_id, url, author_handle, created_at,
                    raw_text, normalized_text, detected_language_mix, category,
-                   entity, location, severity, confidence, cluster_id
+                   entity, location, state, severity, confidence, cluster_id
             FROM complaints
             ORDER BY inserted_at DESC, id DESC
             LIMIT ?
@@ -50,23 +54,35 @@ def _official_grounding_rows() -> list[dict]:
     with connect() as conn:
         rows = conn.execute(
             """
-            SELECT category, entity, location
+            SELECT category, entity, location, normalized_text, source_platform, url,
+                   author_handle, created_at, inserted_at
             FROM complaints
-            WHERE source_platform = 'official'
+            WHERE source_platform IN ('official', 'rss')
             """
         ).fetchall()
-    return [dict(row) for row in rows]
+    return [dict(row) for row in rows if is_official_grounding_row(dict(row))]
 
 
 def _cluster_has_official_match(cluster: dict, official_rows: list[dict]) -> bool:
     category = cluster.get("category", "")
     entity = cluster.get("entity", "")
     location = cluster.get("location", "")
+    cluster_line = match_transport_line(cluster) if category == "transport" else None
+    cluster_time = parse_dt(cluster.get("last_seen_at") or cluster.get("first_seen_at"))
     for row in official_rows:
         if row["category"] != category:
             continue
+        row_time = parse_dt(row.get("created_at") or row.get("inserted_at"))
+        if cluster_time is None or row_time is None:
+            continue
+        if abs(cluster_time - row_time) > OFFICIAL_CORROBORATION_WINDOW:
+            continue
         row_entity = row.get("entity") or ""
         row_location = row.get("location") or ""
+        if cluster_line and category == "transport":
+            row_line = match_transport_line(row)
+            if row_line and row_line == cluster_line:
+                return True
         if entity:
             if not row_entity or row_entity != entity:
                 continue
@@ -85,6 +101,18 @@ def _cluster_has_official_match(cluster: dict, official_rows: list[dict]) -> boo
     return False
 
 
+def _normalize_api_timestamp(value: str | None) -> str:
+    parsed = parse_dt(value)
+    if parsed is None:
+        return value or ""
+    return parsed.astimezone(UTC).isoformat().replace("+00:00", "Z")
+
+
+def _telemetry_only(cluster: dict) -> bool:
+    sources = {part.strip() for part in (cluster.get("sources") or "").split(",") if part.strip()}
+    return sources == {"gtfs_rt"}
+
+
 def _score_cluster_confidence(cluster: dict) -> tuple[float, str]:
     sources = [part.strip() for part in (cluster.get("sources") or "").split(",") if part.strip()]
     source_count = len(set(sources))
@@ -100,6 +128,15 @@ def _score_cluster_confidence(cluster: dict) -> tuple[float, str]:
     if cluster.get("corroborated_by_official"):
         base += 1.25
     base += max(source_weight_total - 0.8, 0) * 0.35
+    if _telemetry_only(cluster):
+        # GPS gaps are hints, not verified incidents — keep below social complaints.
+        base = min(base, 4.8)
+        if not cluster.get("corroborated_by_official"):
+            base = min(base, 3.2)
+        if cluster.get("freshness_bucket") != "recent":
+            base = min(base, 2.0)
+    elif "threads" in sources and cluster.get("freshness_bucket") == "recent":
+        base += 1.5
     score = round(base, 2)
     if score >= 5.5:
         band = "strong"
@@ -113,6 +150,10 @@ def _score_cluster_confidence(cluster: dict) -> tuple[float, str]:
 def _classify_source_role(source_platform: str, author_handle: str = "") -> str:
     if source_platform == "official":
         return "official_grounding"
+    if source_platform == "rss":
+        return "media_report"
+    if source_platform == "gtfs_rt":
+        return "telemetry"
     if (author_handle or "").lower() in MEDIA_HANDLES:
         return "media_report"
     return "public_signal"
@@ -125,13 +166,17 @@ def _cluster_source_roles(cluster: dict) -> list[str]:
     roles: set[str] = set()
     if "official" in sources:
         roles.add("official_grounding")
+    if "rss" in sources:
+        roles.add("media_report")
+    if "gtfs_rt" in sources:
+        roles.add("telemetry")
     if media_handles:
         roles.add("media_report")
     if any(source in {"x", "reddit"} for source in sources):
         roles.add("public_signal")
     if "threads" in sources and (not handles or any(handle.lower() not in MEDIA_HANDLES for handle in handles)):
         roles.add("public_signal")
-    ordered = ["public_signal", "media_report", "official_grounding"]
+    ordered = ["public_signal", "media_report", "telemetry", "official_grounding"]
     return [role for role in ordered if role in roles]
 
 
@@ -146,6 +191,8 @@ def _enrich_clusters(clusters: list[dict]) -> list[dict]:
         if cluster["corroborated_by_official"] and "official_grounding" not in roles:
             roles.append("official_grounding")
         cluster["source_roles"] = roles
+        cluster["first_seen_at"] = _normalize_api_timestamp(cluster.get("first_seen_at", ""))
+        cluster["last_seen_at"] = _normalize_api_timestamp(cluster.get("last_seen_at", ""))
         freshness_bucket, age_days = classify_freshness(cluster.get("last_seen_at", ""))
         cluster["freshness_bucket"] = freshness_bucket
         cluster["age_days"] = age_days
@@ -171,6 +218,8 @@ def list_clusters(
                        created_at,
                        entity,
                        location,
+                       state,
+                       subcategory,
                        url,
                        normalized_text,
                        inserted_at,
@@ -178,6 +227,8 @@ def list_clusters(
                            WHEN 'x' THEN 0.9
                            WHEN 'threads' THEN 0.85
                            WHEN 'reddit' THEN 0.8
+                           WHEN 'rss' THEN 0.75
+                           WHEN 'gtfs_rt' THEN 0.85
                            WHEN 'official' THEN 1.0
                            ELSE 0.7
                        END AS source_weight,
@@ -203,6 +254,8 @@ def list_clusters(
                    MAX(COALESCE(datetime(NULLIF(created_at, '')), inserted_at)) AS last_seen_at,
                    MAX(entity) AS entity,
                    MAX(location) AS location,
+                   MAX(NULLIF(state, '')) AS state,
+                   MAX(NULLIF(subcategory, '')) AS subcategory,
                    MIN(url) AS example_url,
                    MIN(SUBSTR(normalized_text, 1, 180)) AS example_text
             FROM clustered
@@ -228,7 +281,7 @@ def get_cluster_detail(cluster_id: str, include_official: bool = False) -> dict 
             """
             SELECT source_platform, post_id, url, author_handle, created_at,
                    raw_text, normalized_text, detected_language_mix, category,
-                   entity, location, severity, confidence, cluster_id
+                   entity, location, state, severity, confidence, cluster_id
             FROM complaints
             WHERE cluster_id = ?
               AND (? = 1 OR source_platform != 'official')

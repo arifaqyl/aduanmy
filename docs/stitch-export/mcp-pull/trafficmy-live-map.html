@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>TrafficMY - Live Map</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind Configuration Verbatim -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "primary-fixed": "#87fe45",
+                    "on-primary-container": "#1e5000",
+                    "surface-variant": "#e4e2e1",
+                    "on-tertiary": "#ffffff",
+                    "on-error-container": "#93000a",
+                    "surface-soft": "#F7F7F7",
+                    "line-monorail": "#8DC63F",
+                    "tertiary-fixed-dim": "#ffb872",
+                    "outline": "#6f7b64",
+                    "surface-dim": "#dcd9d9",
+                    "on-primary-fixed": "#082100",
+                    "on-secondary-fixed": "#001e2e",
+                    "line-kelana": "#E31837",
+                    "tertiary-fixed": "#ffdcbf",
+                    "on-surface": "#1b1c1c",
+                    "outline-variant": "#becbb1",
+                    "on-background": "#1b1c1c",
+                    "secondary-fixed": "#c8e6ff",
+                    "surface": "#fbf9f8",
+                    "surface-container-low": "#f5f3f2",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#f3f0f0",
+                    "primary-fixed-dim": "#6be026",
+                    "surface-container": "#f0eded",
+                    "inverse-surface": "#303030",
+                    "status-critical": "#FF4B4B",
+                    "ink-secondary": "#777777",
+                    "secondary-fixed-dim": "#88ceff",
+                    "on-secondary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "tertiary-container": "#ff9c27",
+                    "surface-container-lowest": "#ffffff",
+                    "on-tertiary-fixed-variant": "#6a3b00",
+                    "inverse-primary": "#6be026",
+                    "surface-container-high": "#eae8e7",
+                    "status-critical-dark": "#EA2B2B",
+                    "on-tertiary-fixed": "#2d1600",
+                    "tertiary": "#8c5000",
+                    "primary-container": "#58cc02",
+                    "line-putrajaya": "#F4C300",
+                    "on-surface-variant": "#3f4a36",
+                    "on-primary-fixed-variant": "#1f5100",
+                    "background": "#fbf9f8",
+                    "line-ampang": "#F7941D",
+                    "on-primary": "#ffffff",
+                    "secondary-container": "#2fb8ff",
+                    "line-kajang": "#007A33",
+                    "on-secondary-fixed-variant": "#004c6e",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#e4e2e1",
+                    "on-tertiary-container": "#683a00",
+                    "surface-tint": "#2b6c00",
+                    "success-soft": "#D7FFB8",
+                    "surface-bright": "#fbf9f8",
+                    "primary": "#2b6c00",
+                    "on-secondary-container": "#004666",
+                    "secondary": "#006590",
+                    "line-ktm": "#0066B3"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "unit": "4px",
+                    "gap-lg": "16px",
+                    "touch-target-min": "44px",
+                    "gap-xs": "4px",
+                    "gap-sm": "8px",
+                    "gap-md": "12px",
+                    "page-margin": "16px"
+            },
+            "fontFamily": {
+                    "timestamp": ["Nunito Sans"],
+                    "body-main": ["Nunito Sans"],
+                    "micro-tag": ["Nunito Sans"],
+                    "display-logo": ["Nunito Sans"],
+                    "label-small": ["Nunito Sans"],
+                    "label-action": ["Nunito Sans"],
+                    "headline-card": ["Nunito Sans"],
+                    "headline-card-mobile": ["Nunito Sans"],
+                    "caption": ["Nunito Sans"],
+                    "title-section": ["Nunito Sans"],
+                    "body-bold": ["Nunito Sans"]
+            },
+            "fontSize": {
+                    "timestamp": ["11px", {"lineHeight": "1.1", "fontWeight": "700"}],
+                    "body-main": ["15px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                    "micro-tag": ["10px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "900"}],
+                    "display-logo": ["20px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                    "label-small": ["13px", {"lineHeight": "1.1", "fontWeight": "800"}],
+                    "label-action": ["14px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                    "headline-card": ["20px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                    "headline-card-mobile": ["18px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                    "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                    "title-section": ["17px", {"lineHeight": "1.3", "fontWeight": "900"}],
+                    "body-bold": ["15px", {"lineHeight": "1.4", "fontWeight": "900"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
+        }
+        
+        /* Map UI interaction styles */
+        .map-pin {
+            transform-origin: bottom center;
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .map-pin:active {
+            transform: scale(0.8);
+        }
+
+        /* Custom Scrollbar for Filter Chips */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Neubrutalist Shadows */
+        .chunky-shadow {
+            box-shadow: 0 4px 0 0 #3f4a36;
+        }
+        .chunky-shadow-blue {
+            box-shadow: 0 4px 0 0 #004c6e;
+        }
+        .chunky-shadow-red {
+            box-shadow: 0 4px 0 0 #93000a;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-main selection:bg-primary-container selection:text-on-primary-container">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full z-50 bg-surface border-b-2 border-on-surface-variant shadow-[0_4px_0_0_#3f4a36] max-w-[420px] mx-auto left-0 right-0">
+<div class="flex justify-between items-center h-touch-target-min px-page-margin">
+<div class="flex items-center gap-sm"><img alt="TrafficMY Mascot" class="h-8 w-8 rounded-lg" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXk3i8K5OOLQAmBF1xHp7ShZoLrAcFlAEVP17BZmC0o_UjJJvs1Ns0zLkMwDgrJ8sw7yUSM8nkUE92iQoRBYKNM4tN-odXPD2kNC1UsIHaNfqiGsEGpcOAOV5sHTAwE5uHBWdEXT9Ay8lyQg31uTXqBdRG9WtHz7brHlMZFF7pcebdvqwCIoskLS4j-5NLOKDl5ywydDtgnV71w7GTxXlJlr8qyg_WT9oERjAiF1jtVvynAYEV0idfh8E01y1LCBTO3PsSLl1sWnN-"/><h1 class="font-display-logo text-display-logo text-primary-container">TrafficMY</h1></div>
+<div class="flex items-center gap-md">
+<div class="text-right">
+<p class="font-timestamp text-timestamp text-ink-secondary uppercase">Last Update / Kemaskini</p>
+<p class="font-label-small text-label-small text-on-surface">2m ago</p>
+</div>
+<button class="w-touch-target-min h-touch-target-min flex items-center justify-center rounded-lg border-2 border-on-surface-variant hover:bg-surface-container-highest active:translate-y-1 active:shadow-none transition-all shadow-[0_3px_0_0_#3f4a36]">
+<span class="material-symbols-outlined" data-icon="refresh">refresh</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="relative pt-[48px] pb-[72px] h-screen max-w-[420px] mx-auto overflow-hidden">
+<!-- Filter Bar -->
+<div class="absolute top-[64px] left-0 right-0 z-40 px-page-margin">
+<div class="flex gap-sm overflow-x-auto no-scrollbar py-2"><!-- Reports Toggle (Active) -->
+<button class="flex items-center gap-xs px-gap-md py-1 bg-secondary-container text-on-secondary-container border-2 border-on-secondary-fixed-variant rounded-full shadow-[0_4px_0_0_#004c6e] active:translate-y-1 active:shadow-none transition-all whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px]" data-icon="warning">warning</span>
+<span class="font-label-action text-label-action">Reports / Laporan</span>
+</button>
+<!-- LRT Toggle -->
+<button class="flex items-center gap-xs px-gap-md py-1 bg-surface border-2 border-on-surface-variant rounded-full shadow-[0_4px_0_0_#3f4a36] hover:bg-surface-container-highest active:translate-y-1 active:shadow-none transition-all whitespace-nowrap opacity-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="train">train</span>
+<span class="font-label-action text-label-action">LRT</span>
+</button>
+<!-- MRT Toggle -->
+<button class="flex items-center gap-xs px-gap-md py-1 bg-surface border-2 border-on-surface-variant rounded-full shadow-[0_4px_0_0_#3f4a36] hover:bg-surface-container-highest active:translate-y-1 active:shadow-none transition-all whitespace-nowrap opacity-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="subway">subway</span>
+<span class="font-label-action text-label-action">MRT</span>
+</button>
+<!-- Monorail Toggle -->
+<button class="flex items-center gap-xs px-gap-md py-1 bg-surface border-2 border-on-surface-variant rounded-full shadow-[0_4px_0_0_#3f4a36] hover:bg-surface-container-highest active:translate-y-1 active:shadow-none transition-all whitespace-nowrap opacity-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="tram">tram</span>
+<span class="font-label-action text-label-action">Monorail</span>
+</button>
+<!-- KTM Toggle -->
+<button class="flex items-center gap-xs px-gap-md py-1 bg-surface border-2 border-on-surface-variant rounded-full shadow-[0_4px_0_0_#3f4a36] hover:bg-surface-container-highest active:translate-y-1 active:shadow-none transition-all whitespace-nowrap opacity-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="directions_railway">directions_railway</span>
+<span class="font-label-action text-label-action">KTM</span>
+</button>
+<!-- Bus GPS Toggle -->
+<button class="flex items-center gap-xs px-gap-md py-1 bg-surface border-2 border-on-surface-variant rounded-full shadow-[0_4px_0_0_#3f4a36] hover:bg-surface-container-highest active:translate-y-1 active:shadow-none transition-all whitespace-nowrap opacity-90">
+<span class="material-symbols-outlined text-[18px]" data-icon="directions_bus">directions_bus</span>
+<span class="font-label-action text-label-action">Bus GPS</span>
+</button></div>
+</div>
+<!-- Map Container -->
+<div class="w-full h-full relative bg-surface-dim overflow-hidden" data-location="Kuala Lumpur" style="">
+<!-- Simulated Dark Map Background -->
+<div class="w-full h-full bg-cover bg-center" data-alt="A stylized dark mode transit map of Kuala Lumpur with glowing neon transit lines in red, orange, and green. The background is a deep charcoal grey with simplified city blocks. Subtle glowing dots represent stations. The aesthetic is clean, tactical, and high-contrast, matching a modern commuter app interface." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDfCVk13J47ezDSmvgqAPow_-yRKSiUP2BQZd8ZiEeamkHZtpaajnmVIh8RAwglzSyZrVcrKUyhrMybYk5uHdV3H3u7r_YwpYmiGdlOjIKFzZ5AxuImEn6HCpYpjWPBU4_mz_kbo3kbeEXpHvX9OlYcP_iCgu4mh4Z6vzu-koxhGKsQWS3N8exFgon7dWXWoKxDjM2QZkJkc3cRpPFKKPE1aClOZ-M0KTQU3-0g8ZREkJE5nkeMVVFBJwal_RF40HcBtTI6QDai8ToJ')">
+</div>
+<!-- Line Geometry Overlays (SVG) -->
+<svg class="absolute inset-0 w-full h-full pointer-events-none" viewbox="0 0 420 800" xmlns="http://www.w3.org/2000/svg">
+<!-- Kelana Jaya Line -->
+<path class="opacity-80" d="M50 700 L120 600 L200 550 L250 400 L300 200" fill="none" stroke="#E31837" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+<!-- Ampang Line -->
+<path class="opacity-80" d="M380 650 L300 580 L200 550 L150 450 L100 300" fill="none" stroke="#F7941D" stroke-linecap="round" stroke-linejoin="round" stroke-width="6"></path>
+</svg>
+<!-- Map Pins (Interactive) -->
+<!-- Report Pin 1 -->
+<div class="absolute top-[400px] left-[250px] map-pin cursor-pointer group">
+<div class="relative flex flex-col items-center">
+<div class="bg-status-critical border-2 border-status-critical-dark w-10 h-10 rounded-full flex items-center justify-center shadow-[0_4px_0_0_#93000a] text-white border-b-2 shadow-[0_5px_0_0_#93000a]"><img alt="Mascot Report" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXk3i8K5OOLQAmBF1xHp7ShZoLrAcFlAEVP17BZmC0o_UjJJvs1Ns0zLkMwDgrJ8sw7yUSM8nkUE92iQoRBYKNM4tN-odXPD2kNC1UsIHaNfqiGsEGpcOAOV5sHTAwE5uHBWdEXT9Ay8lyQg31uTXqBdRG9WtHz7brHlMZFF7pcebdvqwCIoskLS4j-5NLOKDl5ywydDtgnV71w7GTxXlJlr8qyg_WT9oERjAiF1jtVvynAYEV0idfh8E01y1LCBTO3PsSLl1sWnN-"/></div>
+<div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-status-critical-dark"></div>
+</div>
+</div>
+<!-- Report Pin 2 -->
+<div class="absolute top-[550px] left-[200px] map-pin cursor-pointer group">
+<div class="relative flex flex-col items-center">
+<div class="bg-tertiary-container border-2 border-tertiary text-on-tertiary-container w-10 h-10 rounded-full flex items-center justify-center shadow-[0_4px_0_0_#6a3b00] border-b-2 shadow-[0_5px_0_0_#6a3b00]"><img alt="Mascot Warning" class="w-8 h-8 rounded-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXk3i8K5OOLQAmBF1xHp7ShZoLrAcFlAEVP17BZmC0o_UjJJvs1Ns0zLkMwDgrJ8sw7yUSM8nkUE92iQoRBYKNM4tN-odXPD2kNC1UsIHaNfqiGsEGpcOAOV5sHTAwE5uHBWdEXT9Ay8lyQg31uTXqBdRG9WtHz7brHlMZFF7pcebdvqwCIoskLS4j-5NLOKDl5ywydDtgnV71w7GTxXlJlr8qyg_WT9oERjAiF1jtVvynAYEV0idfh8E01y1LCBTO3PsSLl1sWnN-"/></div>
+<div class="w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-tertiary"></div>
+</div>
+</div>
+<!-- Bus GPS Pin -->
+<div class="absolute top-[320px] left-[120px] map-pin cursor-pointer opacity-80">
+<div class="relative flex flex-col items-center">
+<div class="bg-secondary-container border-2 border-on-secondary-fixed-variant text-on-secondary-container w-8 h-8 rounded-lg flex items-center justify-center shadow-[0_3px_0_0_#004c6e] border-b-2 shadow-[0_4px_0_0_#004c6e]">
+<span class="material-symbols-outlined text-[16px]" data-icon="directions_bus" style="font-variation-settings: 'FILL' 1;">directions_bus</span>
+</div>
+</div>
+</div>
+<!-- Floating Line Info Card -->
+<div class="absolute bottom-[180px] left-page-margin right-page-margin z-40">
+<div class="bg-surface border-2 border-on-surface-variant rounded-xl p-gap-sm shadow-[0_4px_0_0_#3f4a36] flex items-center gap-sm">
+<span class="material-symbols-outlined text-ink-secondary ml-2" data-icon="search">search</span>
+<input class="flex-1 bg-transparent border-none focus:ring-0 font-body-main text-on-surface" placeholder="Where to? / Ke mana?" type="text"/>
+<button class="bg-primary-container text-on-primary-container px-gap-md py-1 rounded-lg border-2 border-on-primary-fixed-variant font-label-action">
+GO
+</button>
+</div>
+</div><div class="absolute bottom-page-margin left-page-margin right-page-margin z-40">
+<div class="bg-surface border-2 border-on-surface-variant rounded-xl p-gap-lg shadow-[0_4px_0_0_#3f4a36] animate-in slide-in-from-bottom duration-300">
+<div class="flex items-center justify-between mb-gap-md">
+<div class="flex items-center gap-md">
+<div class="w-2 h-10 bg-line-kelana rounded-full"></div>
+<div>
+<h3 class="font-headline-card-mobile text-headline-card-mobile">Kelana Jaya Line</h3>
+<p class="font-caption text-caption text-ink-secondary">2 Reports Today / Laporan Hari Ini</p>
+</div>
+</div>
+<div class="flex flex-col items-end">
+<span class="bg-error-container text-on-error-container px-gap-sm py-0.5 rounded-full border-2 border-error font-micro-tag text-micro-tag uppercase mb-1">
+                                DELAY / LEWAT
+                            </span>
+<p class="font-timestamp text-timestamp text-error">Est. +12m</p>
+</div>
+</div>
+<div class="flex gap-sm">
+<button class="flex-1 py-gap-sm bg-surface-variant border-2 border-on-surface-variant rounded-lg font-label-action text-label-action chunky-shadow active:translate-y-1 active:shadow-none transition-all">
+                            Details / Perincian
+                        </button>
+<button class="flex-1 py-gap-sm bg-primary-container text-on-primary-container border-2 border-on-primary-fixed-variant rounded-lg font-label-action text-label-action shadow-[0_4px_0_0_#1f5100] active:translate-y-1 active:shadow-none transition-all">
+                            Plan Route / Rancang
+                        </button>
+</div>
+</div>
+</div>
+</div>
+<!-- FAB for Adding Reports -->
+<button class="absolute bottom-[88px] left-page-margin z-50 w-14 h-14 bg-primary-container border-2 border-on-primary-fixed-variant rounded-xl flex items-center justify-center shadow-[0_5px_0_0_#1f5100] active:translate-y-1 active:shadow-none transition-all overflow-hidden"><img alt="Help" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCXk3i8K5OOLQAmBF1xHp7ShZoLrAcFlAEVP17BZmC0o_UjJJvs1Ns0zLkMwDgrJ8sw7yUSM8nkUE92iQoRBYKNM4tN-odXPD2kNC1UsIHaNfqiGsEGpcOAOV5sHTAwE5uHBWdEXT9Ay8lyQg31uTXqBdRG9WtHz7brHlMZFF7pcebdvqwCIoskLS4j-5NLOKDl5ywydDtgnV71w7GTxXlJlr8qyg_WT9oERjAiF1jtVvynAYEV0idfh8E01y1LCBTO3PsSLl1sWnN-"/></button><button class="absolute bottom-[88px] right-page-margin z-50 w-14 h-14 bg-status-critical border-2 border-status-critical-dark text-white rounded-full flex items-center justify-center shadow-[0_5px_0_0_#93000a] active:translate-y-1 active:shadow-none transition-all">
+<span class="material-symbols-outlined text-[32px]" data-icon="add_comment">add_comment</span>
+</button>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 w-full z-50 bg-surface border-t-2 border-on-surface-variant max-w-[420px] mx-auto left-0 right-0 rounded-t-xl">
+<div class="flex justify-around items-center h-[72px] px-page-margin bg-surface">
+<!-- Home -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-small text-label-small">Home/Utama</span>
+</a>
+<!-- Map (Active) -->
+<a class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-gap-lg py-1 border-2 border-on-secondary-fixed-variant shadow-[0_4px_0_0_#004c6e] active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="map" style="font-variation-settings: 'FILL' 1;">map</span>
+<span class="font-label-small text-label-small">Map/Peta</span>
+</a>
+<!-- Travel -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 active:scale-95 transition-transform duration-100" href="#">
+<span class="material-symbols-outlined" data-icon="directions_transit">directions_transit</span>
+<span class="font-label-small text-label-small">Travel/Perjalanan</span>
+</a>
+</div>
+</nav>
+<script>
+        // Micro-interactions for pins and filters
+        document.querySelectorAll('.map-pin').forEach(pin => {
+            pin.addEventListener('click', () => {
+                // Shake animation on click
+                pin.classList.add('animate-bounce');
+                setTimeout(() => pin.classList.remove('animate-bounce'), 1000);
+            });
+        });
+
+        // Filter toggle simulation
+        const filterButtons = document.querySelectorAll('.no-scrollbar button');
+        filterButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // If not already active
+                if(!btn.classList.contains('bg-secondary-container')) {
+                    // Reset all
+                    filterButtons.forEach(b => {
+                        b.className = 'flex items-center gap-xs px-gap-md py-1 bg-surface border-2 border-on-surface-variant rounded-full shadow-[0_4px_0_0_#3f4a36] hover:bg-surface-container-highest active:translate-y-1 active:shadow-none transition-all whitespace-nowrap opacity-90';
+                    });
+                    // Set active
+                    btn.className = 'flex items-center gap-xs px-gap-md py-1 bg-secondary-container text-on-secondary-container border-2 border-on-secondary-fixed-variant rounded-full shadow-[0_4px_0_0_#004c6e] active:translate-y-1 active:shadow-none transition-all whitespace-nowrap';
+                }
+            });
+        });
+    </script>
+</body></html>

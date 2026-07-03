@@ -14,7 +14,19 @@ threads:
   - category: transport
     url: https://www.threads.com/@thesundaily/video/DYdmVoxiOw_
     discover_profile: false
+  - category: transport
+    url: https://www.threads.com/@bernamaofficial/post/DZqJxH0iKqL
+    discover_profile: false
+  - category: transport
+    url: https://www.threads.com/@malaysiakini/post/DZqJxH0iKqM
+    discover_profile: false
 x:
+  - category: transport
+    url: https://x.com/askrapidkl
+    discover_profile: true
+  - category: transport
+    url: https://x.com/myrapidkl
+    discover_profile: true
   - category: transport
     url: https://x.com/askrapidkl/status/1396814564151504898
     fallback_text: "Ask Rapid KL Kelana Jaya Line Update: LRT Kelana Jaya line is experiencing an incident, specifically trains number 40 and 81. Help and rescue assistance is mobilising."
@@ -27,3 +39,7 @@ x:
   - category: transport
     url: https://x.com/askrapidkl/status/2054167417925026265
     fallback_text: "Kelewatan Tren: Laluan Kelana Jaya / Train Delays: Kelana Jaya Line. Perkhidmatan bas perantara ulang-alik percuma disediakan di antara Bangsar dan KL Gateway."
+  - category: transport
+    url: https://x.com/ktmb/status/1
+    fallback_text: "KTMB Notis: Kelewatan perkhidmatan Komuter Utara di stesen Butterworth dan Padang Besar."
+    discover_profile: false

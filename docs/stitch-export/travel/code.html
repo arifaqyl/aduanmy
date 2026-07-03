@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>TrafficMY - Travel</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary-fixed": "#87fe45",
+                        "on-primary-container": "#1e5000",
+                        "surface-variant": "#e4e2e1",
+                        "on-tertiary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "surface-soft": "#F7F7F7",
+                        "line-monorail": "#8DC63F",
+                        "tertiary-fixed-dim": "#ffb872",
+                        "outline": "#6f7b64",
+                        "surface-dim": "#dcd9d9",
+                        "on-primary-fixed": "#082100",
+                        "on-secondary-fixed": "#001e2e",
+                        "line-kelana": "#E31837",
+                        "tertiary-fixed": "#ffdcbf",
+                        "on-surface": "#1b1c1c",
+                        "outline-variant": "#becbb1",
+                        "on-background": "#1b1c1c",
+                        "secondary-fixed": "#c8e6ff",
+                        "surface": "#fbf9f8",
+                        "surface-container-low": "#f5f3f2",
+                        "error": "#ba1a1a",
+                        "inverse-on-surface": "#f3f0f0",
+                        "primary-fixed-dim": "#6be026",
+                        "surface-container": "#f0eded",
+                        "inverse-surface": "#303030",
+                        "status-critical": "#FF4B4B",
+                        "ink-secondary": "#777777",
+                        "secondary-fixed-dim": "#88ceff",
+                        "on-secondary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "tertiary-container": "#ff9c27",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed-variant": "#6a3b00",
+                        "inverse-primary": "#6be026",
+                        "surface-container-high": "#eae8e7",
+                        "status-critical-dark": "#EA2B2B",
+                        "on-tertiary-fixed": "#2d1600",
+                        "tertiary": "#8c5000",
+                        "primary-container": "#58cc02",
+                        "line-putrajaya": "#F4C300",
+                        "on-surface-variant": "#3f4a36",
+                        "on-primary-fixed-variant": "#1f5100",
+                        "background": "#fbf9f8",
+                        "line-ampang": "#F7941D",
+                        "on-primary": "#ffffff",
+                        "secondary-container": "#2fb8ff",
+                        "line-kajang": "#007A33",
+                        "on-secondary-fixed-variant": "#004c6e",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e4e2e1",
+                        "on-tertiary-container": "#683a00",
+                        "surface-tint": "#2b6c00",
+                        "success-soft": "#D7FFB8",
+                        "surface-bright": "#fbf9f8",
+                        "primary": "#2b6c00",
+                        "on-secondary-container": "#004666",
+                        "secondary": "#006590",
+                        "line-ktm": "#0066B3"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "unit": "4px",
+                        "gap-lg": "16px",
+                        "touch-target-min": "44px",
+                        "gap-xs": "4px",
+                        "gap-sm": "8px",
+                        "gap-md": "12px",
+                        "page-margin": "16px"
+                    },
+                    "fontFamily": {
+                        "timestamp": ["Nunito Sans"],
+                        "body-main": ["Nunito Sans"],
+                        "micro-tag": ["Nunito Sans"],
+                        "display-logo": ["Nunito Sans"],
+                        "label-small": ["Nunito Sans"],
+                        "label-action": ["Nunito Sans"],
+                        "headline-card": ["Nunito Sans"],
+                        "headline-card-mobile": ["Nunito Sans"],
+                        "caption": ["Nunito Sans"],
+                        "title-section": ["Nunito Sans"],
+                        "body-bold": ["Nunito Sans"]
+                    },
+                    "fontSize": {
+                        "timestamp": ["11px", {"lineHeight": "1.1", "fontWeight": "700"}],
+                        "body-main": ["15px", {"lineHeight": "1.4", "fontWeight": "600"}],
+                        "micro-tag": ["10px", {"lineHeight": "1", "letterSpacing": "0.05em", "fontWeight": "900"}],
+                        "display-logo": ["20px", {"lineHeight": "1.2", "letterSpacing": "-0.02em", "fontWeight": "900"}],
+                        "label-small": ["13px", {"lineHeight": "1.1", "fontWeight": "800"}],
+                        "label-action": ["14px", {"lineHeight": "1.2", "fontWeight": "800"}],
+                        "headline-card": ["20px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                        "headline-card-mobile": ["18px", {"lineHeight": "1.2", "fontWeight": "900"}],
+                        "caption": ["12px", {"lineHeight": "1.4", "fontWeight": "700"}],
+                        "title-section": ["17px", {"lineHeight": "1.3", "fontWeight": "900"}],
+                        "body-bold": ["15px", {"lineHeight": "1.4", "fontWeight": "900"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Nunito Sans', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .chunky-shadow { shadow-[0_4px_0_0_#3f4a36]; }
+        .active-press:active { transform: translateY(4px); box-shadow: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface min-h-screen">
+<!-- Top App Bar (Shared Component Strategy) -->
+<header class="fixed top-0 w-full z-50 bg-surface dark:bg-surface-container-high border-b-2 border-on-surface-variant shadow-[0_4px_0_0_#3f4a36]">
+<div class="flex justify-between items-center h-touch-target-min px-page-margin max-w-[420px] mx-auto">
+<div class="flex items-center gap-sm">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed" data-icon="sensors">sensors</span>
+<span class="font-display-logo text-display-logo text-primary-container dark:text-primary-fixed-dim">TrafficMY</span>
+</div>
+<div class="flex items-center gap-md">
+<span class="font-timestamp text-timestamp text-on-surface-variant">Updated 2m ago</span>
+<button class="material-symbols-outlined text-primary dark:text-primary-fixed active:scale-95 transition-transform" data-icon="refresh">refresh</button>
+</div>
+</div>
+</header>
+<!-- Main Canvas -->
+<main class="pt-[60px] pb-32 px-page-margin max-w-[420px] mx-auto space-y-gap-lg">
+<!-- Welcome / Context Tag -->
+<div class="mt-gap-lg flex items-center justify-between">
+<h1 class="font-headline-card-mobile text-headline-card-mobile">Travel / Perjalanan</h1>
+<span class="bg-success-soft text-on-primary-container font-micro-tag text-micro-tag px-2 py-1 rounded-lg border-2 border-primary">LIVE STATUS</span>
+</div>
+<!-- Plan Route Card (Asymmetric / Tactile) -->
+<section class="bg-white border-2 border-on-surface-variant rounded-xl p-gap-lg shadow-[0_4px_0_0_#3f4a36]">
+<div class="flex items-center gap-sm mb-gap-md">
+<span class="material-symbols-outlined text-line-kajang" data-icon="directions_subway">directions_subway</span>
+<h2 class="font-title-section text-title-section">Plan route <span class="font-body-main text-ink-secondary text-sm">(Rancang perjalanan)</span></h2>
+</div>
+<div class="relative space-y-gap-sm">
+<!-- From Input -->
+<div class="space-y-1">
+<label class="font-micro-tag text-micro-tag text-ink-secondary">FROM / DARI</label>
+<div class="flex items-center gap-sm bg-surface-soft border-2 border-outline-variant p-gap-sm rounded-lg">
+<span class="material-symbols-outlined text-ink-secondary" data-icon="my_location">my_location</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-main text-body-main" placeholder="Current location..." type="text"/>
+</div>
+</div>
+<!-- Swap Button (Chunky) -->
+<button class="absolute right-4 top-[50%] -translate-y-[50%] z-10 w-10 h-10 bg-secondary-container border-2 border-on-secondary-fixed-variant rounded-full flex items-center justify-center shadow-[0_4px_0_0_#004c6e] active:translate-y-1 active:shadow-none transition-all">
+<span class="material-symbols-outlined text-on-secondary-container" data-icon="swap_vert">swap_vert</span>
+</button>
+<!-- To Input -->
+<div class="space-y-1">
+<label class="font-micro-tag text-micro-tag text-ink-secondary">TO / KE</label>
+<div class="flex items-center gap-sm bg-surface-soft border-2 border-outline-variant p-gap-sm rounded-lg">
+<span class="material-symbols-outlined text-ink-secondary" data-icon="location_on">location_on</span>
+<input class="bg-transparent border-none focus:ring-0 w-full font-body-main text-body-main" placeholder="Where to?" type="text"/>
+</div>
+</div>
+</div>
+<!-- CTA Button -->
+<button class="w-full mt-gap-lg bg-primary-container text-on-primary-container font-label-action text-label-action py-3 rounded-xl border-2 border-primary shadow-[0_4px_0_0_#1e5000] active:translate-y-1 active:shadow-none transition-all flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined" data-icon="route" style="font-variation-settings: 'FILL' 1;">route</span>
+                Plan route / Rancang
+            </button>
+</section>
+<!-- Passes Section -->
+<section class="bg-tertiary-fixed border-2 border-on-tertiary-fixed-variant rounded-xl overflow-hidden shadow-[0_4px_0_0_#6a3b00]">
+<div class="p-gap-lg">
+<div class="flex items-center gap-sm mb-gap-sm">
+<span class="material-symbols-outlined text-tertiary" data-icon="confirmation_number">confirmation_number</span>
+<h2 class="font-title-section text-title-section">Passes / Pas</h2>
+</div>
+<div class="flex gap-gap-md mb-gap-md">
+<div class="flex-1 bg-white border-2 border-on-tertiary-fixed-variant p-gap-sm rounded-lg">
+<p class="font-body-bold text-body-bold text-tertiary">My50 Unlimited</p>
+<p class="font-caption text-caption text-ink-secondary">Available for Malaysians only.</p>
+</div>
+<div class="flex-1 bg-white border-2 border-on-tertiary-fixed-variant p-gap-sm rounded-lg">
+<p class="font-body-bold text-body-bold text-secondary">MyCity Pass</p>
+<p class="font-caption text-caption text-ink-secondary">1-day or 3-day options.</p>
+</div>
+</div>
+<div class="flex items-start gap-sm bg-tertiary-container/20 p-gap-sm rounded-lg border border-tertiary-fixed-dim">
+<span class="material-symbols-outlined text-tertiary" data-icon="info">info</span>
+<p class="font-caption text-caption">Remember: Use the <strong>same card</strong> to touch in and out to enjoy the discount/pass rate.</p>
+</div>
+</div>
+<div class="bg-on-tertiary-fixed-variant p-gap-sm flex items-center justify-center gap-sm">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-[18px]" data-icon="notification_important">notification_important</span>
+<span class="font-micro-tag text-micro-tag text-tertiary-fixed">TAP-OUT REMINDER AT INTERCHANGE STATIONS</span>
+</div>
+</section>
+<!-- Deals Section (Horizontal Scroll) -->
+<section class="space-y-gap-sm">
+<h3 class="font-label-small text-label-small uppercase tracking-wider text-on-surface-variant">Transit Deals / Tawaran</h3>
+<div class="flex gap-gap-md overflow-x-auto pb-4 scrollbar-hide -mx-page-margin px-page-margin">
+<!-- Deal 1 -->
+<div class="min-w-[200px] bg-white border-2 border-on-surface-variant rounded-xl overflow-hidden shadow-[0_3px_0_0_#f0eded]">
+<div class="h-24 bg-cover bg-center" data-alt="A vibrant, flat-style digital illustration of a Malaysian coffee shop near a train station. The art uses a playful commuter aesthetic with bright yellows and greens, showing a steaming cup of coffee and a modern train passing in the background. High contrast, clean thick lines." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDFQqlxkf5W58CRjqM5unxgGWrBrkN65To7KB9flwjcrUjNa_QHdFHFII1QfgCVlN-yFM0peEA-Ff7EcMvwyAp38eiAwxUuuluRvjn_VRJyJllXuPpkr9Jmd7DkhRyR4a_fWUwh9hOCiNiiDukBNQX3YfH4O9cL6hHrw1Ffl3EVvoaf8dQUoPNwkG8P1WKn1R2DcqwG7Z9B1cZ-CwknV1NwJ8mAqO01AszFK5f12IuN7ybBcZ2Bm9WeO0CQU5lBHtwrCphT4qm4bxfb')"></div>
+<div class="p-gap-sm">
+<p class="font-body-bold text-body-bold">ZUS Coffee</p>
+<p class="font-caption text-caption text-ink-secondary">10% off at Transit Outlets</p>
+</div>
+</div>
+<!-- Deal 2 -->
+<div class="min-w-[200px] bg-white border-2 border-on-surface-variant rounded-xl overflow-hidden shadow-[0_3px_0_0_#f0eded]">
+<div class="h-24 bg-cover bg-center" data-alt="A minimalist vector illustration of a modern convenience store inside a bright, clean train station. The scene features people in transit, holding shopping bags, with soft, high-key lighting. The color palette emphasizes soft blues and primary greens, maintaining a friendly and accessible atmosphere." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAPfpNHutAACxZyKD-HU2ihn79wTSLTJzwoBmSuN9o-AoDLUX7xiKyHKm4IuA9PnnFMmvnlnUPKFni1RVclG25PocFIqPn5_6acBtC9Gx_y72mxKteURPtZSidg0yMAZgiuZgYWnGvA2naia_56mKkVpmVcvTDHG5Piw4DnU6JtJfHyNKxmg8CeNzYdnZggagupolxtzzZNav1nSiLHQoKL822Gcigq3vqZtlMjEs8gmRoTUZ5ffv0dPCPC0bdRo32Py9Qc_usonNsm')"></div>
+<div class="p-gap-sm">
+<p class="font-body-bold text-body-bold">FamilyMart</p>
+<p class="font-caption text-caption text-ink-secondary">RM2 Sofuto for MRT Users</p>
+</div>
+</div>
+<!-- Deal 3 -->
+<div class="min-w-[200px] bg-white border-2 border-on-surface-variant rounded-xl overflow-hidden shadow-[0_3px_0_0_#f0eded]">
+<div class="h-24 bg-cover bg-center" data-alt="A cheerful flat-illustration of a colorful digital voucher or coupon floating over a simplified map of Kuala Lumpur's rail lines. The style is neubrutalist-lite with thick borders and a primary color palette. The mood is rewarding and exciting for the daily commuter." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDRSBW1F-FzVVuy1tMXKXySN4AKjooW5oNJDqHD3y22z-n3SOQOQHPfr3_49LiKMklbF3-cH9DZRkxs4Kl_4SiYjtFZKagNI_hxiB1P4Hi5VeC5oDHbwpn_NefTTG3jXkU7yuUkdEkgilkd8oR5EE-N22F0llhUHRxrXZSx3RFYuRiq0pPFBhIDCBIxYUgEnNudgI8dv5ux0Yexx_vxjyzOgatMFVE_zPQgsJH1XxWszUqhMldx48MXP0VmrlPahc_HCHaZhwwbwrv3')"></div>
+<div class="p-gap-sm">
+<p class="font-body-bold text-body-bold">Grab Rides</p>
+<p class="font-caption text-caption text-ink-secondary">RM3 Off to Stations</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Nav Bar (Shared Component Strategy) -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-xl border-t-2 border-on-surface-variant shadow-[0_-4px_0_0_rgba(0,0,0,0.05)] bg-surface max-w-[420px] left-1/2 -translate-x-1/2">
+<div class="flex justify-around items-center h-[72px] px-page-margin">
+<!-- Home -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:bg-surface-soft active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-label-small text-label-small">Home/Utama</span>
+</button>
+<!-- Map -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant opacity-70 hover:bg-surface-soft active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="map">map</span>
+<span class="font-label-small text-label-small">Map/Peta</span>
+</button>
+<!-- Travel (ACTIVE) -->
+<button class="flex flex-col items-center justify-center bg-secondary-container text-on-secondary-container rounded-full px-gap-lg py-1 border-2 border-on-secondary-fixed-variant shadow-[0_4px_0_0_#004c6e] active:scale-95 transition-all">
+<span class="material-symbols-outlined" data-icon="directions_transit" style="font-variation-settings: 'FILL' 1;">directions_transit</span>
+<span class="font-label-small text-label-small">Travel/Perjalanan</span>
+</button>
+</div>
+</nav>
+<!-- Floating Atmosphere Micro-interaction -->
+<div class="fixed inset-0 pointer-events-none z-0" id="status-particle-container"></div>
+<script>
+        // Simple script to swap input values
+        document.querySelector('button .material-symbols-outlined[data-icon="swap_vert"]').parentElement.addEventListener('click', function() {
+            const inputs = document.querySelectorAll('input[type="text"]');
+            const temp = inputs[0].value;
+            inputs[0].value = inputs[1].value;
+            inputs[1].value = temp;
+            
+            // Visual feedback for press
+            this.classList.add('scale-90');
+            setTimeout(() => this.classList.remove('scale-90'), 100);
+        });
+
+        // Atmosphere effect: tiny transit particles
+        const container = document.getElementById('status-particle-container');
+        for (let i = 0; i < 8; i++) {
+            const p = document.createElement('div');
+            p.className = 'absolute bg-primary-container opacity-10 rounded-full blur-xl';
+            p.style.width = Math.random() * 100 + 50 + 'px';
+            p.style.height = p.style.width;
+            p.style.left = Math.random() * 100 + '%';
+            p.style.top = Math.random() * 100 + '%';
+            container.appendChild(p);
+        }
+    </script>
+</body></html>

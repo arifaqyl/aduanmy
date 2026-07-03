@@ -2,14 +2,26 @@ entities:
   transport:
     - RapidKL
     - KTM
+    - KTMB
     - MRT
     - LRT
+    - ECRL
+    - RTS Link
+    - Penang Rapid
+    - Rapid Penang
     - Ampang Line
     - Sri Petaling Line
     - Ampang/Sri Petaling Line
     - Ampang and Sri Petaling LRT Lines
     - Kelana Jaya Line
+    - Kajang/Putrajaya Lines
+    - KL Monorail Line
     - KL Sentral
+    - Seremban Line
+    - Port Klang Line
+    - Skudai Line
+    - Butterworth-Padang Besar
+    - East Coast Line
   telco_internet:
     - Unifi
     - Maxis
@@ -32,3 +44,13 @@ entities:
     - Johor
     - Penang
     - Kelantan
+    - Sabah
+    - Sarawak
+    - Kedah
+    - Perak
+    - Pahang
+    - Negeri Sembilan
+    - Melaka
+    - Terengganu
+    - Perlis
+    - Labuan

@@ -2,13 +2,25 @@ from __future__ import annotations
 
 import html
 import re
+import threading
+import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
-from urllib.parse import quote_plus
+from email.utils import parsedate_to_datetime
+from urllib.parse import quote_plus, unquote
 
 from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
-from app.core.freshness import LIVE_WINDOW_DAYS
+from app.collectors.date_hints import created_at_from_text
+from app.collectors.threads.session import load_storage_state, save_storage_state
+from app.core.freshness import RECENT_DAYS
+from app.collectors.discovery import threads_queries, threads_watchlist
 from app.core.files import load_yaml
-from app.pipeline.extract import classify_category, extract_entity, is_complaint_signal, transport_incident_signal_ok
+from app.pipeline.extract import (
+    classify_category,
+    is_complaint_signal,
+    transport_incident_signal_ok,
+    transport_rider_signal_worthwhile,
+)
 
 try:
     from playwright.sync_api import sync_playwright
@@ -16,13 +28,77 @@ except Exception:  # pragma: no cover - optional dependency at runtime
     sync_playwright = None
 
 
-RECENT_WINDOW_DAYS = LIVE_WINDOW_DAYS
+RECENT_WINDOW_DAYS = RECENT_DAYS
+PROFILE_POST_LIMIT = 20
+SEARCH_RESULT_LIMIT = 10
+SEARCH_ROWS_PER_CATEGORY = 24
+SEARCH_ROWS_PER_QUERY = 2
+SEARCH_SCROLL_ROUNDS = 2
+SEARCH_MAX_QUERIES_PER_CATEGORY = 12
+SEARCH_CATEGORIES = ["transport"]
+MANDATORY_TRANSPORT_QUERIES = (
+    "rapidkl delay",
+    "lrt kelana jaya line delay",
+    "lrt ampang line delay",
+    "lrt sri petaling line delay",
+    "mrt kajang line delay",
+    "mrt putrajaya line delay",
+    "kl monorail delay",
+    "lrt3 shah alam line",
+    "ktm komuter delay",
+)
+SEARCH_POST_SELECTOR = "a[href*='/post/'], a[href*='/video/']"
+_PLAYWRIGHT_LOCK = threading.Lock()
+SEARCH_POST_JS = """
+els => els.map(a => {
+  const href = a.href || '';
+  if (!href || href.endsWith('/media')) return null;
+  let node = a;
+  let bestText = '';
+  let bestLen = 0;
+  for (let i = 0; i < 12 && node; i++, node = node.parentElement) {
+    const text = (node.innerText || '').trim();
+    const len = text.length;
+    if (len >= 40 && len <= 400 && len > bestLen) {
+      bestText = text;
+      bestLen = len;
+    }
+  }
+  const timeEl = a.querySelector('time') || a.closest('div')?.querySelector('time');
+  return {
+    href,
+    preview_text: bestText,
+    link_text: (a.innerText || '').trim(),
+    created_at: timeEl ? (timeEl.getAttribute('datetime') || '') : ''
+  };
+}).filter(Boolean)
+"""
+
+
+def _new_threads_context(browser):
+    options = {"viewport": {"width": 1280, "height": 2200}}
+    state = load_storage_state()
+    if state:
+        options["storage_state"] = state
+    return browser.new_context(**options), state is not None
+
+
+def _page_has_authenticated_session(page) -> bool:
+    """Confirm that Threads accepted the stored session after navigation."""
+    try:
+        return (
+            page.locator("a[href='/activity']").count() > 0
+            and page.locator("a[href*='/login']").count() == 0
+            and page.get_by_text("Log in", exact=True).count() == 0
+        )
+    except Exception:
+        return False
 
 
 def _bing_result_urls(search_html: str) -> list[tuple[str, str]]:
     soup = soup_from_html(search_html)
     results: list[tuple[str, str]] = []
-    for item in soup.select("li.b_algo")[:5]:
+    for item in soup.select("li.b_algo")[:8]:
         link = item.select_one("h2 a")
         snippet = item.select_one(".b_caption p")
         if not link:
@@ -34,6 +110,73 @@ def _bing_result_urls(search_html: str) -> list[tuple[str, str]]:
     return results
 
 
+def _extract_threads_urls_from_html(page_html: str) -> list[tuple[str, str]]:
+    urls: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for match in re.finditer(r"https?://(?:www\.)?threads\.com/@[^\"'\s<>]+", page_html):
+        href = unquote(match.group(0).rstrip(".,;)"))
+        if href in seen:
+            continue
+        if "/post/" not in href and "/video/" not in href:
+            continue
+        seen.add(href)
+        urls.append((href, ""))
+    return urls
+
+
+def _duckduckgo_threads_results(query: str) -> list[tuple[str, str]]:
+    search_url = f"https://html.duckduckgo.com/html/?q={quote_plus('site:threads.com ' + query + ' malaysia')}"
+    try:
+        search_html = fetch_html(search_url, timeout=15)
+    except Exception:
+        return []
+    results: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for encoded in re.findall(r'uddg=([^&"]+)', search_html):
+        href = unquote(encoded)
+        if "threads.com" not in href or href in seen:
+            continue
+        if "/post/" not in href and "/video/" not in href:
+            continue
+        seen.add(href)
+        results.append((href, ""))
+    results.extend(_extract_threads_urls_from_html(search_html))
+    deduped: list[tuple[str, str]] = []
+    seen.clear()
+    for href, snippet in results:
+        if href in seen:
+            continue
+        seen.add(href)
+        deduped.append((href, snippet))
+    return deduped[:8]
+
+
+def _google_news_threads_results(query: str) -> list[tuple[str, str]]:
+    rss_url = (
+        f"https://news.google.com/rss/search?q={quote_plus('site:threads.com ' + query + ' malaysia')}"
+        "&hl=en-MY&gl=MY&ceid=MY:en"
+    )
+    try:
+        xml_text = fetch_html(rss_url, timeout=20)
+        root = ET.fromstring(xml_text)
+    except Exception:
+        return []
+    results: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for item in root.iter("item"):
+        combined = clean_text(
+            f"{item.findtext('title', '')} {item.findtext('description', '')} {item.findtext('link', '')}"
+        )
+        for href, _ in _extract_threads_urls_from_html(combined):
+            if href in seen:
+                continue
+            seen.add(href)
+            results.append((href, combined[:220]))
+        if len(results) >= 8:
+            break
+    return results
+
+
 def _extract_threads_text(page_html: str) -> str:
     meta = re.search(r'<meta property="og:description" content="([^"]+)"', page_html)
     if meta:
@@ -41,19 +184,85 @@ def _extract_threads_text(page_html: str) -> str:
     return ""
 
 
+def _handle_from_threads_url(url: str) -> str:
+    if "/@" not in url:
+        return "threads"
+    return url.split("/@")[-1].split("/")[0]
+
+
+def _profile_url(handle: str) -> str:
+    return f"https://www.threads.com/@{handle.lstrip('@')}"
+
+
 def _looks_like_pinned_preview(text: str) -> bool:
     return clean_text(text).lower().startswith("pinned ")
 
 
-def _is_profile_discovery_candidate(preview_text: str, exact_text: str, seed_category: str) -> bool:
+def _looks_like_threads_signup_bait(text: str) -> bool:
+    low = clean_text(text).lower()
+    blocked = [
+        "join threads to share ideas",
+        "join threads to see what people are saying",
+        "log in or sign up to view",
+    ]
+    return any(term in low for term in blocked)
+
+
+def _looks_like_aggregated_feed_preview(text: str) -> bool:
+    """Profile cards sometimes merge multiple posts into one preview blob."""
+    return len(re.findall(r"\b\d+[hdw]\b", clean_text(text).lower())) >= 2
+
+
+def _looks_like_reply_thread_blob(text: str) -> bool:
+    low = clean_text(text).lower()
+    if "replying to" in low and len(low) > 100:
+        return True
+    if re.search(r"replying to @\w+", low):
+        return True
+    return False
+
+
+def _looks_like_foreign_platform_outage(text: str, category: str) -> bool:
+    if category != "telco_internet":
+        return False
+    low = text.lower()
+    foreign = ["facebook down", "instagram down", "whatsapp down", "meta down", "tiktok down"]
+    malaysian = ["unifi", "maxis", "celcom", "digi", "time fibre", "telekom", "yes "]
+    return any(term in low for term in foreign) and not any(term in low for term in malaysian)
+
+
+def _is_usable_threads_row(row: dict) -> bool:
+    text = clean_text(row.get("raw_text", ""))
+    if not text or _looks_like_threads_signup_bait(text) or _looks_like_aggregated_feed_preview(text):
+        return False
+    if _looks_like_reply_thread_blob(text):
+        return False
+    category = row.get("seed_category", "")
+    if _looks_like_foreign_platform_outage(text, category):
+        return False
+    return True
+
+
+def _is_watchlist_candidate(preview_text: str, exact_text: str, category: str, role: str) -> bool:
     preview_text = clean_text(preview_text)
     exact_text = clean_text(exact_text)
     combined = clean_text(f"{preview_text} {exact_text}")
     if not combined:
         return False
-    if seed_category == "transport":
-        return transport_incident_signal_ok(combined)
+    if category == "transport":
+        return transport_rider_signal_worthwhile(combined)
+    if category == "telco_internet":
+        return (is_complaint_signal(combined) or classify_category(combined) == "telco_internet") and any(
+            token in combined.lower()
+            for token in ["unifi", "maxis", "celcom", "digi", "internet", "wifi", "broadband", "outage", "gangguan", "lambat"]
+        )
+    if category == "flood_weather":
+        return classify_category(combined) == "flood_weather" or is_complaint_signal(combined)
     return is_complaint_signal(combined) or bool(classify_category(combined))
+
+
+def _is_profile_discovery_candidate(preview_text: str, exact_text: str, seed_category: str) -> bool:
+    return _is_watchlist_candidate(preview_text, exact_text, seed_category, "commuter")
 
 
 def _profile_url_from_post_url(url: str) -> str:
@@ -61,79 +270,95 @@ def _profile_url_from_post_url(url: str) -> str:
     return match.group(1) if match else url
 
 
-def _playwright_post_timestamps(urls: list[str]) -> dict[str, str]:
-    if sync_playwright is None or not urls:
-        return {}
-    timestamps: dict[str, str] = {}
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1280, "height": 2200})
-        for url in urls:
-            try:
-                page.goto(url, wait_until="domcontentloaded", timeout=45000)
-                page.wait_for_timeout(1800)
-                if page.locator("time").count():
-                    created_at = page.locator("time").first.get_attribute("datetime") or ""
-                    if created_at:
-                        timestamps[url] = created_at
-            except Exception:
-                continue
-        browser.close()
-    return timestamps
+def _parse_created_at(value: str) -> datetime | None:
+    if not value:
+        return None
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=UTC)
+    return parsed.astimezone(UTC)
 
 
-def _playwright_profile_post_previews(profile_url: str, limit: int = 12) -> list[dict[str, str]]:
-    if sync_playwright is None:
-        return []
+def _sort_rows_by_created_at(rows: list[dict]) -> list[dict]:
+    def sort_key(row: dict) -> datetime:
+        parsed = _parse_created_at(row.get("created_at", ""))
+        return parsed or datetime.min.replace(tzinfo=UTC)
+
+    return sorted(rows, key=sort_key, reverse=True)
+
+
+def _transport_queries_for_run() -> list[str]:
+    """Search every major Klang Valley rail line; rotate wider national terms."""
+    available = list(dict.fromkeys(threads_queries("transport")))
+    core = list(MANDATORY_TRANSPORT_QUERIES)
+    rotating = [query for query in available if query not in core]
+    if not rotating:
+        return core
+    slot = int(datetime.now(UTC).timestamp() // (15 * 60))
+    start = (slot * 2) % len(rotating)
+    window = [rotating[(start + offset) % len(rotating)] for offset in range(3)]
+    return core + window
+
+
+def _clean_search_preview(preview_text: str) -> str:
+    """Pick the most content-like line from a Threads search card blob."""
+    lines = [clean_text(line) for line in preview_text.splitlines() if clean_text(line)]
+    if not lines:
+        return ""
+    blocked = re.compile(r"^(\d+[hdwms]?|\d{1,2}/\d{1,2}/\d{2,4}|@\w+|facebook|instagram)$", re.I)
+    candidates = [line for line in lines if not blocked.match(line) and len(line) >= 12]
+    if not candidates:
+        candidates = lines
+    return max(candidates, key=len)
+
+
+def _is_search_result_candidate(text: str, category: str) -> bool:
+    text = clean_text(text)
+    if not text or _looks_like_reply_thread_blob(text) or _looks_like_foreign_platform_outage(text, category):
+        return False
+    if category == "transport":
+        return transport_rider_signal_worthwhile(text)
+    if category == "telco_internet":
+        return classify_category(text) == "telco_internet" or (
+            is_complaint_signal(text)
+            and any(token in text.lower() for token in ["unifi", "maxis", "celcom", "digi", "internet", "wifi", "broadband"])
+        )
+    if category == "flood_weather":
+        return classify_category(text) == "flood_weather" or is_complaint_signal(text)
+    return is_complaint_signal(text) or bool(classify_category(text))
+
+
+def _scrape_threads_search_page(page, query: str, limit: int = SEARCH_RESULT_LIMIT) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page(viewport={"width": 1280, "height": 2200})
-        page.goto(profile_url, wait_until="domcontentloaded", timeout=45000)
-        page.wait_for_timeout(1800)
-        for _ in range(2):
-            batch = page.locator("a[href*='/post/']").evaluate_all(
-                """
-                els => els.map(a => {
-                  let node = a;
-                  let bestText = '';
-                  let bestLen = 0;
-                  for (let i = 0; i < 10 && node; i++, node = node.parentElement) {
-                    const text = (node.innerText || '').trim();
-                    const len = text.length;
-                    if (len >= 40 && len <= 220 && len > bestLen) {
-                      bestText = text;
-                      bestLen = len;
-                    }
-                  }
-                  const timeEl = a.querySelector('time') || a.closest('div')?.querySelector('time');
-                  return {
-                    href: a.href,
-                    preview_text: bestText,
-                    created_at: timeEl ? (timeEl.getAttribute('datetime') || '') : ''
-                  };
-                })
-                """
-            )
+    search_url = f"https://www.threads.com/search?q={quote_plus(query)}&filter=recent"
+    try:
+        page.goto(search_url, wait_until="domcontentloaded", timeout=35000)
+        page.wait_for_timeout(1500)
+        for _ in range(SEARCH_SCROLL_ROUNDS):
+            batch = page.locator(SEARCH_POST_SELECTOR).evaluate_all(SEARCH_POST_JS)
             for item in batch:
                 href = item.get("href", "")
-                if "/post/" not in href or href.endswith("/media"):
-                    continue
                 preview_text = clean_text(item.get("preview_text", ""))
-                if _looks_like_pinned_preview(preview_text):
-                    continue
+                link_text = clean_text(item.get("link_text", ""))
+                created_at = item.get("created_at", "") or created_at_from_text(preview_text) or created_at_from_text(link_text)
                 rows.append(
                     {
                         "url": href,
                         "preview_text": preview_text,
-                        "created_at": item.get("created_at", ""),
+                        "link_text": link_text,
+                        "created_at": created_at,
                     }
                 )
             if len({item["url"] for item in rows}) >= limit:
                 break
             page.mouse.wheel(0, 2400)
-            page.wait_for_timeout(900)
-        browser.close()
+            page.wait_for_timeout(500)
+    except Exception:
+        return []
+
     deduped: list[dict[str, str]] = []
     seen_urls: set[str] = set()
     for item in rows:
@@ -141,39 +366,367 @@ def _playwright_profile_post_previews(profile_url: str, limit: int = 12) -> list
             continue
         seen_urls.add(item["url"])
         deduped.append(item)
+    return _sort_rows_by_created_at(deduped)[:limit]
+
+
+def _playwright_threads_search_results(query: str, limit: int = SEARCH_RESULT_LIMIT) -> list[dict[str, str]]:
+    """Scrape threads.com/search for the latest posts matching a keyword."""
+    if sync_playwright is None or not clean_text(query):
+        return []
+    try:
+        with _PLAYWRIGHT_LOCK:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context, _authenticated = _new_threads_context(browser)
+                page = context.new_page()
+                rows = _scrape_threads_search_page(page, query, limit=limit)
+                context.close()
+                browser.close()
+                return rows
+    except Exception:
+        return []
+
+
+def _playwright_post_timestamps(urls: list[str]) -> dict[str, str]:
+    if sync_playwright is None or not urls:
+        return {}
+    timestamps: dict[str, str] = {}
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context, _authenticated = _new_threads_context(browser)
+            page = context.new_page()
+            for url in urls:
+                try:
+                    page.goto(url, wait_until="domcontentloaded", timeout=45000)
+                    page.wait_for_timeout(1800)
+                    if page.locator("time").count():
+                        created_at = page.locator("time").first.get_attribute("datetime") or ""
+                        if created_at:
+                            timestamps[url] = created_at
+                except Exception:
+                    continue
+            context.close()
+            browser.close()
+    except Exception:
+        return timestamps
+    return timestamps
+
+
+def _playwright_profile_post_previews(profile_url: str, limit: int = PROFILE_POST_LIMIT) -> list[dict[str, str]]:
+    if sync_playwright is None:
+        return []
+    rows: list[dict[str, str]] = []
+    try:
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            context, _authenticated = _new_threads_context(browser)
+            page = context.new_page()
+            page.goto(profile_url, wait_until="domcontentloaded", timeout=45000)
+            page.wait_for_timeout(2000)
+            for _ in range(4):
+                batch = page.locator("a[href*='/post/'], a[href*='/video/']").evaluate_all(
+                    """
+                    els => els.map(a => {
+                      const href = a.href || '';
+                      if (!href || href.endsWith('/media')) {
+                        return null;
+                      }
+                      let node = a;
+                      let bestText = '';
+                      let bestLen = 0;
+                      for (let i = 0; i < 12 && node; i++, node = node.parentElement) {
+                        const text = (node.innerText || '').trim();
+                        const len = text.length;
+                        if (len >= 35 && len <= 320 && len > bestLen) {
+                          bestText = text;
+                          bestLen = len;
+                        }
+                      }
+                      const timeEl = a.querySelector('time') || a.closest('div')?.querySelector('time');
+                      return {
+                        href,
+                        preview_text: bestText,
+                        created_at: timeEl ? (timeEl.getAttribute('datetime') || '') : ''
+                      };
+                    }).filter(Boolean)
+                    """
+                )
+                for item in batch:
+                    href = item.get("href", "")
+                    preview_text = clean_text(item.get("preview_text", ""))
+                    if _looks_like_pinned_preview(preview_text):
+                        continue
+                    created_at = item.get("created_at", "") or created_at_from_text(preview_text)
+                    rows.append(
+                        {
+                            "url": href,
+                            "preview_text": preview_text,
+                            "created_at": created_at,
+                        }
+                    )
+                if len({item["url"] for item in rows}) >= limit:
+                    break
+                page.mouse.wheel(0, 2800)
+                page.wait_for_timeout(1000)
+            context.close()
+            browser.close()
+    except Exception:
+        return []
+
+    deduped: list[dict[str, str]] = []
+    seen_urls: set[str] = set()
+    for item in rows:
+        if item["url"] in seen_urls:
+            continue
+        seen_urls.add(item["url"])
+        deduped.append(item)
+    deduped = _sort_rows_by_created_at(deduped)
     return deduped[:limit]
 
 
+def _apply_text_created_at(row: dict) -> None:
+    if row.get("created_at"):
+        return
+    created_at = created_at_from_text(row.get("raw_text", ""))
+    if not created_at:
+        created_at = created_at_from_text(row.get("preview_text", ""))
+    if created_at:
+        row["created_at"] = created_at
+
+
 def _fill_missing_created_at(rows: list[dict]) -> list[dict]:
-    missing_urls = [row["url"] for row in rows if row.get("url") and not row.get("created_at")]
-    if not missing_urls:
-        return rows
-    timestamps = _playwright_post_timestamps(missing_urls)
     for row in rows:
-        if not row.get("created_at"):
-            row["created_at"] = timestamps.get(row["url"], "")
+        _apply_text_created_at(row)
+    missing_urls = [row["url"] for row in rows if row.get("url") and not row.get("created_at")]
+    if missing_urls:
+        timestamps = _playwright_post_timestamps(missing_urls[:5])
+        for row in rows:
+            if not row.get("created_at"):
+                row["created_at"] = timestamps.get(row["url"], "")
+    for row in rows:
+        _apply_text_created_at(row)
     return rows
 
 
 def _is_recent_enough(created_at: str, *, max_age_days: int = RECENT_WINDOW_DAYS) -> bool:
     if not created_at:
         return False
-    try:
-        parsed = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-    except ValueError:
+    parsed = _parse_created_at(created_at)
+    if parsed is None:
         return False
-    if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=UTC)
     return parsed >= datetime.now(UTC) - timedelta(days=max_age_days)
 
 
-def collect_threads_sample() -> list[dict]:
+def _make_threads_row(
+    *,
+    url: str,
+    raw_text: str,
+    query: str,
+    seed_category: str,
+    created_at: str = "",
+    preview_text: str = "",
+    collection_method: str = "",
+) -> dict:
+    row = {
+        "source_platform": "threads",
+        "post_id": make_post_id(url),
+        "url": url,
+        "author_handle": _handle_from_threads_url(url),
+        "created_at": created_at,
+        "raw_text": raw_text,
+        "query": query,
+        "seed_category": seed_category,
+    }
+    if preview_text:
+        row["preview_text"] = preview_text
+    if collection_method:
+        row["collection_method"] = collection_method
+    return row
+
+
+def _resolve_threads_text(url: str, preview_text: str = "", snippet: str = "") -> str:
+    text = clean_text(preview_text)
+    if text and len(text) >= 20:
+        return text
+    try:
+        page_html = fetch_html(url, timeout=10)
+    except Exception:
+        page_html = ""
+    return _extract_threads_text(page_html) or clean_text(snippet)
+
+
+def _collect_keyword_search_posts(seen_urls: set[str]) -> list[dict]:
+    """Primary lane: native Threads keyword search for latest complaint posts."""
+    if sync_playwright is None:
+        return []
     rows: list[dict] = []
-    seed_urls = load_yaml("seed_urls.yaml").get("threads", [])
-    seen_urls: set[str] = set()
-    seed_rows: list[dict] = []
-    for item in seed_urls:
+    try:
+        with _PLAYWRIGHT_LOCK:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context, session_loaded = _new_threads_context(browser)
+                page = context.new_page()
+                authenticated = False
+                session_checked = False
+                for category in SEARCH_CATEGORIES:
+                    category_rows = 0
+                    queries = _transport_queries_for_run()
+                    for query_index, query in enumerate(queries):
+                        mandatory = query_index < len(MANDATORY_TRANSPORT_QUERIES)
+                        if not mandatory and category_rows >= SEARCH_ROWS_PER_CATEGORY:
+                            break
+                        hits = _scrape_threads_search_page(page, query)
+                        if not session_checked:
+                            authenticated = session_loaded and _page_has_authenticated_session(page)
+                            session_checked = True
+                        query_rows = 0
+                        for item in hits:
+                            if query_rows >= SEARCH_ROWS_PER_QUERY or category_rows >= SEARCH_ROWS_PER_CATEGORY:
+                                break
+                            href = item["url"]
+                            if href in seen_urls:
+                                continue
+                            preview_text = clean_text(item.get("preview_text", ""))
+                            link_text = clean_text(item.get("link_text", ""))
+                            created_at = item.get("created_at", "") or created_at_from_text(preview_text) or created_at_from_text(link_text)
+                            if created_at and not _is_recent_enough(created_at):
+                                continue
+                            snippet = _clean_search_preview(preview_text) or link_text
+                            text = snippet if len(snippet) >= 20 else _resolve_threads_text(href, preview_text=snippet)
+                            if not text:
+                                continue
+                            if not _is_search_result_candidate(text, category):
+                                continue
+                            seen_urls.add(href)
+                            rows.append(
+                                _make_threads_row(
+                                    url=href,
+                                    raw_text=text,
+                                    query=query,
+                                    seed_category=category,
+                                    created_at=created_at,
+                                    preview_text=preview_text,
+                                    collection_method=(
+                                        "authenticated_web_search" if authenticated else "public_web_search"
+                                    ),
+                                )
+                            )
+                            category_rows += 1
+                            query_rows += 1
+                if authenticated:
+                    save_storage_state(context.storage_state())
+                context.close()
+                browser.close()
+    except Exception:
+        return rows
+    return rows
+
+
+def _collect_latest_watchlist_posts(seen_urls: set[str]) -> list[dict]:
+    rows: list[dict] = []
+    for category in SEARCH_CATEGORIES:
+        for item in threads_watchlist(category):
+            handle = item.get("handle", "")
+            role = item.get("role", "commuter")
+            if not handle:
+                continue
+            profile_url = _profile_url(handle)
+            try:
+                discovered_posts = _playwright_profile_post_previews(profile_url)
+            except Exception:
+                discovered_posts = []
+            for post in discovered_posts:
+                href = post["url"]
+                if href in seen_urls:
+                    continue
+                preview_text = clean_text(post.get("preview_text", ""))
+                created_at = post.get("created_at", "") or created_at_from_text(preview_text)
+                if created_at and not _is_recent_enough(created_at):
+                    continue
+                text = _resolve_threads_text(href, preview_text=preview_text)
+                if not text:
+                    continue
+                if not _is_watchlist_candidate(preview_text, text, category, role):
+                    continue
+                seen_urls.add(href)
+                rows.append(
+                    _make_threads_row(
+                        url=href,
+                        raw_text=text,
+                        query="latest_profile",
+                        seed_category=category,
+                        created_at=created_at,
+                        preview_text=preview_text,
+                    )
+                )
+    return rows
+
+
+def _web_search_hits(query: str) -> list[tuple[str, str]]:
+    """Run external search engines in parallel — does not block Playwright lane."""
+    hits: list[tuple[str, str]] = []
+    seen: set[str] = set()
+
+    def bing() -> list[tuple[str, str]]:
+        bing_url = f"https://www.bing.com/search?q={quote_plus('site:threads.com ' + query)}&filters=ex1:\"ez2\""
+        try:
+            return _bing_result_urls(fetch_html(bing_url, timeout=12))
+        except Exception:
+            return []
+
+    with ThreadPoolExecutor(max_workers=3) as pool:
+        futures = {
+            pool.submit(bing): "bing",
+            pool.submit(_duckduckgo_threads_results, query): "ddg",
+            pool.submit(_google_news_threads_results, query): "news",
+        }
+        for future in as_completed(futures):
+            try:
+                batch = future.result()
+            except Exception:
+                continue
+            for href, snippet in batch:
+                if href in seen:
+                    continue
+                seen.add(href)
+                hits.append((href, snippet))
+    return hits
+
+
+def _collect_search_discovered_posts(seen_urls: set[str]) -> list[dict]:
+    """Fallback lane: external search engines when native search misses."""
+    rows: list[dict] = []
+    for category in SEARCH_CATEGORIES:
+        for query in threads_queries(category)[:SEARCH_MAX_QUERIES_PER_CATEGORY]:
+            for href, snippet in _web_search_hits(query):
+                if href in seen_urls:
+                    continue
+                text = _resolve_threads_text(href, snippet=snippet)
+                if not text:
+                    continue
+                if not _is_search_result_candidate(text, category):
+                    continue
+                seen_urls.add(href)
+                rows.append(
+                    _make_threads_row(
+                        url=href,
+                        raw_text=text,
+                        query=f"web:{query}",
+                        seed_category=category,
+                    )
+                )
+    return rows
+
+
+def _collect_seed_posts(seen_urls: set[str], *, skip_profile_discovery: bool = False) -> list[dict]:
+    rows: list[dict] = []
+    for item in load_yaml("seed_urls.yaml").get("threads", []):
+        if item.get("category") != "transport":
+            continue
         href = item["url"]
+        if href in seen_urls:
+            continue
         seen_urls.add(href)
         try:
             page_html = fetch_html(href)
@@ -182,89 +735,68 @@ def collect_threads_sample() -> list[dict]:
         text = _extract_threads_text(page_html)
         if not text:
             continue
-        seed_rows.append(
-            {
-                "source_platform": "threads",
-                "post_id": make_post_id(href),
-                "url": href,
-                "author_handle": href.split("/@")[-1].split("/")[0] if "/@" in href else "threads",
-                "created_at": "",
-                "raw_text": text,
-                "query": "seed_url",
-                "seed_category": item["category"],
-            }
+        rows.append(
+            _make_threads_row(
+                url=href,
+                raw_text=text,
+                query="seed_url",
+                seed_category=item["category"],
+            )
         )
-    _fill_missing_created_at(seed_rows)
-    rows.extend(seed_rows)
+
+    if skip_profile_discovery:
+        return rows
+
     profile_map = {
         _profile_url_from_post_url(item["url"]): item["category"]
-        for item in seed_urls
-        if item.get("discover_profile")
+        for item in load_yaml("seed_urls.yaml").get("threads", [])
+        if item.get("category") == "transport" and item.get("discover_profile")
     }
-    for profile_url in profile_map:
+    for profile_url, seed_category in profile_map.items():
         try:
             discovered_posts = _playwright_profile_post_previews(profile_url)
         except Exception:
             discovered_posts = []
-        for item in discovered_posts:
-            href = item["url"]
+        for post in discovered_posts:
+            href = post["url"]
             if href in seen_urls:
                 continue
-            preview_text = clean_text(item.get("preview_text", ""))
-            text = preview_text if preview_text and len(preview_text) >= 80 else ""
-            if not text:
-                try:
-                    page_html = fetch_html(href, timeout=10)
-                except Exception:
-                    continue
-                text = _extract_threads_text(page_html)
-            if not _is_profile_discovery_candidate(preview_text, text, profile_map[profile_url]):
+            preview_text = clean_text(post.get("preview_text", ""))
+            text = _resolve_threads_text(href, preview_text=preview_text)
+            if not _is_profile_discovery_candidate(preview_text, text, seed_category):
                 continue
             seen_urls.add(href)
             rows.append(
-                {
-                    "source_platform": "threads",
-                    "post_id": make_post_id(href),
-                    "url": href,
-                    "author_handle": href.split("/@")[-1].split("/")[0] if "/@" in href else "threads",
-                    "created_at": item.get("created_at", ""),
-                    "raw_text": text,
-                    "query": "profile_discovery",
-                    "seed_category": "",
-                }
-            )
-    query_groups = load_yaml("queries.yaml").get("query_groups", {})
-    for category, queries in query_groups.items():
-        for query in queries[:2]:
-            search_url = f"https://www.bing.com/search?q={quote_plus('site:threads.com ' + query + ' malaysia')}"
-            try:
-                search_html = fetch_html(search_url, timeout=10)
-            except Exception:
-                continue
-            for href, snippet in _bing_result_urls(search_html):
-                if snippet and not is_complaint_signal(snippet) and not classify_category(snippet):
-                    continue
-                try:
-                    page_html = fetch_html(href, timeout=10)
-                except Exception:
-                    page_html = ""
-                text = _extract_threads_text(page_html) or snippet
-                if not text:
-                    continue
-                if href in seen_urls:
-                    continue
-                seen_urls.add(href)
-                rows.append(
-                    {
-                        "source_platform": "threads",
-                        "post_id": make_post_id(href),
-                        "url": href,
-                        "author_handle": href.split("/@")[-1].split("/")[0] if "/@" in href else "threads",
-                        "created_at": "",
-                        "raw_text": text,
-                        "query": query,
-                        "seed_category": category,
-                    }
+                _make_threads_row(
+                    url=href,
+                    raw_text=text,
+                    query="profile_discovery",
+                    seed_category=seed_category,
+                    created_at=post.get("created_at", ""),
+                    preview_text=preview_text,
                 )
+            )
+    return rows
+
+
+def collect_threads_sample() -> list[dict]:
+    seen_urls: set[str] = set()
+    rows: list[dict] = []
+    rows.extend(_collect_keyword_search_posts(seen_urls))
+    if len(rows) < 6:
+        rows.extend(_collect_latest_watchlist_posts(seen_urls))
+    if len(rows) < 6:
+        rows.extend(_collect_search_discovered_posts(seen_urls))
+    rows.extend(_collect_seed_posts(seen_urls, skip_profile_discovery=len(rows) >= 10))
     rows = _fill_missing_created_at(rows)
-    return [row for row in rows if _is_recent_enough(row.get("created_at", ""))]
+    rows = _sort_rows_by_created_at(rows)
+    return [
+        row
+        for row in rows
+        if _is_usable_threads_row(row)
+        and _is_recent_enough(row.get("created_at", ""))
+        and (
+            row.get("seed_category") != "transport"
+            or transport_rider_signal_worthwhile(row.get("raw_text", ""))
+        )
+    ]

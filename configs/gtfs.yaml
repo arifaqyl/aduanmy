@@ -1,0 +1,29 @@
+# Malaysia GTFS — free open API (developer.data.gov.my), no API keys
+static_base: https://api.data.gov.my/gtfs-static/prasarana
+realtime_base: https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana
+
+networks:
+  rapid-bus-kl:
+    label: Rapid KL Bus
+    state: Wilayah Persekutuan
+    mode: bus
+  rapid-bus-mrtfeeder:
+    label: MRT Feeder Bus
+    state: Wilayah Persekutuan
+    mode: bus
+  rapid-bus-penang:
+    label: Rapid Penang
+    state: Penang
+    mode: bus
+  rapid-bus-kuantan:
+    label: Rapid Kuantan
+    state: Pahang
+    mode: bus
+  rapid-rail-kl:
+    label: Rapid Rail KL
+    state: Wilayah Persekutuan
+    mode: rail
+
+anomaly:
+  min_trip_rank: 30
+  cache_hours: 24

@@ -1,0 +1,3 @@
+<!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="currentColor" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="var(--schem-bg, #111318)"/>

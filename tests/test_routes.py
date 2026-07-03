@@ -3,7 +3,6 @@ from starlette.testclient import TestClient
 from app.main import create_app
 from app.db.session import reset_complaints, upsert_complaints
 from app.schemas.complaint import ComplaintSchema
-from app.services.ingest_service import run_ingest
 
 
 def test_root_serves_frontend_html():
@@ -14,10 +13,29 @@ def test_root_serves_frontend_html():
     assert "TrafficMY" in response.text
 
 
-
-def test_refresh_route_runs_ingest_and_returns_cluster_count():
+def test_methodology_page_and_api():
     client = TestClient(create_app())
-    response = client.post("/api/refresh")
+    page = client.get("/methodology")
+    assert page.status_code == 200
+    assert "How it works" in page.text
+    api = client.get("/api/trafficmy/methodology")
+    assert api.status_code == 200
+    payload = api.json()
+    assert payload["product"] == "TrafficMY"
+    assert payload["not_official"] is True
+    assert payload["windows"]["live_window_days"] == 21
+    assert payload["windows"]["status_window_hours"] == 24
+    assert any(s["id"] == "threads" for s in payload["sources"])
+
+
+
+def test_refresh_route_runs_ingest_and_returns_cluster_count(monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.incidents.run_full_now",
+        lambda: {"written": 1, "threads": 1},
+    )
+    client = TestClient(create_app())
+    response = client.post("/api/refresh?sync=true")
     assert response.status_code == 200
     payload = response.json()
     assert payload["status"] == "ok"
@@ -26,7 +44,7 @@ def test_refresh_route_runs_ingest_and_returns_cluster_count():
 
 
 def test_trafficmy_overview_route_returns_product_shaped_payload():
-    run_ingest()
+    reset_complaints()
     client = TestClient(create_app())
     response = client.get("/api/trafficmy/overview")
     assert response.status_code == 200
@@ -39,7 +57,7 @@ def test_trafficmy_overview_route_returns_product_shaped_payload():
 
 
 def test_trafficmy_incidents_route_returns_filtered_payload():
-    run_ingest()
+    reset_complaints()
     client = TestClient(create_app())
     response = client.get("/api/trafficmy/incidents?confidence_band=strong")
     assert response.status_code == 200
@@ -98,21 +116,198 @@ def test_trafficmy_overview_route_accepts_include_stale_flag():
     assert payload["summary"]["transport_cluster_count"] == 2
 
 
-def test_trafficmy_status_route_returns_freshness_payload():
-    run_ingest()
+def test_trafficmy_status_route_returns_freshness_payload(monkeypatch):
+    reset_complaints()
+    monkeypatch.setattr(
+        "app.services.status_service._latest_ingest_summary",
+        lambda: {"written": 0, "threads": 0, "reddit": 0, "x": 0, "rss": 0},
+    )
     client = TestClient(create_app())
     response = client.get("/api/trafficmy/status")
     assert response.status_code == 200
     payload = response.json()
     assert payload["product"] == "TrafficMY"
     assert "freshness" in payload
-    assert payload["freshness"]["freshness_basis"] in {"created_at", "inserted_at"}
+    assert payload["freshness"]["freshness_basis"] in {"created_at", "inserted_at", "none"}
     assert "ingest" in payload
     assert "top_wedge" in payload
     assert "written" in payload["ingest"]
     assert "threads" in payload["ingest"]
     assert "reddit" in payload["ingest"]
     assert "x" in payload["ingest"]
+    assert "rss" in payload["ingest"]
+
+
+def test_health_route_returns_db_and_scheduler_state():
+    client = TestClient(create_app())
+    response = client.get("/api/health")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["service"] == "trafficmy"
+    assert payload["db_ok"] is True
+    assert "complaint_count" in payload
+    assert "scheduler" in payload
+
+
+def test_refresh_route_rejects_wrong_api_key(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "refresh_api_key", "secret-key")
+    monkeypatch.setattr(settings, "allow_dashboard_refresh", False)
+    monkeypatch.setattr(
+        "app.api.routes.incidents.trigger_full_ingest_async",
+        lambda: True,
+    )
+    client = TestClient(create_app())
+    response = client.post("/api/refresh")
+    assert response.status_code == 401
+    ok = client.post("/api/refresh", headers={"X-API-Key": "secret-key"})
+    assert ok.status_code == 200
+
+
+def test_refresh_route_allows_dashboard_header(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "refresh_api_key", "secret-key")
+    monkeypatch.setattr(settings, "allow_dashboard_refresh", True)
+    monkeypatch.setattr(
+        "app.api.routes.incidents.trigger_full_ingest_async",
+        lambda: True,
+    )
+    client = TestClient(create_app())
+    response = client.post("/api/refresh", headers={"X-Dashboard-Refresh": "1"})
+    assert response.status_code == 200
+
+
+def test_refresh_route_requires_same_origin_dashboard_in_production(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "env", "production")
+    monkeypatch.setattr(settings, "refresh_api_key", "secret-key")
+    monkeypatch.setattr(settings, "allow_dashboard_refresh", True)
+    monkeypatch.setattr(
+        "app.api.routes.incidents.trigger_full_ingest_async",
+        lambda: True,
+    )
+    client = TestClient(create_app())
+    blocked = client.post(
+        "/api/refresh",
+        headers={"X-Dashboard-Refresh": "1", "Referer": "https://evil.example/traffic/"},
+    )
+    assert blocked.status_code == 401
+    allowed = client.post(
+        "/api/refresh",
+        headers={"X-Dashboard-Refresh": "1", "Referer": "http://testserver/traffic/"},
+    )
+    assert allowed.status_code == 200
+
+
+def test_refresh_route_rejects_overlapping_ingest(monkeypatch):
+    monkeypatch.setattr("app.api.routes.incidents.trigger_full_ingest_async", lambda: False)
+    client = TestClient(create_app())
+    response = client.post("/api/refresh")
+    assert response.status_code == 409
+
+
+def test_trafficmy_config_route():
+    client = TestClient(create_app())
+    response = client.get("/api/trafficmy/config")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["live_window_days"] == 21
+    assert len(payload["source_lanes"]) == 6
+
+
+def test_trafficmy_brand_and_shell_routes():
+    client = TestClient(create_app())
+    brand = client.get("/api/trafficmy/brand")
+    assert brand.status_code == 200
+    brand_payload = brand.json()
+    assert brand_payload["name"] == "TrafficMY Pulse"
+    assert brand_payload["mobile_first"] is True
+
+    shell = client.get("/api/trafficmy/app-shell")
+    assert shell.status_code == 200
+    shell_payload = shell.json()
+    assert "brand" in shell_payload
+    assert "config" in shell_payload
+    assert "meta" in shell_payload
+    assert "status" in shell_payload
+    assert "freshness" in shell_payload["status"]
+
+
+def test_trafficmy_stations_route():
+    client = TestClient(create_app())
+    response = client.get("/api/trafficmy/stations?q=maluri&limit=5")
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["source"] == "locations.yaml"
+    assert any(item["label"] == "Maluri" for item in payload["items"])
+
+
+def test_trafficmy_map_stations_route(monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.journey.get_map_stations",
+        lambda limit=120, layer="rail": {"product": "TrafficMY", "stations": [], "bounds": {}},
+    )
+    response = TestClient(create_app()).get("/api/trafficmy/map/stations")
+    assert response.status_code == 200
+    assert response.json()["product"] == "TrafficMY"
+
+
+def test_journey_plan_includes_fare(monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.journey.plan_rail_journey",
+        lambda origin, destination: {
+            "legs": [{"kind": "ride"}, {"kind": "transfer"}, {"kind": "ride"}],
+            "transfers": 1,
+            "total_minutes": 32,
+        },
+    )
+    response = TestClient(create_app()).get("/api/trafficmy/journey/plan?origin=Gombak&destination=KLCC")
+    assert response.status_code == 200
+    assert "fare" in response.json()
+    assert response.json()["fare"]["currency"] == "MYR"
+
+
+def test_journey_station_route_uses_search_service(monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.journey.list_rail_stations",
+        lambda query, limit: [{"name": "KLCC", "lines": ["KJL"]}],
+    )
+    response = TestClient(create_app()).get("/api/trafficmy/journey/stations?q=klcc&limit=5")
+    assert response.status_code == 200
+    assert response.json()["items"][0]["name"] == "KLCC"
+    assert response.json()["source"] == "Malaysia government GTFS"
+
+
+def test_journey_plan_route_returns_route_and_handles_bad_place(monkeypatch):
+    monkeypatch.setattr(
+        "app.api.routes.journey.plan_rail_journey",
+        lambda origin, destination: {"origin": origin, "destination": destination, "minutes": 18},
+    )
+    client = TestClient(create_app())
+    response = client.get("/api/trafficmy/journey/plan?origin=Gombak&destination=KLCC")
+    assert response.status_code == 200
+    assert response.json()["minutes"] == 18
+
+    def fail_plan(origin, destination):
+        raise ValueError("Place not found in Malaysia")
+
+    monkeypatch.setattr("app.api.routes.journey.plan_rail_journey", fail_plan)
+    assert client.get("/api/trafficmy/journey/plan?origin=Unknown&destination=KLCC").status_code == 422
+
+
+def test_transport_updates_and_pass_comparison_routes():
+    client = TestClient(create_app())
+    updates = client.get("/api/trafficmy/updates")
+    assert updates.status_code == 200
+    assert updates.json()["product"] == "TrafficMY"
+    comparison = client.get(
+        "/api/trafficmy/pass-comparison?rides_per_month=20&average_fare=3&malaysian=true&student=true"
+    )
+    assert comparison.status_code == 200
+    assert comparison.json()["recommendation"]["id"] == "rapid-pelajar"
 
 
 def test_trafficmy_status_prefers_signal_age_over_insert_time_for_staleness():
@@ -173,6 +368,10 @@ def test_trafficmy_incident_detail_route_returns_product_shaped_detail():
     payload = response.json()
     assert payload["product"] == "TrafficMY"
     assert payload["incident"]["cluster_id"] == "transport:LRT:Kelana Jaya:incident"
+    assert payload["incident"]["headline"]
+    assert "example_text" not in payload["incident"]
+    assert "raw_text" not in payload["items"][0]
+    assert "author_handle" not in payload["items"][0]
     assert len(payload["items"]) == 1
 
 

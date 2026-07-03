@@ -1,0 +1,880 @@
+{
+  "version": 1,
+  "scope": "malaysia",
+  "source_note": "Public operator facts and MyRapid references. Not live timetable data.",
+  "lines": [
+    {
+      "id": "lrt3",
+      "name": "LRT Shah Alam Line",
+      "operator": "Rapid KL",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Bandar Utama",
+        "to": "Johan Setia"
+      },
+      "where_it_goes": "Petaling Jaya, Shah Alam and Klang — north-south corridor west of central KL.",
+      "length_km": 37.8,
+      "underground_km": 2.5,
+      "stations_count": 20,
+      "journey_minutes": 70,
+      "max_speed_kmh": 80,
+      "capacity_note": "22 three-car trains · up to ~624 passengers per train",
+      "official_colour": "#7b2d8e",
+      "schematic_svg": "lines/lrt3.svg",
+      "major_stations": [
+        "Bandar Utama",
+        "Glenmarie",
+        "Shah Alam Stadium",
+        "UiTM Shah Alam",
+        "Johan Setia"
+      ],
+      "interchanges": [
+        {
+          "station": "Bandar Utama",
+          "connects_to": "MRT Kajang Line",
+          "transfer_walk_min": 3,
+          "walking_note": "Paid-to-paid interchange at Bandar Utama station."
+        },
+        {
+          "station": "Glenmarie",
+          "connects_to": "LRT Kelana Jaya Line",
+          "transfer_walk_min": 5,
+          "walking_note": "Connecting station — follow signage between LRT3 and Kelana Jaya platforms."
+        }
+      ],
+      "line_facts": [
+        "37.8 km · 20 stations · ~70 min end-to-end",
+        "Bandar Utama ↔ Johan Setia · interchanges at Bandar Utama and Glenmarie",
+        "Public rider posts and MyRapid announcements — not live headway data"
+      ],
+      "keywords": [
+        "lrt3",
+        "lrt 3",
+        "lrt3 shah alam",
+        "lrt shah alam line",
+        "shah alam lrt",
+        "bandar utama johan setia"
+      ],
+      "operating_hours": {
+        "first_train": "06:00",
+        "last_train": "23:30",
+        "days": "Daily from passenger opening",
+        "service_start_date": "2026-06-29",
+        "peak_hours": [
+          {
+            "label": "Morning peak",
+            "start": "07:00",
+            "end": "09:30",
+            "headway_min": 4
+          },
+          {
+            "label": "Evening peak",
+            "start": "17:00",
+            "end": "19:30",
+            "headway_min": 4
+          }
+        ],
+        "off_peak_headway_min": 8,
+        "weekend_note": "Expected similar to other Rapid KL LRT lines after opening.",
+        "source": "MyRapid / public announcements",
+        "disclaimer": "Passenger service from 29 Jun 2026. Times approximate until operations begin."
+      },
+      "stations_ordered": [
+        "Bandar Utama",
+        "Kayu Ara",
+        "BU11",
+        "Damansara Idaman",
+        "Subang",
+        "Glenmarie",
+        "Kerjaya",
+        "Stadium Shah Alam",
+        "Dato' Menteri",
+        "UiTM Shah Alam",
+        "Seksyen 7",
+        "Bukit Raja Selatan",
+        "Bandar Baru Klang",
+        "Pasar Klang",
+        "Jalan Meru",
+        "Jambatan Kota",
+        "Taman Selatan",
+        "Sri Andalas",
+        "Klang Jaya",
+        "Bandar Bukit Tinggi",
+        "Johan Setia"
+      ]
+    },
+    {
+      "id": "kelana-jaya",
+      "name": "Kelana Jaya Line",
+      "operator": "Rapid KL",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Gombak",
+        "to": "Putra Heights"
+      },
+      "where_it_goes": "East-west spine through KL city centre, Damansara and Kelana Jaya to southern suburbs.",
+      "length_km": 46.4,
+      "stations_count": 37,
+      "journey_minutes": 80,
+      "max_speed_kmh": 80,
+      "capacity_note": "LRT trains · high-frequency KV corridor",
+      "official_colour": "#e31837",
+      "schematic_svg": "lines/kelana-jaya.svg",
+      "major_stations": [
+        "Gombak",
+        "KLCC",
+        "Masjid Jamek",
+        "Pasar Seni",
+        "Bangsar",
+        "Kelana Jaya",
+        "Putra Heights"
+      ],
+      "interchanges": [
+        {
+          "station": "Masjid Jamek",
+          "connects_to": "Ampang / Sri Petaling Lines"
+        },
+        {
+          "station": "KL Sentral",
+          "connects_to": "KL Monorail · KTM Komuter · KLIA Ekspres"
+        },
+        {
+          "station": "Glenmarie",
+          "connects_to": "LRT Shah Alam Line (LRT3)"
+        }
+      ],
+      "keywords": [
+        "kelana jaya",
+        "lrt kelana jaya line",
+        "laluan kelana jaya",
+        "kjl",
+        "kelana jaya line"
+      ],
+      "operating_hours": {
+        "first_train": "06:00",
+        "last_train": "00:30",
+        "days": "Daily",
+        "peak_hours": [
+          {
+            "label": "Morning peak",
+            "start": "07:00",
+            "end": "09:30",
+            "headway_min": 3
+          },
+          {
+            "label": "Evening peak",
+            "start": "17:00",
+            "end": "19:30",
+            "headway_min": 3
+          }
+        ],
+        "off_peak_headway_min": 4,
+        "weekend_note": "Weekends and public holidays: about every 5-7 min on LRT/MRT.",
+        "source": "MyRapid public schedule",
+        "disclaimer": "Approximate first/last train times vary by station. Check MyRapid before travelling."
+      },
+      "stations_ordered": [
+        "Gombak",
+        "Taman Melati",
+        "Wangsa Maju",
+        "Sri Rampai",
+        "Setiawangsa",
+        "Jelatek",
+        "Dato' Keramat",
+        "Damai",
+        "Ampang Park",
+        "KLCC",
+        "Kampung Baru",
+        "Dang Wangi",
+        "Masjid Jamek",
+        "Pasar Seni",
+        "KL Sentral",
+        "Bangsar",
+        "Abdullah Hukum",
+        "Kerinchi",
+        "Universiti",
+        "Taman Jaya",
+        "Asia Jaya",
+        "Taman Paramount",
+        "Taman Bahagia",
+        "Kelana Jaya",
+        "Lembah Subang",
+        "Ara Damansara",
+        "Glenmarie",
+        "Subang Jaya",
+        "SS15",
+        "SS18",
+        "USJ 7",
+        "Taipan",
+        "Wawasan",
+        "USJ 21",
+        "Alam Megah",
+        "Subang Alam",
+        "Putra Heights"
+      ]
+    },
+    {
+      "id": "ampang-sri-petaling",
+      "name": "Ampang / Sri Petaling Lines",
+      "operator": "Rapid KL",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Ampang or Putra Heights",
+        "to": "Sentul Timur"
+      },
+      "where_it_goes": "Two branches (Ampang and Sri Petaling) merging at Chan Sow Lin to Sentul Timur.",
+      "length_km": 45.1,
+      "stations_count": 35,
+      "journey_minutes": 65,
+      "official_colour": "#f7941d",
+      "schematic_svg": "lines/ampang-sri-petaling.svg",
+      "major_stations": [
+        "Ampang",
+        "Chan Sow Lin",
+        "Masjid Jamek",
+        "Sentul Timur",
+        "Awan Besar",
+        "Putra Heights"
+      ],
+      "interchanges": [
+        {
+          "station": "Masjid Jamek",
+          "connects_to": "LRT Kelana Jaya Line"
+        },
+        {
+          "station": "Chan Sow Lin",
+          "connects_to": "MRT Kajang Line"
+        }
+      ],
+      "keywords": [
+        "ampang line",
+        "sri petaling line",
+        "laluan ampang",
+        "lrt ampang",
+        "ampang lrt"
+      ],
+      "operating_hours": {
+        "first_train": "06:00",
+        "last_train": "00:30",
+        "days": "Daily",
+        "peak_hours": [
+          {
+            "label": "Morning peak",
+            "start": "07:00",
+            "end": "09:30",
+            "headway_min": 3
+          },
+          {
+            "label": "Evening peak",
+            "start": "17:00",
+            "end": "19:30",
+            "headway_min": 3
+          }
+        ],
+        "off_peak_headway_min": 6,
+        "weekend_note": "Weekends and public holidays: about every 5-7 min on LRT/MRT.",
+        "source": "MyRapid public schedule",
+        "disclaimer": "Approximate first/last train times vary by station. Check MyRapid before travelling."
+      },
+      "stations_ordered": [
+        "Ampang",
+        "Cahaya",
+        "Cempaka",
+        "Miharja",
+        "Maluri",
+        "Pandan Indah",
+        "Pandan Jaya",
+        "Chan Sow Lin",
+        "Sentul Timur",
+        "Sentul",
+        "Titiwangsa",
+        "PWTC",
+        "Sultan Ismail",
+        "Bandaraya",
+        "Masjid Jamek",
+        "Plaza Rakyat",
+        "Hang Tuah",
+        "Pudu",
+        "Cheras",
+        "Salak Selatan",
+        "Bandar Tun Razak",
+        "Bandar Tasik Selatan",
+        "Sungai Besi",
+        "Awan Besar",
+        "Muhibbah",
+        "Alam Megah",
+        "Subang Alam",
+        "Putra Heights"
+      ]
+    },
+    {
+      "id": "kajang",
+      "name": "MRT Kajang Line",
+      "operator": "Rapid KL",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Kwasa Damansara",
+        "to": "Kajang"
+      },
+      "where_it_goes": "North-south MRT through Sungai Buloh, city centre and Cheras to Kajang.",
+      "length_km": 51,
+      "stations_count": 31,
+      "journey_minutes": 90,
+      "max_speed_kmh": 100,
+      "official_colour": "#007a33",
+      "schematic_svg": "lines/kajang.svg",
+      "major_stations": [
+        "Kwasa Damansara",
+        "Bandar Utama",
+        "Bukit Bintang",
+        "Maluri",
+        "Kajang"
+      ],
+      "interchanges": [
+        {
+          "station": "Bandar Utama",
+          "connects_to": "LRT Shah Alam Line (LRT3)"
+        },
+        {
+          "station": "Chan Sow Lin",
+          "connects_to": "Ampang / Sri Petaling Lines"
+        },
+        {
+          "station": "Sungai Buloh",
+          "connects_to": "MRT Putrajaya Line"
+        }
+      ],
+      "keywords": [
+        "kajang line",
+        "mrt kajang",
+        "laluan kajang",
+        "mrt kajang line"
+      ],
+      "operating_hours": {
+        "first_train": "06:00",
+        "last_train": "00:30",
+        "days": "Daily",
+        "peak_hours": [
+          {
+            "label": "Morning peak",
+            "start": "07:00",
+            "end": "09:30",
+            "headway_min": 3
+          },
+          {
+            "label": "Evening peak",
+            "start": "17:00",
+            "end": "19:30",
+            "headway_min": 3
+          }
+        ],
+        "off_peak_headway_min": 5,
+        "weekend_note": "Weekends and public holidays: about every 5-7 min on LRT/MRT.",
+        "source": "MyRapid public schedule",
+        "disclaimer": "Approximate first/last train times vary by station. Check MyRapid before travelling."
+      },
+      "stations_ordered": [
+        "Kwasa Damansara",
+        "Kwasa Sentral",
+        "Kota Damansara",
+        "Surian",
+        "Mutiara Damansara",
+        "Bandar Utama",
+        "Taman Tun Dr Ismail",
+        "Seksyen 17",
+        "Phileo Damansara",
+        "Pusat Bandar Damansara",
+        "Semantan",
+        "Muzium Negara",
+        "Pasar Seni",
+        "Merdeka",
+        "Bukit Bintang",
+        "Tun Razak Exchange",
+        "Cochrane",
+        "Maluri",
+        "Taman Pertama",
+        "Taman Midah",
+        "Taman Mutiara",
+        "Taman Connaught",
+        "Taman Suntex",
+        "Sri Raya",
+        "Bandar Tun Hussein Onn",
+        "Batu 11 Cheras",
+        "Bukit Dukung",
+        "Sungai Jernih",
+        "Stadium Kajang",
+        "Kajang"
+      ]
+    },
+    {
+      "id": "putrajaya",
+      "name": "MRT Putrajaya Line",
+      "operator": "Rapid KL",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Kwasa Damansara",
+        "to": "Putrajaya Sentral"
+      },
+      "where_it_goes": "Northern suburbs through KL core to Cyberjaya and Putrajaya.",
+      "length_km": 57.7,
+      "stations_count": 36,
+      "journey_minutes": 95,
+      "max_speed_kmh": 100,
+      "official_colour": "#f4c300",
+      "schematic_svg": "lines/putrajaya.svg",
+      "major_stations": [
+        "Kwasa Damansara",
+        "Tun Razak Exchange",
+        "KL Sentral",
+        "Cyberjaya City Centre",
+        "Putrajaya Sentral"
+      ],
+      "interchanges": [
+        {
+          "station": "Sungai Buloh",
+          "connects_to": "MRT Kajang Line"
+        },
+        {
+          "station": "KL Sentral",
+          "connects_to": "Kelana Jaya · Monorail · KTM · KLIA Ekspres"
+        }
+      ],
+      "keywords": [
+        "putrajaya line",
+        "mrt putrajaya",
+        "laluan putrajaya",
+        "mrt putrajaya line"
+      ],
+      "operating_hours": {
+        "first_train": "06:00",
+        "last_train": "00:30",
+        "days": "Daily",
+        "peak_hours": [
+          {
+            "label": "Morning peak",
+            "start": "07:00",
+            "end": "09:30",
+            "headway_min": 3
+          },
+          {
+            "label": "Evening peak",
+            "start": "17:00",
+            "end": "19:30",
+            "headway_min": 3
+          }
+        ],
+        "off_peak_headway_min": 5,
+        "weekend_note": "Weekends and public holidays: about every 5-7 min on LRT/MRT.",
+        "source": "MyRapid public schedule",
+        "disclaimer": "Approximate first/last train times vary by station. Check MyRapid before travelling."
+      },
+      "stations_ordered": [
+        "Kwasa Damansara",
+        "Kampung Selamat",
+        "Sungai Buloh",
+        "Damansara Damai",
+        "Bandar Sri Damansara",
+        "Kepong Baru",
+        "Jinjang",
+        "Sentul Barat",
+        "Sentul",
+        "Titiwangsa",
+        "Hospital Kuala Lumpur",
+        "Raja Uda",
+        "Ampang Park",
+        "Persiaran KLCC",
+        "Kampung Baru",
+        "Tun Razak Exchange",
+        "Chan Sow Lin",
+        "Kuchai",
+        "Taman Naga Emas",
+        "Sungai Besi",
+        "Seri Kembangan",
+        "Equine Park",
+        "Putra Permai",
+        "16 Sierra",
+        "Cyberjaya City Centre",
+        "Putrajaya Sentral"
+      ]
+    },
+    {
+      "id": "monorail",
+      "name": "KL Monorail",
+      "operator": "Rapid KL",
+      "mode": "rail",
+      "endpoints": {
+        "from": "KL Sentral",
+        "to": "Titiwangsa"
+      },
+      "where_it_goes": "Elevated loop serving Bukit Bintang, Chow Kit and KL Sentral.",
+      "length_km": 8.6,
+      "stations_count": 11,
+      "journey_minutes": 22,
+      "official_colour": "#8dc63f",
+      "schematic_svg": "lines/monorail.svg",
+      "major_stations": [
+        "KL Sentral",
+        "Bukit Bintang",
+        "Raja Chulan",
+        "Titiwangsa"
+      ],
+      "interchanges": [
+        {
+          "station": "KL Sentral",
+          "connects_to": "Kelana Jaya · KTM · KLIA Ekspres · MRT Putrajaya"
+        },
+        {
+          "station": "Bukit Bintang",
+          "connects_to": "MRT Kajang Line (nearby)"
+        }
+      ],
+      "keywords": [
+        "kl monorail",
+        "monorail",
+        "monorel",
+        "laluan monorel"
+      ],
+      "operating_hours": {
+        "first_train": "06:00",
+        "last_train": "23:30",
+        "days": "Daily",
+        "peak_hours": [
+          {
+            "label": "Morning peak",
+            "start": "07:00",
+            "end": "09:30",
+            "headway_min": 6
+          },
+          {
+            "label": "Evening peak",
+            "start": "17:00",
+            "end": "19:30",
+            "headway_min": 6
+          }
+        ],
+        "off_peak_headway_min": 8,
+        "weekend_note": "Similar frequency on weekends.",
+        "source": "MyRapid public schedule",
+        "disclaimer": "Approximate - check MyRapid for exact first/last train."
+      },
+      "stations_ordered": [
+        "KL Sentral",
+        "Maharajalela",
+        "Hang Tuah",
+        "Imbi",
+        "Bukit Bintang",
+        "Raja Chulan",
+        "Bukit Nanas",
+        "Medan Tuanku",
+        "Chow Kit",
+        "Titiwangsa"
+      ]
+    },
+    {
+      "id": "ktm-komuter",
+      "name": "KTM Komuter Klang Valley",
+      "operator": "KTMB",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Batu Caves / Tanjung Malim",
+        "to": "Pulau Sebang / Port Klang"
+      },
+      "where_it_goes": "Commuter rail ring linking northern suburbs, KL Sentral and Klang Valley west corridor.",
+      "length_km": 175,
+      "stations_count": 53,
+      "journey_minutes": 120,
+      "official_colour": "#0066b3",
+      "schematic_svg": "lines/ktm-komuter.svg",
+      "major_stations": [
+        "Batu Caves",
+        "KL Sentral",
+        "Mid Valley",
+        "Klang",
+        "Port Klang",
+        "Seremban"
+      ],
+      "interchanges": [
+        {
+          "station": "KL Sentral",
+          "connects_to": "Kelana Jaya · Monorail · MRT Putrajaya · KLIA Ekspres"
+        }
+      ],
+      "keywords": [
+        "ktm komuter",
+        "ktmb komuter",
+        "komuter",
+        "port klang line",
+        "seremban line"
+      ],
+      "operating_hours": {
+        "first_train": "05:30",
+        "last_train": "00:15",
+        "days": "Daily (timetable varies by branch)",
+        "peak_hours": [
+          {
+            "label": "Morning peak",
+            "start": "06:30",
+            "end": "09:30",
+            "headway_min": 15
+          },
+          {
+            "label": "Evening peak",
+            "start": "17:00",
+            "end": "20:00",
+            "headway_min": 15
+          }
+        ],
+        "off_peak_headway_min": 30,
+        "weekend_note": "Weekend and public holiday timetables differ - use dated KTMB timetable.",
+        "source": "KTMB public timetable",
+        "disclaimer": "Fixed timetable service - confirm branch and station times on KTMB."
+      },
+      "stations_ordered": [
+        "Batu Caves",
+        "Sentul",
+        "Putra",
+        "KL Sentral",
+        "Mid Valley",
+        "Petaling",
+        "Jalan Templer",
+        "Klang",
+        "Port Klang",
+        "Seremban"
+      ]
+    },
+    {
+      "id": "kajang-putrajaya",
+      "name": "Kajang / Putrajaya MRT",
+      "operator": "Rapid KL",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Kwasa Damansara",
+        "to": "Kajang / Putrajaya"
+      },
+      "where_it_goes": "Shared northern section; branches south to Kajang or Putrajaya.",
+      "official_colour": "#00a651",
+      "keywords": [
+        "kajang putrajaya mrt",
+        "mrt kajang putrajaya"
+      ]
+    },
+    {
+      "id": "brt-sunway",
+      "name": "BRT Sunway Line",
+      "operator": "Rapid KL",
+      "mode": "bus",
+      "endpoints": {
+        "from": "Sunway-Setia Jaya",
+        "to": "USJ 7"
+      },
+      "where_it_goes": "Bus rapid transit in Sunway and USJ corridor.",
+      "length_km": 5.4,
+      "stations_count": 6,
+      "official_colour": "#5c2d91",
+      "keywords": [
+        "brt sunway",
+        "sunway line"
+      ]
+    },
+    {
+      "id": "ktm-north",
+      "name": "KTM Komuter Utara",
+      "operator": "KTMB",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Padang Besar",
+        "to": "Butterworth / Padang Rengas"
+      },
+      "where_it_goes": "Northern Peninsular commuter services.",
+      "official_colour": "#2b6cb0",
+      "keywords": [
+        "ktm utara",
+        "komuter utara",
+        "padang besar butterworth"
+      ]
+    },
+    {
+      "id": "ets-intercity",
+      "name": "KTM ETS / Intercity",
+      "operator": "KTMB",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Padang Besar / Gemas",
+        "to": "JB Sentral / Tumpat"
+      },
+      "where_it_goes": "Long-distance electric and diesel intercity network.",
+      "official_colour": "#b8860b",
+      "keywords": [
+        "ets",
+        "intercity",
+        "ktm ets",
+        "shuttle tebrau"
+      ]
+    },
+    {
+      "id": "klia-rail",
+      "name": "KLIA Ekspres / Transit",
+      "operator": "Express Rail Link",
+      "mode": "rail",
+      "endpoints": {
+        "from": "KL Sentral",
+        "to": "KLIA Terminal 1 & 2"
+      },
+      "where_it_goes": "Airport rail link to Sepang.",
+      "length_km": 57,
+      "journey_minutes": 33,
+      "official_colour": "#7f1734",
+      "keywords": [
+        "klia ekspres",
+        "klia transit",
+        "erl"
+      ]
+    },
+    {
+      "id": "sabah-railway",
+      "name": "Sabah State Railway",
+      "operator": "JKNS",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Tanjung Aru",
+        "to": "Tenom"
+      },
+      "where_it_goes": "Limited rural rail in Sabah.",
+      "official_colour": "#9b6a31",
+      "keywords": [
+        "sabah railway",
+        "keretapi negeri sabah"
+      ]
+    },
+    {
+      "id": "rapid-bus",
+      "name": "Rapid KL Bus",
+      "operator": "Rapid Bus",
+      "mode": "bus",
+      "endpoints": {
+        "from": "Klang Valley",
+        "to": "Klang Valley"
+      },
+      "where_it_goes": "Stage, feeder and local bus routes across KV.",
+      "official_colour": "#e21836",
+      "keywords": [
+        "rapid kl bus",
+        "bas rapid",
+        "rapidkl bus"
+      ]
+    },
+    {
+      "id": "penang",
+      "name": "Rapid Penang",
+      "operator": "Rapid Bus",
+      "mode": "bus",
+      "endpoints": {
+        "from": "Penang Island",
+        "to": "Seberang Perai"
+      },
+      "where_it_goes": "Penang urban bus network.",
+      "official_colour": "#00843d",
+      "keywords": [
+        "rapid penang",
+        "bas penang"
+      ]
+    },
+    {
+      "id": "kuantan",
+      "name": "Rapid Kuantan",
+      "operator": "Rapid Bus",
+      "mode": "bus",
+      "endpoints": {
+        "from": "Kuantan",
+        "to": "Kuantan"
+      },
+      "where_it_goes": "Kuantan urban bus routes.",
+      "official_colour": "#008b8b",
+      "keywords": [
+        "rapid kuantan"
+      ]
+    },
+    {
+      "id": "mybas",
+      "name": "BAS.MY Network",
+      "operator": "APAD-contracted",
+      "mode": "bus",
+      "endpoints": {
+        "from": "Various cities",
+        "to": "Various cities"
+      },
+      "where_it_goes": "Contracted city bus networks including JB, Ipoh and Seremban.",
+      "official_colour": "#0f766e",
+      "keywords": [
+        "bas.my",
+        "mybas"
+      ]
+    },
+    {
+      "id": "ecrl",
+      "name": "East Coast Rail Link",
+      "operator": "Malaysia Rail Link",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Kota Bharu",
+        "to": "Terminal Bersepadu Gombak"
+      },
+      "where_it_goes": "Planned east-coast to KV link (under construction).",
+      "length_km": 665,
+      "official_colour": "#003d7a",
+      "keywords": [
+        "ecrl",
+        "east coast rail link"
+      ]
+    },
+    {
+      "id": "rts-johor",
+      "name": "RTS Link",
+      "operator": "RTSO",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Bukit Chagar",
+        "to": "Woodlands North"
+      },
+      "where_it_goes": "JB–Singapore cross-border rapid transit (under construction).",
+      "official_colour": "#c41230",
+      "keywords": [
+        "rts link",
+        "rts johor"
+      ]
+    },
+    {
+      "id": "mrt3",
+      "name": "MRT3 Circle Line",
+      "operator": "MRT Corp",
+      "mode": "rail",
+      "endpoints": {
+        "from": "Orbital KL",
+        "to": "Orbital KL"
+      },
+      "where_it_goes": "Planned 51 km orbital line around Kuala Lumpur.",
+      "length_km": 51,
+      "official_colour": "#2563eb",
+      "keywords": [
+        "mrt3",
+        "circle line"
+      ]
+    },
+    {
+      "id": "penang-lrt",
+      "name": "Penang LRT Mutiara Line",
+      "operator": "MRT Corp",
+      "mode": "rail",
+      "endpoints": {
+        "from": "PSR-A",
+        "to": "Komtar"
+      },
+      "where_it_goes": "Planned Penang island LRT (under construction).",
+      "official_colour": "#0f766e",
+      "keywords": [
+        "penang lrt",
+        "mutiara line"
+      ]
+    }
+  ]
+}

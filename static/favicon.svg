@@ -1,0 +1,8 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TrafficMY">
+  <title>TrafficMY</title>
+  <rect width="32" height="32" rx="8" fill="#58CC02" stroke="#1E5000" stroke-width="2"/>
+  <rect x="4" y="4" width="24" height="24" rx="6" fill="#6BE026"/>
+  <circle cx="11" cy="17" r="2" fill="#1E5000"/>
+  <circle cx="21" cy="17" r="2" fill="#1E5000"/>
+  <path d="M9 21 Q16 25 23 21" stroke="#1E5000" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+</svg>

@@ -1,0 +1,104 @@
+# Malaysian places for transport incident extraction (token -> label + state)
+places:
+  # Klang Valley LRT/MRT
+  mrt maluri: { label: Maluri, state: Wilayah Persekutuan }
+  maluri: { label: Maluri, state: Wilayah Persekutuan }
+  pasar seni: { label: Pasar Seni, state: Wilayah Persekutuan }
+  dang wangi: { label: Dang Wangi, state: Wilayah Persekutuan }
+  kl gateway: { label: KL Gateway, state: Wilayah Persekutuan }
+  kepong baru: { label: Kepong Baru, state: Wilayah Persekutuan }
+  semantan: { label: Semantan, state: Wilayah Persekutuan }
+  taman pertama: { label: Taman Pertama, state: Wilayah Persekutuan }
+  bandar tasik selatan: { label: Bandar Tasik Selatan, state: Wilayah Persekutuan }
+  masjid jamek: { label: Masjid Jamek, state: Wilayah Persekutuan }
+  pudu: { label: Pudu, state: Wilayah Persekutuan }
+  cempaka: { label: Cempaka, state: Selangor }
+  kwasa: { label: Kwasa Damansara, state: Selangor }
+  muzium negara: { label: Muzium Negara, state: Wilayah Persekutuan }
+  bangsar: { label: Bangsar, state: Wilayah Persekutuan }
+  kl sentral: { label: KL Sentral, state: Wilayah Persekutuan }
+  chan sow lin: { label: Chan Sow Lin, state: Wilayah Persekutuan }
+  ara damansara: { label: Ara Damansara, state: Selangor }
+  kelana jaya: { label: Kelana Jaya, state: Selangor }
+  ampang: { label: Ampang, state: Selangor }
+  shah alam: { label: Shah Alam, state: Selangor }
+  subang jaya: { label: Subang Jaya, state: Selangor }
+  petaling jaya: { label: Petaling Jaya, state: Selangor }
+  putrajaya: { label: Putrajaya, state: Putrajaya }
+  cyberjaya: { label: Cyberjaya, state: Selangor }
+  kajang: { label: Kajang, state: Selangor }
+  # Johor
+  jb sentral: { label: JB Sentral, state: Johor }
+  johor bahru: { label: Johor Bahru, state: Johor }
+  johor bahru sentral: { label: JB Sentral, state: Johor }
+  skudai: { label: Skudai, state: Johor }
+  kulai: { label: Kulai, state: Johor }
+  batu pahat: { label: Batu Pahat, state: Johor }
+  muar: { label: Muar, state: Johor }
+  # Penang
+  butterworth: { label: Butterworth, state: Penang }
+  bukit mertajam: { label: Bukit Mertajam, state: Penang }
+  penang sentral: { label: Penang Sentral, state: Penang }
+  george town: { label: George Town, state: Penang }
+  pulau pinang: { label: Penang, state: Penang }
+  # Perak
+  ipoh: { label: Ipoh, state: Perak }
+  taiping: { label: Taiping, state: Perak }
+  # Negeri Sembilan / Melaka
+  seremban: { label: Seremban, state: Negeri Sembilan }
+  nilai: { label: Nilai, state: Negeri Sembilan }
+  melaka: { label: Melaka, state: Melaka }
+  melaka sentral: { label: Melaka Sentral, state: Melaka }
+  # Pahang / Terengganu / Kelantan
+  kuantan: { label: Kuantan, state: Pahang }
+  bentong: { label: Bentong, state: Pahang }
+  gemas: { label: Gemas, state: Negeri Sembilan }
+  kuala lipis: { label: Kuala Lipis, state: Pahang }
+  kota bharu: { label: Kota Bharu, state: Kelantan }
+  # East Malaysia
+  kota kinabalu: { label: Kota Kinabalu, state: Sabah }
+  kk sentral: { label: KK Sentral, state: Sabah }
+  sandakan: { label: Sandakan, state: Sabah }
+  tawau: { label: Tawau, state: Sabah }
+  kuching: { label: Kuching, state: Sarawak }
+  sibu: { label: Sibu, state: Sarawak }
+  miri: { label: Miri, state: Sarawak }
+  # Kedah / Perlis
+  alor setar: { label: Alor Setar, state: Kedah }
+  sungai petani: { label: Sungai Petani, state: Kedah }
+  kangar: { label: Kangar, state: Perlis }
+  padang besar: { label: Padang Besar, state: Perlis }
+
+state_aliases:
+  kl: Wilayah Persekutuan
+  kuala lumpur: Wilayah Persekutuan
+  wp kuala lumpur: Wilayah Persekutuan
+  wilayah persekutuan: Wilayah Persekutuan
+  selangor: Selangor
+  johor: Johor
+  penang: Penang
+  pulau pinang: Penang
+  perak: Perak
+  negeri sembilan: Negeri Sembilan
+  melaka: Melaka
+  malacca: Melaka
+  pahang: Pahang
+  terengganu: Terengganu
+  kelantan: Kelantan
+  kedah: Kedah
+  perlis: Perlis
+  sabah: Sabah
+  sarawak: Sarawak
+  putrajaya: Putrajaya
+  labuan: Labuan
+
+entity_states:
+  RapidKL: Wilayah Persekutuan
+  Kelana Jaya Line: Selangor
+  Ampang/Sri Petaling Line: Wilayah Persekutuan
+  Kajang/Putrajaya Lines: Selangor
+  KL Monorail Line: Wilayah Persekutuan
+  Penang Rapid: Penang
+  Rapid Penang: Penang
+  KTMB: ""
+  KTM: ""

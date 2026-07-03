@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 380 80" role="img" aria-label="KL Monorail schematic">
+<title>KL Monorail</title>
+<rect width="380" height="80" fill="#111318"/>
+<line x1="28.0" y1="48.0" x2="352.0" y2="48.0" stroke="#8dc63f" stroke-width="6" stroke-linecap="butt"/>
+<g transform="translate(28.0,48.0)"><!-- Terminal cap marker. Pattern: RapidKL linear diagram convention (reference only). -->
+<rect x="-4" y="-4" width="8" height="8" rx="1" fill="#ece8e1"/></g>
+<g transform="translate(64.0,48.0)"><!-- TrafficMY reusable stop marker. Geometry pattern: public-transport/generating-transit-maps (MIT). -->
+<circle cx="0" cy="0" r="4" fill="#ece8e1"/></g>
+<g transform="translate(100.0,48.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<g transform="translate(136.0,48.0)"><!-- TrafficMY reusable stop marker. Geometry pattern: public-transport/generating-transit-maps (MIT). -->
+<circle cx="0" cy="0" r="4" fill="#ece8e1"/></g>
+<g transform="translate(172.0,48.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<g transform="translate(208.0,48.0)"><!-- TrafficMY reusable stop marker. Geometry pattern: public-transport/generating-transit-maps (MIT). -->
+<circle cx="0" cy="0" r="4" fill="#ece8e1"/></g>
+<g transform="translate(244.0,48.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<g transform="translate(280.0,48.0)"><!-- TrafficMY reusable stop marker. Geometry pattern: public-transport/generating-transit-maps (MIT). -->
+<circle cx="0" cy="0" r="4" fill="#ece8e1"/></g>
+<g transform="translate(316.0,48.0)"><!-- TrafficMY reusable stop marker. Geometry pattern: public-transport/generating-transit-maps (MIT). -->
+<circle cx="0" cy="0" r="4" fill="#ece8e1"/></g>
+<g transform="translate(352.0,48.0)"><!-- Terminal cap marker. Pattern: RapidKL linear diagram convention (reference only). -->
+<rect x="-4" y="-4" width="8" height="8" rx="1" fill="#ece8e1"/></g>
+<text x="28.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">KL Sent.</text>
+<text x="64.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Maharaja</text>
+<text x="100.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">H.Tuah</text>
+<text x="136.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Imbi</text>
+<text x="172.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">B.Bintang</text>
+<text x="208.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">R.Chulan</text>
+<text x="244.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">B.Nanas</text>
+<text x="280.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">M.Tuanku</text>
+<text x="316.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Chow Kit</text>
+<text x="352.0" y="72.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Titiwangsa</text>
+<text x="190.0" y="14" fill="#6b6660" font-size="8" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">10 stations</text>
+</svg>

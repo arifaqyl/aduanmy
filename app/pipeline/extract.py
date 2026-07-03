@@ -3,6 +3,8 @@ from __future__ import annotations
 import re
 
 from app.core.files import load_yaml
+from app.core.malaysia_transport_scope import has_strict_malaysia_transport_anchor
+from app.pipeline.geo import extract_location as _geo_extract_location
 
 GENERIC_QUERY_TOKENS = {
     "boleh",
@@ -53,6 +55,13 @@ TRANSPORT_ENTITY_ALIASES = [
     ("kajang line", ["laluan kajang", "kajang line", "mrt kajang line"]),
     ("putrajaya line", ["laluan putrajaya", "putrajaya line", "mrt putrajaya line"]),
     ("kl monorail line", ["laluan monorel", "kl monorail line", "monorail line", "kl monorail"]),
+    ("seremban line", ["ktm seremban", "seremban line", "komuter seremban"]),
+    ("port klang line", ["ktm port klang", "port klang line", "komuter port klang"]),
+    ("skudai line", ["ktm skudai", "skudai line", "komuter skudai"]),
+    ("butterworth-padang besar", ["butterworth padang besar", "ktm butterworth", "ets butterworth"]),
+    ("east coast line", ["east coast rail link", "ecrl", "laluan pantai timur"]),
+    ("penang rapid", ["rapid penang", "bas penang", "penang rapid"]),
+    ("rts link", ["rts link", "rts johor", "rapid transit system johor"]),
 ]
 
 LINE_LOCATION_BLOCKERS = [
@@ -170,6 +179,50 @@ CATEGORY_BLOCKED_TOKENS = {
         "salary:",
         "jobstreet",
         "message me today",
+        "replying to",
+        "pov:",
+        "pov ",
+        "jom jalan",
+        "jalan-jalan",
+        "every single time",
+        "when i don't have",
+        "goodbye to astro",
+        "people are saying goodbye",
+        "running to",
+        "intern at",
+        "internship at",
+        "connected with lrt",
+        "dekat lrt",
+        "near lrt station",
+        "walking distance to lrt",
+        "below market",
+        "pas piala dunia",
+        "world cup",
+        "hot meals",
+        "bayangkan",
+        "can expect",
+        "may experience",
+        "what if",
+        "akan jd",
+        "akan jadi",
+        "serve really good",
+        "delay their opening",
+        "opening delayed",
+        "delay the opening",
+        "under construction",
+        "construction progress",
+        "launch date",
+        "commence operations",
+        "start operations",
+        "free rides",
+        "free ride",
+        "preview ride",
+        "preview rides",
+        "percuma sehingga",
+        "percuma hingga",
+        "naik percuma",
+        "rides until",
+        "rides till",
     ],
     "telco_internet": [
         "hbo",
@@ -259,6 +312,13 @@ TRANSPORT_STRONG_INCIDENT_TERMS = [
     "door malfunction",
     "tak bukak",
     "pintu tak bukak",
+    "tak bukak pintu",
+    "pintu tak buka",
+    "tak buka pintu",
+    "buat hal",
+    "jerking",
+    "stop lama",
+    "berhenti lama",
     "disembark",
     "turun chan sow lin",
     "gap masa",
@@ -280,6 +340,94 @@ TRANSPORT_WEAK_INCIDENT_TERMS = [
     "hari2",
 ]
 
+# Speculation / future scenario — not a current disruption (e.g. "Bayangkan LRT3… akan jd macam Pasar Seni").
+TRANSPORT_HYPOTHETICAL_TERMS = [
+    "bayangkan",
+    "imagin",
+    "what if",
+    "what would",
+    "kalau nanti",
+    "nanti bila",
+    "bila nanti",
+    "akan jadi",
+    "akan jd",
+    "akan menjadi",
+    "will become",
+    "will be like",
+    "going to be like",
+    "might become",
+    "could become",
+    "worst case",
+    "if lrt3",
+    "when lrt3",
+    "bila lrt3",
+]
+
+# Forward-looking advisory copy without proof of an ongoing incident.
+TRANSPORT_ADVISORY_TERMS = [
+    "can expect",
+    "may experience",
+    "might experience",
+    "expected to",
+    "is expected",
+    "are expected",
+    "please plan",
+    "plan extra time",
+    "allow extra time",
+    "commuters are advised",
+    "advised to plan",
+]
+
+TRANSPORT_QUIET_OR_SPECULATIVE_PATTERNS = [
+    r"\btak\s+(?:padat|sesak|ramai)\b",
+    r"\b(?:delay|problem|gangguan|rosak)\s+(?:ke|tak)(?:\s+\w+){0,2}\s*\?",
+    r"\bsebab\s+takut\s+(?:train|tren).{0,30}\b(?:problem|delay|gangguan)\b",
+]
+
+# Present / ongoing incident — required when text is advisory, weak, or hypothetical-adjacent.
+TRANSPORT_PRESENT_ACTIVE_TERMS = [
+    "stuck",
+    "stucked",
+    "tak gerak",
+    "tak gerak2",
+    "tak bergerak",
+    "kenape tak gerak",
+    "kenapa pulak ni",
+    "right now",
+    "currently",
+    "sedang",
+    "sekarang",
+    "skrg",
+    "hari ni",
+    "harini",
+    "pagi ni",
+    "pagi ini",
+    "this morning",
+    "today",
+    "now",
+    "tadi",
+    "baru ni",
+    "semalam",
+    "again",
+    "still",
+    "experiencing",
+    "is delayed",
+    "are delayed",
+    "was delayed",
+    "has been delayed",
+    "have been delayed",
+    "tunggu",
+    "kena tunggu",
+    "waiting for",
+    "not moving",
+    "tak boleh keluar",
+    "disembark",
+    "manual operation",
+    "manually operated",
+    "fire alarm",
+    "emergency brake",
+]
+
 TRANSPORT_LIVE_CONTEXT_TERMS = [
     "hari ni",
     "harini",
@@ -291,7 +439,13 @@ TRANSPORT_LIVE_CONTEXT_TERMS = [
     "today",
     "now",
     "semalam",
-    "another day",
+    "still",
+    "again",
+    "sekarang",
+    "skrg",
+    "tadi",
+    "baru ni",
+    "ke?",
 ]
 
 TRANSPORT_SPECIFICITY_TERMS = [
@@ -299,13 +453,83 @@ TRANSPORT_SPECIFICITY_TERMS = [
     "stesen",
     "platform",
     "laluan",
-    "line",
     "rapidkl",
     "myrapidkl",
     "train",
     "tren",
     "interchange",
 ]
+
+TRANSPORT_ACTIONABLE_IMPACT_TERMS = [
+    "waiting",
+    "waited",
+    "tunggu",
+    "kena tunggu",
+    "queue",
+    "beratur",
+    "not moving",
+    "tak gerak",
+    "tak bergerak",
+    "cannot board",
+    "tak boleh naik",
+    "cannot exit",
+    "tak boleh keluar",
+    "stranded",
+    "terkandas",
+    "missed",
+    "late for",
+    "terlambat",
+    "jadi lambat",
+    "sampai lambat",
+    "lambat ke opis",
+    "penuh",
+    "sesak",
+    "packed",
+    "evacuated",
+    "ditutup",
+    "closed",
+    "no train",
+    "tiada tren",
+    "pintu tak bukak",
+    "tak bukak pintu",
+    "pintu tak buka",
+    "tak buka pintu",
+    "stop lama",
+    "berhenti lama",
+    "ramai manusia",
+    "door malfunction",
+    "shuttle bus",
+    "bas perantara",
+]
+
+TRANSPORT_CONCRETE_CAUSE_TERMS = [
+    "due to",
+    "disebabkan",
+    "technical fault",
+    "technical issue",
+    "fire alarm",
+    "emergency brake",
+    "brake failure",
+    "track switch",
+    "signal failure",
+    "power failure",
+    "door malfunction",
+    "manual operation",
+]
+
+TRANSPORT_CHATTER_PATTERNS = [
+    r"\b(?:what do you think|thoughts|korang rasa|siapa setuju|unpopular opinion)\b",
+    r"\b(?:throwback|remember when|dulu|tahun lepas|last year)\b",
+    r"\b(?:always|selalu|hari2|every day)\b.{0,50}\b(?:delay|lambat|problem|rosak)\b",
+    r"\b(?:i think|rasanya|rasa macam)\b.{0,60}\b(?:delay|problem|gangguan)\b",
+]
+
+
+def _contains_transport_marker(low: str, token: str) -> bool:
+    if re.fullmatch(r"[a-z0-9]+", token):
+        return bool(re.search(r"(?<![a-z0-9])" + re.escape(token) + r"(?![a-z0-9])", low))
+    return token in low
+
 
 ISSUE_KEYWORDS = {
     "transport": {
@@ -389,6 +613,43 @@ def classify_category(text: str) -> str:
     return ""
 
 
+def extract_bus_route(text: str) -> str:
+    try:
+        from app.db.gtfs_store import all_short_names
+
+        catalog = all_short_names()
+    except Exception:
+        catalog = set()
+    # Bare numbers are commonly dates, durations, engagement counts, dosages
+    # or train times. Only accept a numeric bus route with an explicit route
+    # marker so "(250 pax)" or "500 micrograms" don't get misread as a route.
+    candidates: list[str] = []
+    for match in re.finditer(r"\b(?:route|bus|bas|laluan)\s*#?\s*(T?\d{2,3})\b", text, re.I):
+        candidates.append(match.group(1).upper())
+    for match in re.finditer(r"\b(T\d{2,3})\b", text, re.I):
+        candidates.append(match.group(1).upper())
+    if not catalog:
+        return candidates[0] if candidates else ""
+    for candidate in candidates:
+        for form in (candidate, candidate.removeprefix("T"), f"T{candidate.removeprefix('T')}"):
+            if form in catalog:
+                return form
+    low = text.lower()
+    route_context = re.compile(r"\b(?:route|bus|bas|laluan|no\.?|nombor|#)\b", re.I)
+    for name in sorted(catalog, key=len, reverse=True):
+        if len(name) < 3:
+            continue
+        for occurrence in re.finditer(r"\b" + re.escape(name.lower()) + r"\b", low):
+            if not name.isdigit():
+                return name
+            # Purely numeric route names ("250", "780") are too easy to
+            # collide with unrelated quantities — require nearby route wording.
+            window = low[max(0, occurrence.start() - 20) : occurrence.start()]
+            if route_context.search(window):
+                return name
+    return ""
+
+
 def extract_entity(text: str, category: str = "") -> str:
     low = text.lower()
     if category == "transport":
@@ -406,60 +667,10 @@ def extract_entity(text: str, category: str = "") -> str:
 
 
 def extract_location(text: str) -> str:
-    low = text.lower()
-    sanitized = low
+    sanitized = text.lower()
     for phrase in LINE_LOCATION_BLOCKERS:
         sanitized = sanitized.replace(phrase, " ")
-    locations = [
-        "mrt maluri",
-        "pasar seni",
-        "dang wangi",
-        "kl gateway",
-        "kepong baru",
-        "semantan",
-        "taman pertama",
-        "bandar tasik selatan",
-        "masjid jamek",
-        "pudu",
-        "cempaka",
-        "kwasa",
-        "muzium negara",
-        "bangsar",
-        "kl sentral",
-        "maluri",
-        "chan sow lin",
-        "ara damansara",
-        "kuala lumpur",
-        "selangor",
-        "johor",
-        "penang",
-        "kelantan",
-        "ampang",
-        "kelana jaya",
-        "kl",
-    ]
-    label_map = {
-        "kl": "Kuala Lumpur",
-        "kl sentral": "KL Sentral",
-        "kl gateway": "KL Gateway",
-        "kelana jaya": "Kelana Jaya",
-        "mrt maluri": "Maluri",
-        "pasar seni": "Pasar Seni",
-        "dang wangi": "Dang Wangi",
-        "chan sow lin": "Chan Sow Lin",
-        "ara damansara": "Ara Damansara",
-        "kepong baru": "Kepong Baru",
-        "semantan": "Semantan",
-        "taman pertama": "Taman Pertama",
-        "bandar tasik selatan": "Bandar Tasik Selatan",
-        "masjid jamek": "Masjid Jamek",
-        "muzium negara": "Muzium Negara",
-    }
-    for location in locations:
-        pattern = r"\b" + re.escape(location) + r"\b"
-        if re.search(pattern, sanitized):
-            return label_map.get(location, location.title())
-    return ""
+    return _geo_extract_location(sanitized)
 
 
 def detect_severity(text: str) -> str:
@@ -511,30 +722,268 @@ def is_complaint_signal(text: str) -> bool:
     return any(term in low for term in complaint_terms)
 
 
-def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
-    low = text.lower()
+TRANSPORT_LINE_INFO_TERMS = [
+    "km route",
+    "km long",
+    "kilometer",
+    "kilometre",
+    "stations",
+    "stesen",
+    "interchange",
+    "persimpangan",
+    "end-to-end",
+    "journey time",
+    "max speed",
+    "km/h",
+    "capacity",
+    "penumpang",
+    "three-car",
+    "underground",
+    "bawah tanah",
+    "car trains",
+]
 
-    blocked = CATEGORY_BLOCKED_TOKENS.get("transport", [])
-    if any(token in low for token in blocked):
+
+def transport_line_info_signal_ok(text: str, entity_hint: str = "") -> bool:
+    """Informational route-fact posts — not live disruptions."""
+    low = text.lower()
+    mentions_line = any(
+        token in low
+        for token in [
+            "lrt",
+            "mrt",
+            "ktm",
+            "monorail",
+            "line",
+            "laluan",
+            "lrt3",
+            "kelana",
+            "ampang",
+            "kajang",
+            "putrajaya",
+            "shah alam",
+            "komuter",
+            "ets",
+            "transit",
+        ]
+    )
+    launch_keywords = [
+        "launch", "open", "free ride", "start operation", "commence", "first day",
+        "preview", "review", "opening", "launched", "opened", "starts operation"
+    ]
+    is_launch_or_review = mentions_line and any(kw in low for kw in launch_keywords)
+
+    spam_and_future_blockers = [
+        "for sale", "for rent", "asking price", "below market", "investment",
+        "berminat boleh pm", "dm for viewing", "walkable walking distance",
+        "walking distance", "corner lot", "apartment", "condo", "internship",
+        "hiring", "fresh graduate", "salary:", "jobstreet",
+        "delay their opening", "opening delayed", "delay the opening",
+        "under construction", "construction progress", "launch date"
+    ]
+    if any(token in low for token in spam_and_future_blockers):
         return False
 
+    promo_block = [
+        "free rides",
+        "free ride",
+        "preview ride",
+        "preview rides",
+        "percuma sehingga",
+        "naik percuma",
+        "world cup",
+        "pas piala dunia",
+    ]
+    if not is_launch_or_review and any(term in low for term in promo_block):
+        return False
+    if is_launch_or_review:
+        return True
+    if transport_incident_signal_ok(text, entity_hint):
+        return False
+    info_hits = sum(1 for term in TRANSPORT_LINE_INFO_TERMS if term in low)
+    has_numbers = bool(re.search(r"\d+(\.\d+)?\s*(km|stesen|stations|min)", low))
+    return mentions_line and (info_hits >= 2 or has_numbers)
+
+
+def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
+    low = text.lower()
+    # Word-boundary matching matters here: short tokens like "line" and "ets"
+    # are common substrings of unrelated English words ("adrenaline", "tickets",
+    # "streets", "assets"...). A naive `token in low` check turned those into
+    # false transit mentions and let non-transport posts through.
+    unambiguous_transit_hit = any(
+        _contains_transport_marker(low, token)
+        for token in [
+            "lrt",
+            "mrt",
+            "ktm",
+            "monorail",
+            "line",
+            "laluan",
+            "lrt3",
+            "komuter",
+            "ets",
+            "transit",
+            "train",
+            "tren",
+            "bas",
+            "bus",
+        ]
+    )
+    # These are also real Malaysian place/district names ("Putrajaya",
+    # "Kajang") — a bare mention shows up in food ads, job posts, and local
+    # chatter with zero transit relevance. Only count them when paired with
+    # an explicit line/mode word, or written as an actual line name.
+    ambiguous_place_hit = any(
+        _contains_transport_marker(low, token)
+        for token in ["kelana", "ampang", "kajang", "putrajaya", "shah alam"]
+    ) and (
+        unambiguous_transit_hit
+        or bool(
+            re.search(
+                r"\b(?:kelana jaya|ampang|kajang|putrajaya|shah alam)\s+line\b"
+                r"|\bline\s+(?:kelana jaya|ampang|kajang|putrajaya|shah alam)\b",
+                low,
+            )
+        )
+    )
+    mentions_line = unambiguous_transit_hit or ambiguous_place_hit
+    launch_keywords = [
+        "launch", "open", "free ride", "start operation", "commence", "first day",
+        "preview", "review", "opening", "launched", "opened", "starts operation"
+    ]
+    is_launch_or_review = mentions_line and any(kw in low for kw in launch_keywords)
+
+    blocked = CATEGORY_BLOCKED_TOKENS.get("transport", [])
+    if is_launch_or_review:
+        spam_blockers = [
+            "for sale", "for rent", "asking price", "below market", "investment",
+            "berminat boleh pm", "dm for viewing", "walkable walking distance",
+            "walking distance", "corner lot", "apartment", "condo", "internship",
+            "hiring", "fresh graduate", "salary:", "jobstreet",
+            "delay their opening", "opening delayed", "delay the opening",
+            "under construction", "construction progress", "launch date"
+        ]
+        if any(token in low for token in spam_blockers):
+            return False
+    else:
+        if any(token in low for token in blocked):
+            return False
+
+    hypothetical_hit = any(token in low for token in TRANSPORT_HYPOTHETICAL_TERMS)
+    advisory_hit = any(token in low for token in TRANSPORT_ADVISORY_TERMS)
+    present_active_hit = any(token in low for token in TRANSPORT_PRESENT_ACTIVE_TERMS)
+    speculative_question_hit = any(
+        re.search(pattern, low, re.I) for pattern in TRANSPORT_QUIET_OR_SPECULATIVE_PATTERNS
+    )
+
+    # Casual LRT/MRT mention without an active problem — e.g. "condo near LRT".
+    mentions_transit = any(
+        token in low
+        for token in ["lrt", "mrt", "ktm", "rapidkl", "rapid kl", "komuter", "bas rapid"]
+    )
     strong_hit = any(token in low for token in TRANSPORT_STRONG_INCIDENT_TERMS)
     weak_hit = any(token in low for token in TRANSPORT_WEAK_INCIDENT_TERMS)
     live_context_hit = any(token in low for token in TRANSPORT_LIVE_CONTEXT_TERMS)
-
-    entity = entity_hint or extract_entity(text, "transport")
-    location = extract_location(text)
-    specificity_hit = bool(
-        entity
-        or location
-        or any(token in low for token in TRANSPORT_SPECIFICITY_TERMS)
+    direct_experience_hit = any(
+        token in low
+        for token in [
+            "stuck", "tak gerak", "tak bergerak", "kena tunggu", "waiting for",
+            "is delayed", "was delayed", "still delayed", "fire alarm", "emergency",
+            "pintu tak bukak", "not moving", "manual operation",
+        ]
     )
 
-    if strong_hit and specificity_hit:
+    entity = entity_hint or extract_entity(text, "transport")
+    # A Malaysian place/state name alone is not enough — "Selangor" or
+    # "Petaling Jaya" show up in food ads, job posts, and unrelated chatter.
+    # Require an actual transit anchor (line/mode mention, named entity, or a
+    # transit-specific noun like "station"/"platform") before it counts.
+    specificity_hit = bool(
+        mentions_line
+        or entity
+        or any(_contains_transport_marker(low, token) for token in TRANSPORT_SPECIFICITY_TERMS)
+    )
+
+    if not specificity_hit:
+        return False
+
+    # Questions and quiet-service observations are discovery chatter, not evidence.
+    if speculative_question_hit and not direct_experience_hit:
+        return False
+
+    # Future/hypothetical posts — e.g. "Bayangkan LRT3 start… Glenmarie akan jd macam Pasar Seni?"
+    if hypothetical_hit and not present_active_hit:
+        return False
+
+    # Advisory headlines without ongoing live wording — e.g. "Commuters can expect delays."
+    if advisory_hit and not present_active_hit and not live_context_hit:
+        return False
+
+    # Weak "problem/delay" inside a conditional future chain still isn't a live incident.
+    if hypothetical_hit:
+        return False
+
+    # Must describe something going wrong now — not just name-drop a line or station.
+    if strong_hit and (present_active_hit or live_context_hit or not advisory_hit):
         return True
-    if weak_hit and specificity_hit and live_context_hit:
+    if weak_hit and (present_active_hit or live_context_hit):
         return True
+    if weak_hit and mentions_transit and any(token in low for token in ["tak gerak", "rosak", "lambat", "delay", "gangguan"]):
+        if present_active_hit or live_context_hit:
+            return True
     return False
+
+
+def transport_rider_signal_worthwhile(text: str, entity_hint: str = "") -> bool:
+    """Strict Threads gate: keep observable live conditions, reject discussion-only posts."""
+    if not transport_incident_signal_ok(text, entity_hint):
+        return False
+
+    low = text.lower()
+    entity = entity_hint or extract_entity(text, "transport")
+    location = extract_location(text)
+    if not has_strict_malaysia_transport_anchor(text, entity=entity, location=location):
+        return False
+
+    chatter_hit = any(re.search(pattern, low, re.I) for pattern in TRANSPORT_CHATTER_PATTERNS)
+    present_hit = any(token in low for token in TRANSPORT_PRESENT_ACTIVE_TERMS)
+    live_context_hit = any(token in low for token in TRANSPORT_LIVE_CONTEXT_TERMS)
+    impact_hit = any(token in low for token in TRANSPORT_ACTIONABLE_IMPACT_TERMS)
+    cause_hit = any(token in low for token in TRANSPORT_CONCRETE_CAUSE_TERMS)
+    measured_hit = bool(
+        re.search(r"\b\d{1,3}\s*(?:min|mins|minute|minutes|minit|jam|hour|hours)\b", low)
+    )
+    direct_hit = any(
+        token in low
+        for token in [
+            "stuck",
+            "tak gerak",
+            "tak bergerak",
+            "kena tunggu",
+            "waiting for",
+            "not moving",
+            "pintu tak bukak",
+            "tak bukak pintu",
+            "pintu tak buka",
+            "tak buka pintu",
+            "cannot board",
+            "tak boleh naik",
+        ]
+    )
+
+    observable_hit = impact_hit or cause_hit or measured_hit or direct_hit
+    riding_delay_hit = any(
+        token in low for token in ["delay", "delays", "delayed", "kelewatan", "gangguan", "lambat", "disruption"]
+    ) and present_hit
+    incident_now_hit = any(token in low for token in ["incident", "gangguan", "disruption"]) and present_hit
+    if riding_delay_hit or incident_now_hit:
+        observable_hit = True
+    if chatter_hit and not (present_hit and observable_hit):
+        return False
+    if "?" in low and not observable_hit:
+        return False
+    return observable_hit
 
 
 def category_signal_ok(text: str, category: str, entity: str = "") -> bool:
@@ -622,6 +1071,24 @@ def category_signal_ok(text: str, category: str, entity: str = "") -> bool:
             "button press",
             "camera distortion",
             "photo of my face",
+            "port in",
+            "porting",
+            "number transfer",
+            "mnp",
+            "sim registration",
+            "sim activation",
+            "new sim",
+            "esim",
+            "wrong bill",
+            "overcharged",
+            "bill dispute",
+            "plan price",
+            "postpaid plan",
+            "prepaid plan",
+            "contract renewal",
+            "early termination",
+            "upgrade plan",
+            "change plan",
         ]
         if any(token in low for token in onboarding_noise) and not any(token in low for token in service_terms[:10]):
             return False

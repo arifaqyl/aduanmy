@@ -1,0 +1,84 @@
+updates:
+  - id: lrt-shah-alam-launch
+    type: launch
+    featured: true
+    operator: Rapid KL
+    title: LRT Shah Alam opens 29 June
+    summary: Passenger service starts at 6:00 am between Bandar Utama and Johan Setia.
+    valid_from: 2026-06-28
+    valid_to: 2026-07-28
+    badge: New line
+    url: https://www.thestar.com.my/news/nation/2026/06/28/anwar-launches-rm1663bil-lrt3-shah-alam-line
+  - id: lrt-shah-alam-free
+    type: saving
+    featured: true
+    operator: Rapid KL
+    title: Free Shah Alam Line rides for one month
+    summary: Free rides begin 29 June 2026. Check Rapid KL for the final campaign terms.
+    valid_from: 2026-06-29
+    valid_to: 2026-07-28
+    badge: Free ride
+    url: https://www.malaymail.com/amp/news/malaysia/2026/06/28/pm-anwar-free-lrt3-shah-alam-line-rides-for-one-month-starting-tomorrow/225518
+  - id: ktm-app-migration
+    type: deadline
+    featured: true
+    operator: KTMB
+    title: Move KTM Wallet before 30 June
+    summary: The old KTMB Mobile App stops working after 30 June 2026. Move to KITS Style and convert the wallet balance to Rail Points.
+    valid_from: 2026-03-13
+    valid_to: 2026-06-30
+    badge: Deadline
+    url: https://www.ktmb.com.my/assets/pdf/2026/FAQ%20KITS%20STYLE%20_%20As%20of%2013.03.26.pdf
+  - id: klia-group-saver
+    type: saving
+    operator: ERL
+    title: KLIA Group Saver
+    summary: Groups of at least three can pay RM40 per person one-way from KL Sentral, or RM32 from Bandar Tasik Selatan.
+    valid_from: 2026-05-08
+    valid_to: 2026-06-30
+    badge: Ends soon
+    url: https://www.kliaekspres.com/offers/our-offers/group-saver/
+  - id: klia-bank-islam
+    type: saving
+    operator: ERL
+    title: 20% off ERL with Bank Islam Card-i
+    summary: Tap an eligible Bank Islam credit or debit Card-i directly at KLIA Ekspres or KLIA Transit gates.
+    valid_from: 2026-01-01
+    valid_to: 2026-12-31
+    badge: 20% off
+    url: https://www.kliaekspres.com/offers/our-offers/20-off-at-the-gate-with-bank-islam-card-i/
+  - id: my50
+    type: pass
+    operator: Rapid KL
+    title: My50 unlimited travel
+    summary: Malaysians get 30 days of unlimited Rapid KL rail and bus travel for RM50.
+    badge: RM50
+    url: https://myrapid.com.my/our-products/my50/
+  - id: rapid-pelajar
+    type: concession
+    operator: Rapid KL
+    title: Students can get up to 50% off
+    summary: Rapid Pelajar covers Malaysian primary, secondary, college and university students on Rapid KL services.
+    badge: Student
+    url: https://myrapid.com.my/our-products/rapidpelajar/
+  - id: rapid-mesra
+    type: concession
+    operator: Prasarana
+    title: Free Prasarana rides for registered OKU users
+    summary: Rapid Mesra provides unlimited free rides on Prasarana-operated trains, buses and vans for eligible Malaysian OKU cardholders.
+    badge: Free
+    url: https://myrapid.com.my/our-products/rapidmesra/
+  - id: penang-mutiara-pass
+    type: pass
+    operator: Rapid Penang
+    title: Mutiara Pass for Malaysians
+    summary: Penang state subsidy provides 30 consecutive days of unlimited Rapid Penang bus rides.
+    badge: Penang
+    url: https://myrapid.com.my/bus-train/rapid-penang/rapid-pg-bus/
+  - id: ktm-student
+    type: concession
+    operator: KTMB
+    title: KTM student concessions
+    summary: Eligible Malaysian students can apply for 50% Komuter discounts; separate ETS and Intercity concession terms apply.
+    badge: Student
+    url: https://www.ktmb.com.my/assets/pdf/2026/T%26C%20Komuter%20April%202026.pdf

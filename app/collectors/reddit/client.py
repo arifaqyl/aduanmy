@@ -5,8 +5,9 @@ import re
 from urllib.parse import quote_plus
 
 from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
-from app.core.freshness import LIVE_WINDOW_DAYS
+from app.core.freshness import LIVE_WINDOW_DAYS, RECENT_DAYS
 from app.core.files import load_yaml
+from app.collectors.discovery import reddit_queries, reddit_subreddits
 from app.pipeline.extract import category_signal_ok, extract_entity
 
 CURATED_SEED_POSTS = [
@@ -46,6 +47,8 @@ REDDIT_DISCOVERY_QUERIES = {
     "transport": [
         "kelana jaya line delay",
         "mrt delay",
+        "gangguan lrt",
+        "rapidkl kelewatan",
     ],
     "telco_internet": [
         "unifi down",
@@ -113,7 +116,7 @@ ARTICLE_SENTENCE_HINTS = {
 }
 
 
-def _is_recent_enough(created_at: str, *, max_age_days: int = LIVE_WINDOW_DAYS) -> bool:
+def _is_recent_enough(created_at: str, *, max_age_days: int = RECENT_DAYS) -> bool:
     if not created_at:
         return False
     try:
@@ -250,17 +253,19 @@ def collect_reddit_sample() -> list[dict]:
     rows: list[dict] = _curated_seed_rows()
     seen_post_ids = {row["post_id"] for row in rows}
     query_groups = load_yaml("queries.yaml").get("query_groups", {})
-    for category, queries in query_groups.items():
-        search_queries = REDDIT_DISCOVERY_QUERIES.get(category) or queries[:2]
+    for category in query_groups:
+        search_queries = reddit_queries(category) or REDDIT_DISCOVERY_QUERIES.get(category) or query_groups.get(category, [])[:2]
+        subreddits = reddit_subreddits(category) or SUBREDDITS.get(category, ["malaysia"])
+        per_search = 3 if category != "transport" else 5
         for query in search_queries:
-            for subreddit in SUBREDDITS.get(category, ["malaysia"]):
-                url = f"https://old.reddit.com/r/{subreddit}/search/?q={quote_plus(query)}&restrict_sr=on&sort=new&t=year"
+            for subreddit in subreddits:
+                url = f"https://old.reddit.com/r/{subreddit}/search/?q={quote_plus(query)}&restrict_sr=on&sort=new&t=week"
                 try:
                     html = fetch_html(url)
                 except Exception:
                     continue
                 soup = soup_from_html(html)
-                for post in soup.select("div.search-result")[:3]:
+                for post in soup.select("div.search-result")[:per_search]:
                     title_el = post.select_one("a.search-title")
                     meta_el = post.select_one("div.search-result-meta")
                     snippet_el = post.select_one("div.search-result-body")

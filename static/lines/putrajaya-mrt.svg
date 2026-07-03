@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 656" role="img" aria-label="MRT Putrajaya Line schematic">
+<title>MRT Putrajaya Line</title>
+<rect width="240" height="656" fill="#111318"/>
+<line x1="36.0" y1="28.0" x2="36.0" y2="628.0" stroke="#f4c300" stroke-width="6" stroke-linecap="butt"/>
+<g transform="translate(36.0,28.0)"><!-- Terminal cap marker. Pattern: RapidKL linear diagram convention (reference only). -->
+<rect x="-4" y="-4" width="8" height="8" rx="1" fill="#ece8e1"/></g>
+<text x="52.0" y="32.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">Kwasa D.</text>
+<line x1="31.0" y1="52.0" x2="41.0" y2="52.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="56.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">K.Selamat</text>
+<g transform="translate(36.0,76.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="80.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">S.Buloh</text>
+<line x1="31.0" y1="100.0" x2="41.0" y2="100.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="104.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">D.Damai</text>
+<line x1="31.0" y1="124.0" x2="41.0" y2="124.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="128.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">BSD</text>
+<line x1="31.0" y1="148.0" x2="41.0" y2="148.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="152.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">K.Baru</text>
+<line x1="31.0" y1="172.0" x2="41.0" y2="172.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="176.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">Jinjang</text>
+<line x1="31.0" y1="196.0" x2="41.0" y2="196.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="200.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">S.Barat</text>
+<g transform="translate(36.0,220.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="224.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">Sentul</text>
+<g transform="translate(36.0,244.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="248.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">Titiwangsa</text>
+<line x1="31.0" y1="268.0" x2="41.0" y2="268.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="272.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">HKL</text>
+<line x1="31.0" y1="292.0" x2="41.0" y2="292.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="296.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">Raja Uda</text>
+<g transform="translate(36.0,316.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="320.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">Amp.Park</text>
+<line x1="31.0" y1="340.0" x2="41.0" y2="340.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="344.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">KLCC</text>
+<g transform="translate(36.0,364.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="368.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">K.Baru</text>
+<g transform="translate(36.0,388.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="392.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">TRX</text>
+<g transform="translate(36.0,412.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="416.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">C.Sow Lin</text>
+<line x1="31.0" y1="436.0" x2="41.0" y2="436.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="440.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">Kuchai</text>
+<line x1="31.0" y1="460.0" x2="41.0" y2="460.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="464.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">Naga Emas</text>
+<g transform="translate(36.0,484.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="52.0" y="488.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">S.Besi</text>
+<line x1="31.0" y1="508.0" x2="41.0" y2="508.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="512.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">S.Kembangan</text>
+<line x1="31.0" y1="532.0" x2="41.0" y2="532.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="536.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">Equine</text>
+<line x1="31.0" y1="556.0" x2="41.0" y2="556.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="560.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">P.Permai</text>
+<line x1="31.0" y1="580.0" x2="41.0" y2="580.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="584.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">16 Sierra</text>
+<line x1="31.0" y1="604.0" x2="41.0" y2="604.0" stroke="#ece8e1" stroke-width="2"/>
+<text x="52.0" y="608.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="400">Cyberjaya</text>
+<g transform="translate(36.0,628.0)"><!-- Terminal cap marker. Pattern: RapidKL linear diagram convention (reference only). -->
+<rect x="-4" y="-4" width="8" height="8" rx="1" fill="#ece8e1"/></g>
+<text x="52.0" y="632.0" fill="#ece8e1" font-size="12" font-family="IBM Plex Sans,sans-serif" font-weight="600">Putrajaya</text>
+<text x="120.0" y="16" fill="#6b6660" font-size="9" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">26 stations · top to bottom</text>
+</svg>

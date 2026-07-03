@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" role="img" aria-label="Klang Valley rail schematic">
+<title>Klang Valley rail schematic</title>
+<rect width="360" height="160" fill="#111318"/>
+<path class="schem-line" data-line-id="kelana-jaya" d="M24,82 H336" fill="none" stroke="#e31837" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path class="schem-line" data-line-id="kajang" d="M180,16 V144" fill="none" stroke="#007a33" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path class="schem-line" data-line-id="putrajaya" d="M260,24 L200,82 L120,140" fill="none" stroke="#f4c300" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path class="schem-line" data-line-id="ampang-sri-petaling" d="M280,48 L200,82 L120,116" fill="none" stroke="#f7941d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path class="schem-line" data-line-id="monorail" d="M168,70 L232,58" fill="none" stroke="#8dc63f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path class="schem-line" data-line-id="lrt3" d="M60,40 V124" fill="none" stroke="#7b2d8e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path class="schem-line" data-line-id="ktm-komuter" d="M32,130 Q180,148 348,130" fill="none" stroke="#0066b3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<g transform="translate(180.0,82.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<g transform="translate(200.0,82.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<g transform="translate(60.0,82.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<g transform="translate(180.0,136.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text class="schem-text-label" data-line-id="kelana-jaya" x="74" y="76" fill="#e31837" font-size="8" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">Kelana Jaya Line</text>
+<text class="schem-text-label" data-line-id="lrt3" x="60" y="32" fill="#7b2d8e" font-size="8" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="middle" style="cursor:pointer">Shah Alam Line (LRT3)</text>
+<text class="schem-text-label" data-line-id="kajang" x="180" y="10" fill="#007a33" font-size="8" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="middle" style="cursor:pointer">Kajang Line</text>
+<text class="schem-text-label" data-line-id="putrajaya" x="270" y="20" fill="#f4c300" font-size="8" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">Putrajaya Line</text>
+<text class="schem-text-label" data-line-id="ampang-sri-petaling" x="288" y="44" fill="#f7941d" font-size="8" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">Ampang / Sri Petaling</text>
+<text class="schem-text-label" data-line-id="monorail" x="236" y="54" fill="#8dc63f" font-size="8" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">KL Monorail</text>
+<text class="schem-text-label" data-line-id="ktm-komuter" x="32" y="144" fill="#0066b3" font-size="8" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">KTM Komuter</text>
+<text x="60" y="92" fill="#ece8e1" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="middle">Glenmarie</text>
+<text x="180" y="92" fill="#ece8e1" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="middle">Pasar Seni</text>
+<text x="212" y="85" fill="#ece8e1" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="start">TRX</text>
+<text x="188" y="139" fill="#ece8e1" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="start">Kajang</text>
+<text x="8" y="154" fill="#6b6660" font-size="8" font-family="IBM Plex Sans,sans-serif">Not geographic · open a line for station list</text>
+</svg>

@@ -1,0 +1,187 @@
+# National discovery — free public search, no paid APIs
+reddit_subreddits:
+  transport:
+    - malaysia
+    - penang
+    - malaysians
+    - myrailing
+    - johor
+  telco_internet:
+    - malaysia
+    - Bolehland
+  banking_payments:
+    - malaysia
+    - MalaysianPF
+  gov_portals:
+    - malaysia
+  flood_weather:
+    - malaysia
+
+reddit_queries:
+  transport:
+    - kelana jaya line delay
+    - kelana delay stuck bangsar
+    - ampang line delay
+    - ampang lrt stuck
+    - sri petaling delay
+    - mrt kajang delay
+    - mrt kajang stuck
+    - putrajaya line delay
+    - monorail delay kl
+    - lrt pasar seni delay
+    - komuter delay kl
+    - mrt delay malaysia
+    - ktm delay
+    - ktm komuter delay
+    - jb sentral train
+    - butterworth train delay
+    - penang ferry disruption
+    - rapid penang bas
+    - gangguan lrt
+    - lrt3 shah alam
+    - lrt last train
+    - mrt operating hours
+    - ktm first train
+    - lrt kelana jaya line
+    - east coast rail link delay
+  telco_internet:
+    - unifi down
+    - maxis outage
+  banking_payments:
+    - duitnow pending
+  gov_portals:
+    - myjpj error
+  flood_weather:
+    - banjir kl
+    - banjir johor
+
+threads_queries:
+  transport:
+    - lrt problem
+    - lrt rosak
+    - lrt delay
+    - lrt kelewatan
+    - mrt delay
+    - mrt problem
+    - mrt gangguan
+    - rapid kl delay
+    - tren lambat
+    - tren rosak
+    - bas rapid rosak
+    - ktm delay
+    - ktmb komuter delay
+    - fire alarm mrt
+    - lrt3 delay
+    - ecrl delay
+    - lrt last train
+    - mrt operating hours
+    - ktm first train
+    - lrt kelana jaya line
+    - gangguan lrt malaysia
+    - rapidkl delay
+    - rapid kl delay
+    - rapidkl stuck
+    - lrt stuck
+    - lrt penuh
+    - bas penuh
+    - gangguan rapidkl
+    - askrapidkl
+    - lrt3 shah alam line
+    - kelana jaya stuck
+    - mrt penuh
+    - tren sesak
+    - kelana delay
+    - kelana jaya stuck
+    - kelana jaya line delay
+    - ampang line delay
+    - ampang lrt stuck
+    - sri petaling delay
+    - mrt kajang delay
+    - mrt kajang stuck
+    - putrajaya line delay
+    - monorail delay kl
+    - lrt pasar seni delay
+    - lrt bangsar delay
+    - komuter delay kl
+    - port klang line delay
+  telco_internet:
+    - unifi down
+    - unifi gangguan
+    - unifi lambat
+    - maxis down
+    - maxis outage
+    - internet lambat malaysia
+  flood_weather:
+    - banjir kl
+    - banjir jalan tutup
+    - banjir selangor
+    - hujan lebat jalan
+
+# Latest-post watchlist — scraped first (Malaysians post transport/telco incidents here before news/X)
+threads_watchlist:
+  transport:
+    - handle: transit.taste.trail
+      role: commuter
+    - handle: thesundaily
+      role: news
+    - handle: thestaronline
+      role: news
+    - handle: bernamaofficial
+      role: news
+    - handle: malaysiakini
+      role: news
+  telco_internet:
+    - handle: afifah.hgm
+      role: commuter
+  flood_weather:
+    - handle: thesundaily
+      role: news
+    - handle: bernamaofficial
+      role: news
+
+x_queries:
+  transport:
+    - askrapidkl delay
+    - myrapidkl line update
+    - ktmb delay
+    - ktmb komuter
+    - rapid penang
+    - jb sentral train
+    - ecrl delay
+    - kelana jaya line delay
+  telco_internet:
+    - unifi down malaysia
+  flood_weather:
+    - banjir kl
+
+rss_feeds:
+  - url: "https://news.google.com/rss/search?q=rapid+kl+OR+kelana+jaya+line+OR+lrt+gangguan+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
+    category: transport
+    author_handle: google-news:kv-en
+  - url: "https://news.google.com/rss/search?q=mrt+kelewatan+OR+gangguan+tren+kuala+lumpur&hl=ms-MY&gl=MY&ceid=MY:ms"
+    category: transport
+    author_handle: google-news:kv-ms
+  - url: "https://news.google.com/rss/search?q=ktm+OR+ktmb+OR+komuter+delay+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
+    category: transport
+    author_handle: google-news:ktm-en
+  - url: "https://news.google.com/rss/search?q=ktm+kelewatan+OR+gangguan+tren+johor&hl=ms-MY&gl=MY&ceid=MY:ms"
+    category: transport
+    author_handle: google-news:ktm-ms
+  - url: "https://news.google.com/rss/search?q=penang+rapid+OR+ferry+gangguan+penang&hl=en-MY&gl=MY&ceid=MY:en"
+    category: transport
+    author_handle: google-news:penang-en
+  - url: "https://news.google.com/rss/search?q=jb+sentral+OR+RTS+link+johor&hl=en-MY&gl=MY&ceid=MY:en"
+    category: transport
+    author_handle: google-news:johor-en
+  - url: "https://news.google.com/rss/search?q=east+coast+rail+link+OR+ecrl+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
+    category: transport
+    author_handle: google-news:ecrl-en
+  - url: "https://news.google.com/rss/search?q=ktm+ipoh+OR+ktm+seremban+delay&hl=en-MY&gl=MY&ceid=MY:en"
+    category: transport
+    author_handle: google-news:central-en
+  - url: "https://news.google.com/rss/search?q=sabah+bas+OR+kuching+transport+gangguan&hl=en-MY&gl=MY&ceid=MY:en"
+    category: transport
+    author_handle: google-news:east-my-en
+  - url: "https://news.google.com/rss/search?q=unifi+outage+OR+maxis+down+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
+    category: telco_internet
+    author_handle: google-news:telco-en

@@ -2,41 +2,35 @@
 
 ## Current Phase
 
-Phase 1: prove the collection engine, score the categories, and narrow to the strongest wedge.
+**TrafficMY production** — live transport pulse with Stitch UI, strict scraper accuracy, and unattended droplet deploy.
 
-Current winner: `TrafficMY`
+Live: [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)
 
-## Now
+## Shipped
 
-- [x] Multi-source collection across Threads, Reddit, X, and official pages
-- [x] Structured storage in SQLite
-- [x] Category, entity, location extraction
-- [x] Duplicate clustering
-- [x] Wedge scoring
-- [x] Transport-focused product routes
-- [x] Freshness-aware incident surfacing
-- [x] Official grounding separated from crowd density
+- [x] Multi-source collection (Threads, Reddit, RSS, official)
+- [x] Structured SQLite storage with 90-day retention and backups
+- [x] Category, entity, location extraction with noise gates
+- [x] Transport-focused product routes and professional public summaries
+- [x] MYT calendar-day freshness model and end-of-service line states
+- [x] MapLibre map, journey planner, pass calculator, installable PWA
+- [x] Stitch Play UI (mascots, glance card, bottom nav, travel banner)
+- [x] Docker production deploy with scheduler, healthchecks, watchdog
+- [x] 227-test regression suite + CI on push/PR
 
 ## Next
 
-- [ ] Tighten telco false positives further
-- [ ] Improve official transport status harvesting
-- [ ] Improve cluster labeling and issue typing
-- [ ] Expand fresh transport discovery without reopening noise
-- [ ] Make the frontend incident story sharper
+- [ ] Saved commute watch (origin → destination alerts)
+- [ ] Penang scope toggle
+- [ ] Session-backed X lane behind a controlled flag
+- [ ] Labelled incident-quality evaluation harness
+- [ ] Further scraper precision (ambiguous place names, numeric route collisions)
 
-## Later
+## Explicit Non-Goals
 
-- [ ] Session-backed X expansion behind a controlled flag
-- [ ] Better transport anomaly detection from official/open-data telemetry where feasible
-- [ ] Provider/entity dashboards
-- [ ] Timeline views for recurring incidents
-- [ ] Clearer scoring/report exports for wedge comparison
+- Broad national “truth engine” claims
+- Republishing raw rider wording or usernames
+- GTFS-as-incident-truth
+- Login-heavy scraping everywhere
 
-## Explicit Non-Goals For Now
-
-- [ ] Broad national “truth engine” claims
-- [ ] Login-heavy scraping everywhere
-- [ ] Full generic complaint platform UI
-- [ ] Corruption accusation mapping
-- [ ] Expensive always-on AI classification for every refresh
+See [docs/PRODUCTION_AUDIT_2026-06-30.md](docs/PRODUCTION_AUDIT_2026-06-30.md) for the production baseline.

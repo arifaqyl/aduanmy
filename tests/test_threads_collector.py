@@ -1,12 +1,108 @@
 from datetime import UTC, datetime, timedelta
 
 from app.collectors.threads.client import (
+    _apply_text_created_at,
+    _clean_search_preview,
     _fill_missing_created_at,
     _is_recent_enough,
     _is_profile_discovery_candidate,
+    _is_search_result_candidate,
+    _is_usable_threads_row,
+    _is_watchlist_candidate,
+    _looks_like_aggregated_feed_preview,
+    _looks_like_foreign_platform_outage,
     _looks_like_pinned_preview,
+    _looks_like_reply_thread_blob,
+    _looks_like_threads_signup_bait,
+    _sort_rows_by_created_at,
+    _scrape_threads_search_page,
+    _transport_queries_for_run,
 )
-from app.pipeline.extract import category_signal_ok, transport_incident_signal_ok
+from app.pipeline.extract import (
+    category_signal_ok,
+    transport_incident_signal_ok,
+    transport_rider_signal_worthwhile,
+)
+
+
+def test_transport_query_rotation_keeps_core_and_lrt3_coverage():
+    queries = _transport_queries_for_run()
+    assert queries[:9] == [
+        "rapidkl delay",
+        "lrt kelana jaya line delay",
+        "lrt ampang line delay",
+        "lrt sri petaling line delay",
+        "mrt kajang line delay",
+        "mrt putrajaya line delay",
+        "kl monorail delay",
+        "lrt3 shah alam line",
+        "ktm komuter delay",
+    ]
+    assert len(queries) == 12
+
+
+def test_threads_search_uses_recent_results_tab():
+    class EmptyLocator:
+        def evaluate_all(self, _script):
+            return []
+
+    class Mouse:
+        def wheel(self, _x, _y):
+            pass
+
+    class Page:
+        def __init__(self):
+            self.url = ""
+            self.mouse = Mouse()
+
+        def goto(self, url, **_kwargs):
+            self.url = url
+
+        def wait_for_timeout(self, _milliseconds):
+            pass
+
+        def locator(self, _selector):
+            return EmptyLocator()
+
+    page = Page()
+    _scrape_threads_search_page(page, "lrt3 shah alam")
+
+    assert "filter=recent" in page.url
+
+
+def test_looks_like_threads_signup_bait_flags_login_prompts():
+    assert _looks_like_threads_signup_bait("Join Threads to share ideas, ask questions, post random thoughts")
+    assert not _looks_like_threads_signup_bait("Tak boleh keluar stesen fire alarm kat MRT Maluri")
+
+
+def test_is_usable_threads_row_rejects_aggregated_feed_preview():
+    assert not _is_usable_threads_row(
+        {"raw_text": "afifah.hgm 3h Me every single time iam.anamaro 15h POV: Me when I don't have unifi"}
+    )
+
+
+def test_is_usable_threads_row_rejects_signup_bait():
+    assert not _is_usable_threads_row({"raw_text": "Join Threads to share ideas"})
+    assert _is_usable_threads_row({"raw_text": "Kelana Jaya line delay at Bangsar"})
+
+
+def test_is_usable_threads_row_rejects_reply_thread_blob():
+    blob = "lelzilla45 06/16/26 Replying to @rapidkl why is the train stuck at Bangsar for 20 minutes"
+    assert _looks_like_reply_thread_blob(blob)
+    assert not _is_usable_threads_row({"raw_text": blob, "seed_category": "transport"})
+
+
+def test_foreign_platform_outage_rejected_for_telco_search():
+    text = "Facebook down worldwide again today"
+    assert _looks_like_foreign_platform_outage(text, "telco_internet")
+    assert not _is_search_result_candidate(text, "telco_internet")
+    assert _is_search_result_candidate("Unifi down again in Shah Alam", "telco_internet")
+
+
+def test_apply_text_created_at_uses_raw_text():
+    row = {"raw_text": "05 June 2026: Kelana Jaya Line incident update", "created_at": ""}
+    _apply_text_created_at(row)
+    assert row["created_at"] == "2026-06-05T00:00:00Z"
 
 
 def test_fill_missing_created_at_backfills_only_missing_rows(monkeypatch):
@@ -63,6 +159,148 @@ def test_transport_incident_signal_rejects_property_and_lifestyle_mentions():
     assert not transport_incident_signal_ok(
         "Located in Menara UOA Bangsar and connected with LRT Bangsar, serving really good pastries."
     )
+    assert not transport_incident_signal_ok(
+        "lelzilla45 06/16/26 Replying to @lelzilla45 LRT Chan Sow Lin station is nice"
+    )
+    assert not transport_incident_signal_ok(
+        "People are saying goodbye to Astro. Everyone running to Unifi."
+    )
+
+
+def test_transport_incident_signal_rejects_hypothetical_and_advisory_posts():
+    assert not transport_incident_signal_ok(
+        "Bayangkan LRT3 dah start operate lepastu KJ line ada problem/delay, "
+        "station Glenmarie akan jd macam Pasar Seni?",
+        "Kelana Jaya Line",
+    )
+    assert not transport_incident_signal_ok(
+        "Commuters on the Kelana Jaya Line can expect delays.",
+        "Kelana Jaya Line",
+    )
+    assert not transport_incident_signal_ok(
+        "What if MRT Kajang line will become like Pasar Seni when LRT3 opens?",
+    )
+    assert not transport_incident_signal_ok(
+        "Lrt kelana jaya line harini tak padat sangat, ramai WFH sebab takut train problem ke?",
+        "Kelana Jaya Line",
+    )
+    assert not transport_incident_signal_ok("LRT delay tak tu? Jalan jem tak tu? Jangan stress pagi ni")
+
+
+def test_transport_incident_signal_rejects_generic_chatter():
+    assert not transport_rider_signal_worthwhile("Kelana Jaya Line delay memang teruk")
+    assert not transport_rider_signal_worthwhile("Korang rasa MRT Kajang selalu delay tak?")
+    assert not transport_rider_signal_worthwhile("Throwback dulu LRT Ampang selalu rosak")
+    assert not transport_rider_signal_worthwhile("Unpopular opinion: RapidKL delay hari2")
+
+
+def test_transport_rider_signal_rejects_latest_threads_false_positives():
+    assert not transport_rider_signal_worthwhile(
+        "That magnificent finish by Mbappe is a great example of how the game could be improved "
+        "by changing the offside rule. Or... he could just delay his run, like every other striker."
+    )
+    assert not transport_rider_signal_worthwhile(
+        "Lord, go before me and make every crooked path straight. Where there has been delay, "
+        "bring divine acceleration."
+    )
+    assert not transport_rider_signal_worthwhile(
+        "Rebuilding requires you to show up daily. Each day that passes by with no work put in "
+        "is another day that delays the finish line."
+    )
+    assert not transport_rider_signal_worthwhile(
+        "Gold Line is operating on a 12 minute westbound delay due to a track blockage."
+    )
+    assert not transport_rider_signal_worthwhile(
+        "benda ni hype awal2 je sis. sy dah rasa mrt kajang 2017. bila dah byk issue, "
+        "tak maintenance, tobat dah nak naik. nak ke office kena tukar line lrt kelana jaya"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "Harini ramai orang belakang tabir LRT 3 post gambar. Kalau LRT problem, "
+        "janganlah maki-maki orang bawah."
+    )
+    assert not transport_rider_signal_worthwhile(
+        "LRT3 Shah Alam Line Day 1 experience. Glenmarie ke TRX, 60 minit, 2 pertukaran laluan."
+    )
+
+
+def test_transport_incident_signal_accepts_concrete_current_evidence():
+    assert transport_rider_signal_worthwhile("Kelana Jaya Line delay again, waiting 25 minutes at Bangsar")
+    assert transport_rider_signal_worthwhile("MRT Kajang delay due to a signal failure")
+    assert transport_rider_signal_worthwhile("LRT Ampang tak gerak sekarang, penuh dekat platform")
+    assert transport_rider_signal_worthwhile(
+        "Kepada yang stuck traffic jam drpd Kg Melayu Subang menuju ke MRT Kwasa, guna jalan alternatif"
+    )
+    assert transport_rider_signal_worthwhile(
+        "Lrt kelana jaya line elok smpai masjid jamek ko tak bukak pintu lepas tu jalan je. "
+        "sampai pasar seni jem dgn manusia, extra cost hari ni, sampai lambat ke opis"
+    )
+    assert transport_rider_signal_worthwhile(
+        "LRT buat hal harini. Train duk jerking after KLCC station. Sampai Masjid Jamek stop lama, "
+        "pintu tak buka. Manusia dah macam semut dekat platform."
+    )
+
+
+def test_transport_incident_signal_rejects_generic_delay_word_outside_transit_context():
+    # Real production false positives (2026-07-02 QA sample): a bare place-name
+    # match ("Selangor", "Putrajaya") plus a generic word like "delay"/"problem"
+    # used to be enough to look like a live transit incident.
+    assert not transport_incident_signal_ok(
+        "kays.lists Kalau mengakali sistem mah curang lah kak. Itu kan voucher kompensasi "
+        "keterlambatan yang akan cust dapat kl memang ada delay pengiriman lewat dari "
+        "estimasi packing dari toko."
+    )
+    assert not transport_incident_signal_ok(
+        "Ibu bapa di area KL & Cheras yang tercari-cari servis Terapi Cara Kerja (OT) di rumah, "
+        "slot dengan OT ALSHAHFIKA kini dibuka! Sangat sesuai untuk anak yang ada delay, "
+        "masalah sensori, Autism, atau ADHD."
+    )
+    assert not transport_incident_signal_ok(
+        "Boleh save contact saya. Saya nak juga cari circle bisnes baru.. Especially di KL dan "
+        "Selangor. jabbalsinarservices Saya pembekal Fire alarm panel. Product Dari Italy."
+    )
+    assert not transport_incident_signal_ok(
+        "Hi, ada tak makeup canvas yg available? Location Petaling Jaya. -got your personal "
+        "transport -fair to medium tan skin w minimal skin problem"
+    )
+    assert not transport_incident_signal_ok(
+        "Give IM Adrenaline into the anterolateral thigh without delay. Adults: 500 micrograms "
+        "(0.5 mL of 1:1000). Repeat every 5 minutes if symptoms persist."
+    )
+
+
+def test_transport_incident_signal_rejects_ambiguous_place_name_without_line_word():
+    # "Putrajaya" and "Kajang" are both MRT lines *and* everyday place names.
+    # A bare mention with an unrelated "lambat/penuh" should not count as a
+    # transit-line mention unless paired with an actual mode/line word.
+    assert not transport_incident_signal_ok(
+        "PRESINT 11, PUTRAJAYA Ramai yang WhatsApp bila slot dah penuh. CLOSED ORDER (250 pax). "
+        "Kalau nak makan minggu depan, lock slot dari sekarang. Siapa lambat, kena tunggu slot "
+        "seterusnya."
+    )
+    assert transport_incident_signal_ok("MRT Putrajaya problem, stuck dekat stesen TRX dari tadi.")
+    assert transport_incident_signal_ok("putrajaya line rosak lagi? stop lama wei!! still at conlay")
+
+
+def test_transport_incident_signal_word_boundary_avoids_line_substring_false_positive():
+    # "line" is a substring of many unrelated English words (adrenaline,
+    # tickets->ets, streets->ets). Naive substring matching used to treat
+    # those as transit mentions.
+    assert not transport_incident_signal_ok(
+        "AND usually skin or mucosal changes. Give IM Adrenaline into the anterolateral thigh "
+        "without delay. Adults: 500 micrograms, repeat every 5 minutes if symptoms persist."
+    )
+    assert not transport_incident_signal_ok(
+        "Selalu delay beli tickets kat closets warehouse sale, streets penuh orang beratur."
+    )
+
+
+def test_extract_bus_route_ignores_unrelated_numbers():
+    from app.pipeline.extract import extract_bus_route
+
+    assert extract_bus_route("CLOSED ORDER (250 pax) siapa lambat kena tunggu slot seterusnya") == ""
+    assert extract_bus_route(
+        "Give IM Adrenaline without delay. Adults: 500 micrograms, repeat every 5 minutes."
+    ) == ""
 
 
 def test_threads_recent_filter_rejects_old_posts():
@@ -70,5 +308,159 @@ def test_threads_recent_filter_rejects_old_posts():
 
 
 def test_threads_recent_filter_accepts_recent_posts():
-    recent = (datetime.now(UTC) - timedelta(days=5)).isoformat().replace("+00:00", "Z")
+    recent = (datetime.now(UTC) - timedelta(days=2)).isoformat().replace("+00:00", "Z")
     assert _is_recent_enough(recent) is True
+
+
+def test_threads_recent_filter_rejects_four_day_old_posts():
+    old = (datetime.now(UTC) - timedelta(days=4)).isoformat().replace("+00:00", "Z")
+    assert _is_recent_enough(old) is False
+
+
+def test_is_watchlist_candidate_news_role_is_strict_for_transport():
+    assert _is_watchlist_candidate(
+        "Kelana Jaya line delay after train brake failure",
+        "",
+        "transport",
+        "news",
+    )
+    assert not _is_watchlist_candidate(
+        "Best nasi lemak near LRT Bangsar",
+        "",
+        "transport",
+        "news",
+    )
+
+
+def test_sort_rows_by_created_at_orders_newest_first():
+    rows = [
+        {"created_at": "2026-06-20T10:00:00Z"},
+        {"created_at": "2026-06-25T10:00:00Z"},
+        {"created_at": ""},
+    ]
+    sorted_rows = _sort_rows_by_created_at(rows)
+    assert sorted_rows[0]["created_at"] == "2026-06-25T10:00:00Z"
+    assert sorted_rows[-1]["created_at"] == ""
+
+
+def test_clean_search_preview_picks_complaint_line():
+    preview = "damelias\nLrt kelana jaya line\n4d\nHi guys, LRT still problem ke?\n1\n3"
+    assert _clean_search_preview(preview) == "Hi guys, LRT still problem ke?"
+
+
+def test_is_search_result_candidate_accepts_transport_complaint():
+    assert _is_search_result_candidate("Hi guys, LRT still delayed and not moving at Bangsar", "transport")
+    assert not _is_search_result_candidate("Hi guys, LRT still problem ke?", "transport")
+    assert not _is_search_result_candidate("Best nasi lemak near LRT Bangsar", "transport")
+
+
+def test_collect_threads_sample_prioritizes_keyword_search(monkeypatch):
+    calls: list[str] = []
+    recent = (datetime.now(UTC) - timedelta(hours=6)).isoformat().replace("+00:00", "Z")
+
+    def fake_keyword(seen):
+        calls.append("keyword")
+        return [{"url": "https://threads.com/@a/post/1", "raw_text": "LRT still delayed, waiting 20 minutes at Bangsar", "created_at": recent, "query": "lrt problem", "seed_category": "transport", "source_platform": "threads", "post_id": "abc", "author_handle": "a"}]
+
+    def fake_watchlist(seen):
+        calls.append("watchlist")
+        return []
+
+    def fake_web(seen):
+        calls.append("web")
+        return []
+
+    def fake_seed(seen, skip_profile_discovery=False):
+        calls.append("seed")
+        return []
+
+    monkeypatch.setattr("app.collectors.threads.client._collect_keyword_search_posts", fake_keyword)
+    monkeypatch.setattr("app.collectors.threads.client._collect_latest_watchlist_posts", fake_watchlist)
+    monkeypatch.setattr("app.collectors.threads.client._collect_search_discovered_posts", fake_web)
+    monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", fake_seed)
+    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows: rows)
+
+    from app.collectors.threads.client import collect_threads_sample
+
+    rows = collect_threads_sample()
+    assert calls == ["keyword", "watchlist", "web", "seed"]
+    assert len(rows) == 1
+    assert rows[0]["query"] == "lrt problem"
+
+
+def test_collect_threads_sample_skips_watchlist_when_keyword_enough(monkeypatch):
+    recent = (datetime.now(UTC) - timedelta(hours=6)).isoformat().replace("+00:00", "Z")
+
+    def fake_keyword(seen):
+        return [
+            {
+                "url": f"https://threads.com/@a/post/{i}",
+                "raw_text": f"LRT delay again, waiting {i + 10} minutes at Bangsar",
+                "created_at": recent,
+                "query": "lrt problem",
+                "seed_category": "transport",
+                "source_platform": "threads",
+                "post_id": f"abc{i}",
+                "author_handle": "a",
+            }
+            for i in range(6)
+        ]
+
+    monkeypatch.setattr("app.collectors.threads.client._collect_keyword_search_posts", fake_keyword)
+    monkeypatch.setattr(
+        "app.collectors.threads.client._collect_latest_watchlist_posts",
+        lambda seen: (_ for _ in ()).throw(AssertionError("watchlist should be skipped")),
+    )
+    monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", lambda seen, skip_profile_discovery=False: [])
+    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows: rows)
+
+    from app.collectors.threads.client import collect_threads_sample
+
+    rows = collect_threads_sample()
+    assert len(rows) == 6
+
+
+def test_collect_threads_sample_prioritizes_watchlist(monkeypatch):
+    calls: list[str] = []
+    recent = (datetime.now(UTC) - timedelta(hours=6)).isoformat().replace("+00:00", "Z")
+
+    def fake_keyword(seen):
+        calls.append("keyword")
+        return []
+
+    def fake_watchlist(seen):
+        calls.append("watchlist")
+        return [{"url": "https://threads.com/@a/post/1", "raw_text": "MRT delay now, waiting 15 minutes at Maluri", "created_at": recent, "query": "latest_profile", "seed_category": "transport", "source_platform": "threads", "post_id": "abc", "author_handle": "a"}]
+
+    def fake_web(seen):
+        calls.append("web")
+        return []
+
+    def fake_seed(seen, skip_profile_discovery=False):
+        calls.append("seed")
+        return []
+
+    monkeypatch.setattr("app.collectors.threads.client._collect_keyword_search_posts", fake_keyword)
+    monkeypatch.setattr("app.collectors.threads.client._collect_latest_watchlist_posts", fake_watchlist)
+    monkeypatch.setattr("app.collectors.threads.client._collect_search_discovered_posts", fake_web)
+    monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", fake_seed)
+    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows: rows)
+
+    from app.collectors.threads.client import collect_threads_sample
+
+    rows = collect_threads_sample()
+    assert calls[0] == "keyword"
+    assert len(rows) == 1
+    assert rows[0]["query"] == "latest_profile"
+
+
+def test_transit_launch_bypass():
+    from app.pipeline.extract import transport_line_info_signal_ok
+    # Non-transit posts with free rides are still blocked
+    assert not transport_line_info_signal_ok("Get your free rides at the theme park today")
+
+    # Any transit line bypasses these blocks for launch/opening updates
+    assert transport_line_info_signal_ok("LRT Kelana Jaya free rides today")
+    assert transport_line_info_signal_ok("LRT Kelana Jaya line start operations today")
+    assert transport_line_info_signal_ok("LRT3 free rides today")
+    assert transport_line_info_signal_ok("LRT3 line start operations today")

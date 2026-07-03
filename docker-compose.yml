@@ -1,0 +1,40 @@
+services:
+  trafficmy:
+    build: .
+    container_name: trafficmy
+    ports:
+      - "8002:8000"
+    env_file:
+      - .env.production
+    environment:
+      ADUANMY_ENV: production
+      ADUANMY_DB_PATH: /data/aduanmy.db
+      ADUANMY_DATA_DIR: /data
+      ADUANMY_AUTO_REFRESH_ENABLED: "true"
+      ADUANMY_GTFS_ANOMALY_ENABLED: "false"
+      ADUANMY_GTFS_REFRESH_INTERVAL_SECONDS: "300"
+      ADUANMY_FULL_REFRESH_INTERVAL_SECONDS: "900"
+      ADUANMY_REFRESH_ON_STARTUP: "true"
+      ADUANMY_DISCOVERY_DEPTH: "full"
+      ADUANMY_STALE_AFTER_MINUTES: "120"
+      ADUANMY_RETENTION_DAYS: "90"
+      ADUANMY_CORS_ORIGINS: "https://arifaqyl.me"
+      ADUANMY_ALLOW_DASHBOARD_REFRESH: "false"
+      ADUANMY_X_AUTO_COLLECT_ENABLED: "false"
+      ADUANMY_THREADS_SESSION_PATH: "/data/private/threads-session.json"
+      ADUANMY_BACKUP_ENABLED: "true"
+      ADUANMY_BACKUP_INTERVAL_SECONDS: "21600"
+      # Set a secret in production so random visitors cannot hammer /api/refresh
+      # ADUANMY_REFRESH_API_KEY: change-me
+    volumes:
+      - trafficmy_data:/data
+    restart: unless-stopped
+    stop_grace_period: 60s
+    init: true
+    logging:
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  trafficmy_data:

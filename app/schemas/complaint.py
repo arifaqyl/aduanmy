@@ -14,8 +14,8 @@ class ComplaintSchema(BaseModel):
     subcategory: str = ""
     entity: str = ""
     location: str = ""
+    state: str = ""
     severity: str = ""
     confidence: float = 0.0
     engagement: str = ""
     cluster_id: str = ""
-

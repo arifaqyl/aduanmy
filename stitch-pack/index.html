@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrafficMY · Malaysia Transport</title>
+  <meta name="description" content="See if your line is delayed — at a glance." />
+  <meta name="theme-color" content="#58CC02" />
+  <meta property="og:title" content="TrafficMY · Malaysia Transport" />
+  <meta property="og:description" content="See if your line is delayed — at a glance." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="static/og-image.png" />
+  <meta property="og:image:alt" content="TrafficMY" />
+  <link rel="icon" href="static/favicon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
+  <link rel="stylesheet" href="static/css/components.css" />
+  <link rel="stylesheet" href="static/css/play.css" />
+</head>
+<body class="tm-app play-app">
+
+  <header class="tm-header">
+    <div class="tm-header-inner">
+      <a class="tm-brand" href="#" id="brandLink" aria-label="TrafficMY home">
+        <img class="tm-logo" id="logoImg" src="static/logo.svg" width="160" height="38" alt="TrafficMY" />
+      </a>
+      <div class="tm-header-status">
+        <span class="tm-live-dot" id="liveDot" aria-hidden="true"></span>
+        <span class="tm-live-meta" id="liveMeta" aria-live="polite">Checking sources</span>
+      </div>
+      <div class="tm-header-tools">
+        <div class="head-info-wrap refresh-meta-wrap tm-mobile-only">
+          <button class="tm-icon-btn tm-icon-btn-sm" id="refreshInfoBtn" type="button" aria-expanded="false" aria-controls="refreshInfoPopoverMobile" title="Update schedule">?</button>
+          <div class="info-popover" id="refreshInfoPopoverMobile" role="tooltip"></div>
+        </div>
+        <a class="tm-text-btn" href="#" id="methodLink" hidden>Method</a>
+        <button class="tm-icon-btn" type="button" id="langToggle" aria-pressed="false" title="Bahasa Malaysia / English">EN</button>
+        <button class="tm-icon-btn" type="button" id="contrastToggle" aria-pressed="false" title="High contrast" hidden>Aa</button>
+        <button class="tm-icon-btn" type="button" id="compareToggle" aria-pressed="false" title="Compare two lines" hidden>⇄</button>
+        <button class="tm-icon-btn" type="button" id="notifyToggle" aria-pressed="false" title="Watch saved lines" hidden>◎</button>
+        <button class="tm-primary-btn" id="refreshBtn" type="button" disabled>
+          <span class="btn-icon" aria-hidden="true">↻</span>
+          <span class="btn-label">Refresh</span>
+        </button>
+      </div>
+    </div>
+    <div class="tm-header-sub">
+      <div class="tm-refresh-meta refresh-meta" id="intervalMeta"></div>
+      <div class="head-info-wrap refresh-meta-wrap">
+        <button class="tm-icon-btn tm-icon-btn-sm" id="refreshInfoBtnDesktop" type="button" aria-expanded="false" aria-controls="refreshInfoPopover" title="Update schedule">?</button>
+        <div class="info-popover" id="refreshInfoPopover" role="tooltip"></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="tm-mobile-search" id="mobileSearchBar" hidden aria-hidden="true"></div>
+
+  <main class="tm-main">
+    <nav class="tm-nav" id="mainTabs" role="tablist" aria-label="Main sections">
+      <button class="tm-nav-btn main-tab active" type="button" role="tab" aria-selected="true" aria-controls="tabStatus" id="tabBtnStatus" data-tab="status">Home</button>
+      <button class="tm-nav-btn main-tab" type="button" role="tab" aria-selected="false" aria-controls="tabMap" id="tabBtnMap" data-tab="map">Map</button>
+      <button class="tm-nav-btn main-tab" type="button" role="tab" aria-selected="false" aria-controls="tabTravel" id="tabBtnTravel" data-tab="travel">Travel</button>
+      <button class="tm-nav-help status-info-btn" type="button" aria-label="What is Pulse?" title="Pulse is rider-reported disruption intelligence, not an operator all-clear board">?</button>
+    </nav>
+
+    <div class="tm-view tab-panel active" id="tabStatus" role="tabpanel" aria-labelledby="tabBtnStatus">
+      <div class="tm-status-layout">
+        <div class="tm-status-primary">
+          <div id="glanceCard" class="play-glance play-glance--ok" aria-live="polite">
+            <img class="play-mascot" src="static/mascots/train-quiet.svg" width="64" height="64" alt="" />
+            <div class="play-glance-copy">
+              <strong>Loading</strong>
+              <span>Checking your lines</span>
+            </div>
+          </div>
+
+          <div id="riskStrip" class="play-risk-strip" hidden aria-label="My lines during rush hour"></div>
+
+          <section class="tm-live-today" id="liveTodaySection">
+            <div class="tm-live-today-head">
+              <h2 class="tm-live-today-title">Live today</h2>
+              <span class="tm-section-sub section-sub" id="reportCount">Today · MYT</span>
+            </div>
+            <p class="tm-live-today-note">Resets at midnight MYT · when last train passes, the line ends for the day.</p>
+            <div class="tm-official-strip official-strip" id="officialStrip" hidden>
+              <h3>Official corroboration</h3>
+              <div id="officialFeed"></div>
+            </div>
+            <div class="tm-last-viewed last-viewed" id="lastViewed" hidden></div>
+            <div id="reportFeed" class="tm-report-feed"></div>
+          </section>
+
+          <section class="tm-sources" id="pulseHero" aria-label="Data sources" hidden>
+            <div class="tm-source-coverage source-coverage-strip" id="sourceCoverageStrip"></div>
+          </section>
+
+          <div class="tm-toolbar tm-toolbar--search">
+            <div class="tm-search-wrap search-wrap" id="searchWrap">
+              <input class="tm-input" id="placeSearch" type="search" placeholder="Search station or line" autocomplete="off" aria-label="Search station or line" />
+              <button class="tm-search-clear search-clear" id="searchClear" type="button" aria-label="Clear">×</button>
+              <div class="tm-search-suggestions search-suggestions" id="searchSuggestions" role="listbox"></div>
+            </div>
+            <select class="tm-select" id="sortSelect" aria-label="Sort lines">
+              <option value="severity">Severity</option>
+              <option value="freshest">Freshest</option>
+              <option value="reports">Most reports</option>
+            </select>
+          </div>
+
+          <div class="tm-filter-banner filter-active-banner" id="filterBanner">
+            <span>Filter: <strong id="filterLabel"></strong></span>
+            <button class="tm-search-clear search-clear" id="filterClear" type="button">Clear</button>
+          </div>
+
+          <div class="tm-filters filters" id="filters">
+            <button class="tm-chip chip active" data-mode="all">All</button>
+            <button class="tm-chip chip" data-mode="favorites">⭐ Saved</button>
+            <button class="tm-chip chip" data-mode="rail">🚆 Rail</button>
+            <button class="tm-chip chip" data-mode="lrt">🚇 LRT</button>
+            <button class="tm-chip chip" data-mode="mrt">🚊 MRT</button>
+            <button class="tm-chip chip" data-mode="ktm">🚂 KTM</button>
+            <button class="tm-chip chip" data-mode="monorail">🛤 Mono</button>
+            <button class="tm-chip chip" data-mode="bus">🚌 Bus</button>
+          </div>
+          <p class="tm-filter-hint filter-hint" id="filterHint" hidden></p>
+
+          <div class="tm-stale-banner stale-banner" id="staleBanner">
+            <strong>Stale data</strong>
+            <span id="staleBannerDetail">. Try Refresh.</span>
+          </div>
+
+          <div class="tm-context-bar context-bar" id="contextBar"></div>
+          <div class="tm-board-summary board-summary" id="boardSummary" aria-live="polite"></div>
+          <div class="tm-stats-bar stats-bar" id="statsBar"></div>
+          <div class="summary-strip" id="summaryStrip" hidden aria-hidden="true"></div>
+          <div class="tm-pulse-strip pulse-strip" id="pulseStrip" aria-label="Active disruptions" hidden></div>
+
+          <section class="tm-board dep-board board" id="lineBoard" aria-label="Line status board">
+            <div class="tm-board-head dep-board-head board-head">
+              <span>Line</span>
+              <span>Status</span>
+              <span>Detail</span>
+              <span class="tm-board-count board-count">…</span>
+            </div>
+            <div class="tm-loading-banner loading-banner" id="boardLoadingBanner">
+              <span class="tm-loading-spinner loading-spinner" aria-hidden="true"></span>
+              <span>Loading lines</span>
+            </div>
+          </section>
+
+          <div class="tm-compare-bar compare-bar" id="compareBar" aria-live="polite">
+            <span>Compare: tap two lines</span>
+            <button type="button" class="tm-search-clear search-clear" id="compareClear">Clear</button>
+          </div>
+
+          <div class="tm-legend line-legend collapsed-mobile" id="lineLegend">
+            <div class="tm-legend-head line-legend-head">
+              <button type="button" class="tm-legend-toggle line-legend-toggle" id="lineLegendToggle" aria-expanded="false" aria-controls="lineLegendGrid">Line colours</button>
+              <button type="button" id="glossaryBtn">Glossary</button>
+            </div>
+            <div class="tm-legend-grid line-legend-grid" id="lineLegendGrid"></div>
+          </div>
+          <div class="tm-route-legend route-legend" id="routeLegend" aria-label="Disruption colours"></div>
+        </div>
+
+        <aside class="tm-status-side">
+          <div class="tm-schematic-wrap schematic-wrap" id="schematicWrap" hidden aria-hidden="true">
+            <div class="tm-schematic-head schematic-head">
+              <span>Klang Valley</span>
+              <span>Tap a line</span>
+            </div>
+            <svg class="tm-kv-schematic kv-schematic" id="kvSchematic" viewBox="0 0 360 160" role="img" aria-label="Klang Valley schematic loading">
+              <path class="tm-schem-line schem-line" stroke="#e31837" opacity=".4" d="M40,50 H320"/>
+              <path class="tm-schem-line schem-line" stroke="#f7941d" opacity=".4" d="M40,90 H320"/>
+              <path class="tm-schem-line schem-line" stroke="#0066b3" opacity=".4" d="M40,130 H320"/>
+              <path class="tm-schem-line schem-line" stroke="#7b2d8e" opacity=".4" d="M80,30 V130"/>
+              <path class="tm-schem-line schem-line" stroke="#007a33" opacity=".4" d="M160,30 V130"/>
+              <path class="tm-schem-line schem-line" stroke="#8dc63f" opacity=".4" d="M200,30 V130"/>
+              <path class="tm-schem-line schem-line" stroke="#f4c300" opacity=".4" d="M240,30 V130"/>
+            </svg>
+          </div>
+
+          <section class="tm-side-block" id="plannedSection" hidden>
+            <h2 class="tm-side-title">Planned services</h2>
+            <div class="tm-board board" id="plannedServices"></div>
+          </section>
+
+          <section class="tm-side-block tm-side-block--muted" id="communityReportsSection" hidden aria-hidden="true">
+            <div class="tm-side-head">
+              <h2 class="tm-side-title">What's happening</h2>
+              <span class="tm-section-sub section-sub">Moved to Live today</span>
+            </div>
+          </section>
+        </aside>
+      </div>
+    </div>
+
+    <div class="tm-view tab-panel" id="tabMap" role="tabpanel" aria-labelledby="tabBtnMap" hidden>
+      <p class="tm-map-note">Rider pins from today (MYT). Tap LRT/MRT/KTM chips to show one network only — blue dots are KTM trains (when KTM is on), orange is bus GPS.</p>
+      <div class="tm-map-toolbar map-toolbar" role="group" aria-label="Map layers">
+        <button class="tm-chip chip map-on active" type="button" id="mapLayerReports" data-layer="reports" aria-pressed="true">Reports</button>
+        <button class="tm-chip chip map-on active" type="button" id="mapLayerLrt" data-layer="lrt" aria-pressed="true">LRT</button>
+        <button class="tm-chip chip map-on active" type="button" id="mapLayerMrt" data-layer="mrt" aria-pressed="true">MRT</button>
+        <button class="tm-chip chip map-on active" type="button" id="mapLayerMonorail" data-layer="monorail" aria-pressed="true">Monorail</button>
+        <button class="tm-chip chip map-on active" type="button" id="mapLayerKtm" data-layer="ktm" aria-pressed="true">KTM</button>
+        <button class="tm-chip chip map-on active" type="button" id="mapLayerInterchanges" data-layer="interchanges" aria-pressed="true">Changes</button>
+        <button class="tm-chip chip" type="button" id="mapLayerBuses" data-layer="buses" aria-pressed="false">Bus GPS</button>
+        <button class="tm-chip chip map-on active" type="button" id="mapTiltToggle" aria-pressed="true">3D</button>
+      </div>
+      <div class="tm-map-layout map-layout">
+        <aside class="tm-map-sidebar map-sidebar" id="mapSidebar">
+          <div class="tm-map-sidebar-head map-sidebar-head">Lines</div>
+          <div id="mapSidebarList"></div>
+        </aside>
+        <div class="tm-map-main map-main">
+          <div class="tm-map-wrap map-wrap">
+            <div class="tm-map-loading map-loading" id="mapLoading" role="status">Loading map</div>
+            <div id="malaysiaMap" role="application" aria-label="Malaysia transport map"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tm-view tab-panel" id="tabTravel" role="tabpanel" aria-labelledby="tabBtnTravel" hidden>
+      <div class="tm-travel-layout">
+        <section class="tm-travel-card" aria-labelledby="journeyTitle">
+          <div class="tm-travel-card-head">
+            <span class="tm-travel-icon" aria-hidden="true">🚇</span>
+            <div>
+              <h2 id="journeyTitle">Plan route</h2>
+              <p class="tm-travel-lead">Rapid KL rail · station or address</p>
+            </div>
+          </div>
+          <form class="tm-journey-form journey-form journey-form--compact" id="journeyForm">
+            <div class="tm-field field">
+              <label for="journeyFrom">From</label>
+              <input class="tm-input" id="journeyFrom" list="stationOptions" placeholder="Wangsa Maju" autocomplete="off" required />
+            </div>
+            <button class="tm-swap-btn swap-btn" id="swapJourney" type="button" aria-label="Swap">⇅</button>
+            <div class="tm-field field">
+              <label for="journeyTo">To</label>
+              <input class="tm-input" id="journeyTo" list="stationOptions" placeholder="Bukit Bintang" autocomplete="off" required />
+            </div>
+            <div class="tm-travel-actions">
+              <button class="tm-use-location use-location" id="useLocation" type="button">📍 Near me</button>
+              <button class="tool-button tm-primary-btn" type="submit">Find route</button>
+            </div>
+          </form>
+          <datalist id="stationOptions"></datalist>
+          <div class="tm-journey-result journey-result" id="journeyResult" hidden aria-live="polite"></div>
+          <p class="tm-travel-foot">Not KTM or buses · <a href="https://myrapid.com.my/journey-planner/" target="_blank" rel="noopener noreferrer">MyRapid planner ↗</a></p>
+        </section>
+
+        <section class="tm-travel-card" aria-labelledby="savingsTitle">
+          <div class="tm-travel-card-head">
+            <span class="tm-travel-icon" aria-hidden="true">💳</span>
+            <div>
+              <h2 id="savingsTitle">Passes &amp; fares</h2>
+              <p class="tm-travel-lead">My50 · Rapid Pelajar · pay-as-you-go</p>
+            </div>
+          </div>
+          <form id="savingsForm" class="savings-card savings-card--compact">
+            <div class="savings-form savings-form--inline">
+              <div class="tm-field field"><label for="monthlyRides">Trips/mo</label><input class="tm-input" id="monthlyRides" type="number" min="1" max="200" value="44" /></div>
+              <div class="tm-field field"><label for="averageFare">Avg RM</label><input class="tm-input" id="averageFare" type="number" min="0.5" max="20" step="0.10" value="3.00" /></div>
+              <button class="tool-button tm-primary-btn" type="submit">Compare</button>
+            </div>
+            <div class="check-row">
+              <label><input id="isMalaysian" type="checkbox" checked /> Malaysian</label>
+              <label><input id="isStudent" type="checkbox" /> Student</label>
+            </div>
+          </form>
+          <div class="saving-result" id="savingResult" hidden aria-live="polite"></div>
+        </section>
+
+        <section class="tm-travel-card" id="updatesSection">
+          <div class="tm-travel-card-head">
+            <span class="tm-travel-icon" aria-hidden="true">🎟</span>
+            <div>
+              <h2 class="tm-side-title">Deals &amp; launches</h2>
+              <span class="tm-section-sub section-sub" id="updatesAsOf">Verified links</span>
+            </div>
+          </div>
+          <div class="tm-updates-grid updates-grid" id="updatesGrid"></div>
+        </section>
+      </div>
+    </div>
+
+    <div class="tm-view tab-panel" id="tabPlan" hidden aria-hidden="true"></div>
+    <div class="tm-view tab-panel" id="tabPasses" hidden aria-hidden="true"></div>
+
+    <section class="tm-method" id="methodSection">
+      <button class="method-toggle" id="methodToggle" aria-expanded="false">
+        <span>Scope &amp; methodology</span>
+        <span class="method-chevron">▼</span>
+      </button>
+      <div class="method-body">
+        <p>Not an official operator site. Malaysia transport only. Sources: Threads, Reddit, RSS, operator notices, GTFS.</p>
+        <ul>
+          <li>Crowd reports are not confirmation of normal service.</li>
+          <li>Quiet lines mean no recent qualifying signal, not all-clear.</li>
+          <li>Official corroboration requires a time-matched notice.</li>
+        </ul>
+      </div>
+    </section>
+  </main>
+
+  <footer class="tm-footer">
+    <div class="tm-footer-inner">
+      <img class="tm-footer-logo footer-logo" id="footerLogo" src="static/logo.svg" width="120" height="29" alt="" aria-hidden="true" />
+      <span><span id="footerTagline">Malaysia transport intelligence</span> · <a href="#" id="footerMethodLink">Method</a> · <span class="tm-footer-time" id="footerTime"></span></span>
+    </div>
+  </footer>
+
+  <button class="tm-fab fab-refresh" id="fabRefresh" type="button" aria-label="Refresh" disabled><span class="btn-icon">↻</span></button>
+
+  <nav class="tm-bottom-nav bottom-nav" id="bottomNav" aria-label="Mobile navigation">
+    <button class="tm-bottom-nav-btn bottom-nav-btn active" type="button" data-tab="status" aria-label="Home" aria-current="page">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M4 6h16M4 12h10M4 18h14"/></svg>
+      Home
+    </button>
+    <button class="tm-bottom-nav-btn bottom-nav-btn" type="button" data-tab="map" aria-label="Map">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l-6-3V6l6 3 6-3 6 3v9l-6-3-6 3z"/></svg>
+      Map
+    </button>
+    <button class="tm-bottom-nav-btn bottom-nav-btn" type="button" data-tab="travel" aria-label="Travel">
+      <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="6" cy="19" r="2"/><path d="M8 19h3.5a2 2 0 0 0 1.7-1L18.7 7.3a2 2 0 0 0-3.4-2L9 16"/><rect x="2" y="5" width="20" height="14" rx="2" opacity=".35"/></svg>
+      Travel
+    </button>
+  </nav>
+
+  <div class="tm-toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="tm-backdrop" id="backdrop"></div>
+
+  <div id="schematicModal" class="schematic-modal" hidden aria-hidden="true" role="dialog" aria-modal="true">
+    <div class="schematic-modal-backdrop" id="schematicModalBackdrop"></div>
+    <div class="schematic-modal-inner">
+      <button type="button" class="schematic-modal-close tm-close-btn" id="schematicModalClose">Close</button>
+      <img id="schematicModalImg" alt="Route diagram" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" />
+    </div>
+  </div>
+
+  <div class="shortcuts-panel" id="shortcutsPanel" role="dialog" aria-labelledby="shortcutsTitle" aria-modal="true" hidden>
+    <div class="shortcuts-card">
+      <h2 id="shortcutsTitle">Shortcuts</h2>
+      <div class="shortcut-row"><span>Search</span><kbd>/</kbd></div>
+      <div class="shortcut-row"><span>Help</span><kbd>?</kbd></div>
+      <div class="shortcut-row"><span>Close</span><kbd>Esc</kbd></div>
+      <button class="tool-button tm-primary-btn" type="button" id="shortcutsClose">Close</button>
+    </div>
+  </div>
+
+  <aside id="panel" role="dialog" aria-modal="true" aria-labelledby="panelTitle" aria-hidden="true">
+    <div class="panel-drag-handle tm-panel-handle" id="panelDragHandle" aria-hidden="true"></div>
+    <span class="panel-focus-sentinel" tabindex="0" id="panelFocusStart"></span>
+    <div class="panel-head tm-panel-head">
+      <div class="panel-title-wrap">
+        <div class="panel-title tm-panel-title" id="panelTitle">Details</div>
+        <div class="panel-sub tm-panel-sub" id="panelSub"></div>
+      </div>
+      <button class="close tm-close-btn" id="closePanel" aria-label="Close">×</button>
+    </div>
+    <div class="panel-body tm-panel-body" id="panelBody"></div>
+    <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
+  </aside>
+
+  <script src="static/js/app.js" defer></script>
+</body>
+</html>

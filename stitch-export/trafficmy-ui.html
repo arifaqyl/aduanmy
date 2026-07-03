@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrafficMY — UI reference for Stitch</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green: #58cc02; --green-dark: #46a302; --green-soft: #d7ffb8;
+      --blue: #1cb0f6; --blue-dark: #1899d6;
+      --yellow: #ffc800; --orange: #ff9600; --red: #ff4b4b; --red-dark: #ea2b2b;
+      --bg: #ffffff; --surface: #f7f7f7; --ink: #3c3c3c; --ink-2: #777; --line: #e5e5e5;
+      --radius: 16px; --font: "Nunito", system-ui, sans-serif;
+      --kelana: #e31837; --ampang: #f7941d; --kajang: #007a33; --putrajaya: #f4c300;
+      --mono: #8dc63f; --ktm: #0066b3;
+    }
+    * { box-sizing: border-box; margin: 0; }
+    body { font-family: var(--font); background: var(--surface); color: var(--ink); max-width: 420px; margin: 0 auto; min-height: 100vh; padding-bottom: 80px; }
+    .hdr { background: var(--bg); border-bottom: 2px solid var(--line); padding: 12px 16px; position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 12px; }
+    .logo { font-weight: 900; font-size: 20px; color: var(--green-dark); }
+    .live { flex: 1; font-size: 13px; font-weight: 700; color: var(--ink-2); display: flex; align-items: center; gap: 6px; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+    .btn-refresh { min-height: 44px; padding: 0 16px; border-radius: 14px; background: var(--green); color: #fff; font-weight: 800; border: 2px solid var(--green-dark); box-shadow: 0 4px 0 var(--green-dark); font-family: inherit; cursor: pointer; }
+    .tabs { display: flex; gap: 4px; padding: 8px 16px; background: var(--bg); border-bottom: 2px solid var(--line); }
+    .tabs label { flex: 1; text-align: center; min-height: 44px; line-height: 44px; font-weight: 800; font-size: 14px; border-radius: 12px; cursor: pointer; color: var(--ink-2); }
+    input[name="tab"] { display: none; }
+    #tab-home:checked ~ .tabs label[for="tab-home"],
+    #tab-map:checked ~ .tabs label[for="tab-map"],
+    #tab-travel:checked ~ .tabs label[for="tab-travel"] { background: var(--blue); color: #fff; }
+    .panel { display: none; padding: 12px 16px 24px; }
+    #tab-home:checked ~ .panels #panel-home,
+    #tab-map:checked ~ .panels #panel-map,
+    #tab-travel:checked ~ .panels #panel-travel { display: block; }
+    .glance { display: flex; gap: 16px; align-items: center; padding: 20px; background: var(--bg); border: 2px solid var(--orange); border-radius: var(--radius); box-shadow: 0 4px 0 #cc7700; margin-bottom: 12px; }
+    .glance.ok { border-color: var(--green); box-shadow: 0 4px 0 var(--green-dark); }
+    .mascot { width: 56px; height: 56px; border-radius: 50%; background: #ffe8c8; display: grid; place-items: center; font-size: 28px; flex-shrink: 0; }
+    .glance.ok .mascot { background: var(--green-soft); }
+    .glance strong { display: block; font-size: 20px; font-weight: 900; margin-bottom: 4px; }
+    .glance span { font-size: 14px; font-weight: 600; color: var(--ink-2); }
+    .section-head { display: flex; justify-content: space-between; align-items: baseline; margin: 16px 0 8px; }
+    .section-head h2 { font-size: 17px; font-weight: 900; }
+    .section-sub { font-size: 12px; font-weight: 700; color: var(--ink-2); }
+    .note { font-size: 12px; color: var(--ink-2); margin-bottom: 10px; line-height: 1.4; }
+    .feed { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; }
+    .signal { flex: 0 0 260px; background: var(--bg); border: 2px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: 0 3px 0 var(--line); }
+    .signal .badges { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+    .badge { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 999px; text-transform: uppercase; }
+    .badge-riding { background: #ffe8c8; color: #cc5500; }
+    .badge-src { background: #eee; color: #555; }
+    .badge-official { background: var(--green-soft); color: var(--green-dark); }
+    .signal p { font-size: 14px; font-weight: 700; line-height: 1.35; margin-bottom: 6px; }
+    .signal time { font-size: 11px; font-weight: 700; color: var(--ink-2); }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 8px; }
+    .input, .select { flex: 1; min-height: 48px; padding: 12px 16px; border: 2px solid var(--line); border-radius: 14px; font-family: inherit; font-size: 15px; font-weight: 600; background: var(--bg); }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .chip { min-height: 44px; padding: 0 14px; border: 2px solid var(--line); border-radius: 999px; background: var(--bg); font-family: inherit; font-size: 13px; font-weight: 800; color: var(--ink-2); box-shadow: 0 3px 0 var(--line); cursor: pointer; }
+    .chip.on { background: var(--blue); border-color: var(--blue-dark); color: #fff; box-shadow: 0 3px 0 var(--blue-dark); }
+    .line-card { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--bg); border: 2px solid var(--line); border-radius: var(--radius); margin-bottom: 10px; box-shadow: 0 3px 0 var(--line); }
+    .stripe { width: 6px; align-self: stretch; border-radius: 4px; flex-shrink: 0; }
+    .line-meta { flex: 1; min-width: 0; }
+    .line-meta strong { display: block; font-size: 15px; font-weight: 900; }
+    .line-meta span { font-size: 12px; font-weight: 600; color: var(--ink-2); }
+    .status { font-size: 11px; font-weight: 900; padding: 6px 10px; border-radius: 8px; text-transform: uppercase; flex-shrink: 0; }
+    .status-delay { background: #ffe8c8; color: #cc5500; }
+    .status-ok { background: var(--green-soft); color: var(--green-dark); }
+    .status-unknown { background: #eee; color: #888; }
+    .map-box { height: 280px; background: #1a1d24; border-radius: var(--radius); border: 2px solid #333; position: relative; overflow: hidden; margin-bottom: 12px; }
+    .map-placeholder { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #666; font-size: 13px; font-weight: 700; text-align: center; padding: 20px; }
+    .map-pin { position: absolute; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #0f1117; }
+    .map-line { position: absolute; height: 4px; border-radius: 2px; opacity: 0.9; }
+    .travel-card { background: var(--bg); border: 2px solid var(--line); border-radius: var(--radius); padding: 16px; margin-bottom: 12px; box-shadow: 0 3px 0 var(--line); }
+    .travel-card h2 { font-size: 17px; font-weight: 900; margin-bottom: 4px; }
+    .travel-card .lead { font-size: 13px; color: var(--ink-2); font-weight: 600; margin-bottom: 12px; }
+    .field { margin-bottom: 10px; }
+    .field label { display: block; font-size: 12px; font-weight: 800; color: var(--ink-2); margin-bottom: 4px; }
+    .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; max-width: 420px; margin: 0 auto; background: var(--bg); border-top: 2px solid var(--line); display: flex; padding: 8px 16px; gap: 4px; }
+    .bottom-nav label { flex: 1; text-align: center; min-height: 48px; line-height: 48px; font-weight: 800; font-size: 13px; border-radius: 12px; cursor: pointer; }
+    .stitch-note { background: #fff8e6; border: 2px dashed #ffc800; border-radius: 12px; padding: 12px; font-size: 12px; font-weight: 700; color: #886600; margin-bottom: 16px; line-height: 1.4; }
+  </style>
+</head>
+<body>
+
+  <input type="radio" name="tab" id="tab-home" checked />
+  <input type="radio" name="tab" id="tab-map" />
+  <input type="radio" name="tab" id="tab-travel" />
+
+  <header class="hdr">
+    <div class="logo">TrafficMY</div>
+    <div class="live"><span class="dot"></span> Updated 2m ago</div>
+    <button type="button" class="btn-refresh">↻ Refresh</button>
+  </header>
+
+  <nav class="tabs" aria-label="Main sections">
+    <label for="tab-home">Home</label>
+    <label for="tab-map">Map</label>
+    <label for="tab-travel">Travel</label>
+  </nav>
+
+  <div class="panels">
+    <!-- HOME -->
+    <div class="panel" id="panel-home">
+      <p class="stitch-note">Stitch: redesign this screen. Sample data below. See STITCH_BRIEF.md for rules.</p>
+
+      <div class="glance">
+        <div class="mascot">😟</div>
+        <div>
+          <strong>2 lines need attention</strong>
+          <span>Kelana Jaya · KTM Komuter — rider reports today</span>
+        </div>
+      </div>
+
+      <div class="section-head">
+        <h2>Live today</h2>
+        <span class="section-sub">3 signals · MYT</span>
+      </div>
+      <p class="note">Resets midnight MYT. After last train → "Ended for today".</p>
+
+      <div class="feed">
+        <article class="signal">
+          <div class="badges">
+            <span class="badge badge-riding">Riding now</span>
+            <span class="badge badge-src">Threads</span>
+          </div>
+          <p>Stuck at Bangsar ~25 min, Kelana Jaya line not moving</p>
+          <time>18m ago · Kelana Jaya</time>
+        </article>
+        <article class="signal">
+          <div class="badges">
+            <span class="badge badge-riding">Riding now</span>
+            <span class="badge badge-src">Reddit</span>
+          </div>
+          <p>KTM delay at KL Sentral, train tak gerak</p>
+          <time>42m ago · KTM Komuter</time>
+        </article>
+        <article class="signal">
+          <div class="badges">
+            <span class="badge badge-official">Official</span>
+          </div>
+          <p>Kelewatan Tren: Laluan Ampang/Sri Petaling</p>
+          <time>1h ago · MyRapid</time>
+        </article>
+      </div>
+
+      <div class="toolbar">
+        <input class="input" type="search" placeholder="Search station or line" />
+        <select class="select" style="flex:0 0 auto;width:auto"><option>Severity</option></select>
+      </div>
+
+      <div class="chips">
+        <button type="button" class="chip on">All</button>
+        <button type="button" class="chip">⭐ Saved</button>
+        <button type="button" class="chip">🚇 LRT</button>
+        <button type="button" class="chip">🚊 MRT</button>
+        <button type="button" class="chip">🚂 KTM</button>
+        <button type="button" class="chip">🚌 Bus</button>
+      </div>
+
+      <div class="section-head"><h2>Lines</h2><span class="section-sub">18 tracked</span></div>
+
+      <div class="line-card">
+        <div class="stripe" style="background:var(--kelana)"></div>
+        <div class="line-meta"><strong>Kelana Jaya Line</strong><span>Waiting reports at Bangsar</span></div>
+        <span class="status status-delay">Delay</span>
+      </div>
+      <div class="line-card">
+        <div class="stripe" style="background:var(--ktm)"></div>
+        <div class="line-meta"><strong>KTM Komuter</strong><span>KL Sentral area</span></div>
+        <span class="status status-delay">Delay</span>
+      </div>
+      <div class="line-card">
+        <div class="stripe" style="background:var(--kajang)"></div>
+        <div class="line-meta"><strong>MRT Kajang Line</strong><span>No signal today</span></div>
+        <span class="status status-unknown">Quiet</span>
+      </div>
+      <div class="line-card">
+        <div class="stripe" style="background:var(--ampang)"></div>
+        <div class="line-meta"><strong>Ampang Line</strong><span>No signal today</span></div>
+        <span class="status status-ok">Quiet</span>
+      </div>
+    </div>
+
+    <!-- MAP -->
+    <div class="panel" id="panel-map">
+      <p class="stitch-note">Map tab: layer chips must filter to ONE network (LRT only = no KTM blue).</p>
+      <div class="chips">
+        <button type="button" class="chip on">Reports</button>
+        <button type="button" class="chip on">LRT</button>
+        <button type="button" class="chip">MRT</button>
+        <button type="button" class="chip">KTM</button>
+        <button type="button" class="chip">Bus GPS</button>
+      </div>
+      <div class="map-box">
+        <div class="map-line" style="left:10%;top:45%;width:70%;background:var(--kelana)"></div>
+        <div class="map-line" style="left:15%;top:55%;width:60%;background:var(--ampang)"></div>
+        <div class="map-pin" style="left:48%;top:42%;background:var(--orange)"></div>
+        <div class="map-pin" style="left:62%;top:50%;background:var(--orange)"></div>
+        <div class="map-placeholder">MapLibre dark basemap<br/>+ line geometry + pins</div>
+      </div>
+      <div class="line-card">
+        <div class="stripe" style="background:var(--kelana)"></div>
+        <div class="line-meta"><strong>Kelana Jaya</strong><span>2 pins today</span></div>
+        <span class="status status-delay">Delay</span>
+      </div>
+    </div>
+
+    <!-- TRAVEL -->
+    <div class="panel" id="panel-travel">
+      <div class="travel-card">
+        <h2>🚇 Plan route</h2>
+        <p class="lead">Rapid KL rail · station or address</p>
+        <div class="field"><label>From</label><input class="input" value="Wangsa Maju" /></div>
+        <div class="field"><label>To</label><input class="input" value="KLCC" /></div>
+        <button type="button" class="btn-refresh" style="width:100%;margin-top:8px">Plan route</button>
+      </div>
+      <div class="travel-card">
+        <h2>🎫 Passes</h2>
+        <p class="lead">My50 · touch in/out same card</p>
+        <p class="note">Tap-out reminder at interchange stations.</p>
+      </div>
+    </div>
+  </div>
+
+  <nav class="bottom-nav" aria-label="Bottom navigation">
+    <label for="tab-home">Home</label>
+    <label for="tab-map">Map</label>
+    <label for="tab-travel">Travel</label>
+  </nav>
+
+</body>
+</html>

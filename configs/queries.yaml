@@ -8,6 +8,26 @@ query_groups:
     - lrt rosak
     - kl sentral jam
     - ktm lambat
+    - gangguan lrt malaysia
+    - kelewatan mrt kl
+    - bas rapidkl lambat
+    - monorel breakdown kl
+    - ktm komuter delay
+    - jb sentral train delay
+    - butterworth train delay
+    - penang rapid bas
+    - ecrl delay
+    - rts link johor
+    - ktm ipoh delay
+    - ktm seremban delay
+    - bas sabah rosak
+    - lrt3 launch
+    - lrt3 delay
+    - lrt3 rosak
+    - shah alam line delay
+    - lrt3 opening
+    - lrt3 free ride
+
   telco_internet:
     - unifi down
     - unifi tak boleh

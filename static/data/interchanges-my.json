@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "scope": "malaysia",
+  "source_note": "Public operator wayfinding facts. Not live crowding or lift status.",
+  "stations": {
+    "kl sentral": {
+      "name": "KL Sentral",
+      "walk_min": 8,
+      "indoor": true,
+      "paid_separate": true,
+      "note_en": "Tap out when switching Prasarana (LRT/MRT/Monorail) ↔ KTMB or KLIA Ekspres. Monorail is via Nu Sentral mall (~5 min walk, indoor).",
+      "note_ms": "Tap keluar bila tukar Prasarana (LRT/MRT/Monorel) ↔ KTMB atau KLIA Ekspres. Monorel melalui Nu Sentral (~5 min, dalam bangunan).",
+      "ets_warning_en": "KTM Komuter platforms ≠ ETS concourse — confirm platform in KTMB app.",
+      "ets_warning_ms": "Platform Komuter ≠ ruang ETS — semak dalam aplikasi KTMB."
+    },
+    "masjid jamek": {
+      "name": "Masjid Jamek",
+      "walk_min": 3,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "Kelana Jaya ↔ Ampang/Sri Petaling — follow paid interchange signs underground.",
+      "note_ms": "Kelana Jaya ↔ Ampang/Sri Petaling — ikut papan tukar berbayar di bawah tanah."
+    },
+    "maluri": {
+      "name": "Maluri",
+      "walk_min": 4,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "MRT Kajang ↔ Ampang/Sri Petaling — connecting paid interchange.",
+      "note_ms": "MRT Kajang ↔ Ampang/Sri Petaling — pertukaran berbayar bersambung."
+    },
+    "muzium negara": {
+      "name": "Muzium Negara",
+      "walk_min": 6,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "MRT Kajang ↔ Kelana Jaya via linkbridge — follow MRT signage.",
+      "note_ms": "MRT Kajang ↔ Kelana Jaya melalui jejantas — ikut papan MRT."
+    },
+    "abdullah hukum": {
+      "name": "Abdullah Hukum",
+      "walk_min": 5,
+      "indoor": false,
+      "paid_separate": false,
+      "note_en": "Kelana Jaya ↔ MRT Kajang — outdoor link, follow overhead walkway signs.",
+      "note_ms": "Kelana Jaya ↔ MRT Kajang — sambungan luar, ikut jejantas pejalan kaki."
+    },
+    "bandar utama": {
+      "name": "Bandar Utama",
+      "walk_min": 3,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "MRT Kajang ↔ LRT Shah Alam (LRT3) — paid-to-paid interchange.",
+      "note_ms": "MRT Kajang ↔ LRT Shah Alam (LRT3) — pertukaran berbayar."
+    },
+    "glenmarie": {
+      "name": "Glenmarie",
+      "walk_min": 5,
+      "indoor": false,
+      "paid_separate": false,
+      "note_en": "Kelana Jaya ↔ LRT Shah Alam (LRT3) — follow station signage between platforms.",
+      "note_ms": "Kelana Jaya ↔ LRT Shah Alam (LRT3) — ikut papan stesen antara platform."
+    },
+    "hang tuah": {
+      "name": "Hang Tuah",
+      "walk_min": 3,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "Monorail ↔ Ampang/Sri Petaling — indoor interchange.",
+      "note_ms": "Monorel ↔ Ampang/Sri Petaling — pertukaran dalam bangunan."
+    },
+    "titiwangsa": {
+      "name": "Titiwangsa",
+      "walk_min": 4,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "Monorail ↔ Ampang/Sri Petaling — follow interchange signs.",
+      "note_ms": "Monorel ↔ Ampang/Sri Petaling — ikut papan pertukaran."
+    },
+    "putra heights": {
+      "name": "Putra Heights",
+      "walk_min": 4,
+      "indoor": false,
+      "paid_separate": false,
+      "note_en": "Kelana Jaya ↔ Sri Petaling Line terminus — cross-platform interchange.",
+      "note_ms": "Kelana Jaya ↔ Laluan Sri Petaling — pertukaran merentas platform."
+    },
+    "subang jaya": {
+      "name": "Subang Jaya",
+      "walk_min": 5,
+      "indoor": false,
+      "paid_separate": true,
+      "note_en": "Kelana Jaya ↔ KTM Komuter — separate operators; tap out and buy new ticket.",
+      "note_ms": "Kelana Jaya ↔ KTM Komuter — operator berbeza; tap keluar dan beli tiket baru."
+    },
+    "klcc": {
+      "name": "KLCC",
+      "walk_min": 8,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "Kelana Jaya station links to Suria KLCC via underground walkway.",
+      "note_ms": "Stesen Kelana Jaya bersambung ke Suria KLCC melalui laluan bawah tanah."
+    },
+    "pasar seni": {
+      "name": "Pasar Seni",
+      "walk_min": 5,
+      "indoor": false,
+      "paid_separate": false,
+      "note_en": "Kelana Jaya line — short walk to MRT Kajang (Merdeka) via covered link.",
+      "note_ms": "Laluan Kelana Jaya — berjalan pendek ke MRT Kajang (Merdeka) melalui laluan bertutup."
+    },
+    "merdeka": {
+      "name": "Merdeka",
+      "walk_min": 5,
+      "indoor": false,
+      "paid_separate": false,
+      "note_en": "MRT Kajang — walk to Pasar Seni (Kelana Jaya) via covered pedestrian link.",
+      "note_ms": "MRT Kajang — berjalan ke Pasar Seni (Kelana Jaya) melalui laluan pejalan kaki."
+    },
+    "bukit bintang": {
+      "name": "Bukit Bintang",
+      "walk_min": 3,
+      "indoor": true,
+      "paid_separate": false,
+      "note_en": "Monorail hub — short walk to MRT Kajang (Bukit Bintang) station nearby.",
+      "note_ms": "Hab monorel — berjalan pendek ke stesen MRT Kajang (Bukit Bintang) berhampiran."
+    }
+  },
+  "operator_notes": {
+    "ktm-komuter": {
+      "en": "Off-peak trains every ~30 min · delays common — check KTMB app",
+      "ms": "Luar waktu puncak ~30 min antara tren · kelewatan biasa — semak app KTMB"
+    },
+    "ktm-north": {
+      "en": "Northern Komuter — low frequency outside peak; confirm branch timetable",
+      "ms": "Komuter Utara — kekerapan rendah luar puncak; semak jadual cawangan"
+    },
+    "ets-intercity": {
+      "en": "ETS uses separate concourse from Komuter at major hubs",
+      "ms": "ETS guna ruang berasingan daripada Komuter di hab utama"
+    }
+  }
+}

@@ -1,17 +1,91 @@
 {
-  "written": 13,
-  "threads": 5,
-  "reddit": 5,
-  "x": 1,
-  "official": 11,
+  "status": "ok",
+  "run_id": "2026-07-01T09:41:02.928561Z",
+  "started_at": "2026-07-01T09:41:02.928561Z",
+  "finished_at": "2026-07-01T09:44:19.548041Z",
+  "duration_seconds": 196.62,
+  "written": 8,
+  "pruned": 0,
+  "threads_pruned_rejected": 0,
+  "threads": 3,
+  "reddit": 1,
+  "x": 0,
+  "official": 13,
+  "rss": 1,
+  "gtfs": 0,
   "timings": {
-    "x": 10.77,
-    "reddit": 24.95,
-    "official": 30.71,
-    "threads": 44.47
+    "x": 0.0,
+    "gtfs": 0.0,
+    "rss": 7.98,
+    "official": 43.71,
+    "reddit": 63.62,
+    "threads": 196.23
   },
   "categories": {
-    "telco_internet": 4,
-    "transport": 9
+    "transport": 7,
+    "telco_internet": 1
+  },
+  "states": {
+    "Selangor": 1,
+    "Wilayah Persekutuan": 4
+  },
+  "modes": {
+    "rail": 5
+  },
+  "sources": {
+    "gtfs": {
+      "source": "gtfs",
+      "started_at": "2026-07-01T09:41:02.931743Z",
+      "finished_at": "2026-07-01T09:41:02.931743Z",
+      "status": "paused",
+      "row_count": 0,
+      "duration_seconds": 0,
+      "error": "reference_only"
+    },
+    "official": {
+      "source": "official",
+      "started_at": "2026-07-01T09:41:02.929597Z",
+      "finished_at": "2026-07-01T09:41:46.641543Z",
+      "status": "healthy",
+      "row_count": 13,
+      "duration_seconds": 43.71,
+      "error": ""
+    },
+    "reddit": {
+      "source": "reddit",
+      "started_at": "2026-07-01T09:41:02.929079Z",
+      "finished_at": "2026-07-01T09:42:06.551937Z",
+      "status": "healthy",
+      "row_count": 1,
+      "duration_seconds": 63.62,
+      "error": ""
+    },
+    "rss": {
+      "source": "rss",
+      "started_at": "2026-07-01T09:41:02.930710Z",
+      "finished_at": "2026-07-01T09:41:10.907803Z",
+      "status": "healthy",
+      "row_count": 1,
+      "duration_seconds": 7.98,
+      "error": ""
+    },
+    "threads": {
+      "source": "threads",
+      "started_at": "2026-07-01T09:41:02.928561Z",
+      "finished_at": "2026-07-01T09:44:19.157076Z",
+      "status": "healthy",
+      "row_count": 3,
+      "duration_seconds": 196.23,
+      "error": ""
+    },
+    "x": {
+      "source": "x",
+      "started_at": "2026-07-01T09:41:02.929597Z",
+      "finished_at": "2026-07-01T09:41:02.929597Z",
+      "status": "paused",
+      "row_count": 0,
+      "duration_seconds": 0,
+      "error": "disabled_until_authenticated"
+    }
   }
 }

@@ -1,79 +1,54 @@
-# AduanMY
+# AduanMY / TrafficMY
 
-Malaysia-first public complaint intelligence engine.
+Malaysia-first public transport pulse built from rider and operator signals.
 
-Status: `in progress`
+**Live:** [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)  
+**Status:** production · **Tests:** 227 passing · **License:** [MIT](LICENSE)
 
-Current product direction: **TrafficMY**  
-Why: transport has the strongest live complaint density, the clearest verification path, and the best demo story in the current evidence set.
+AduanMY is the research engine. **TrafficMY** is the shipped product surface: a mobile-first PWA that turns filtered crowd and official signals into line status, live incidents, maps, and journey helpers for Malaysian public transport.
 
 ## What It Does
 
-AduanMY collects public complaint signals from multiple sources, normalizes them, clusters duplicate incidents, and exposes a cleaner surface for deciding which Malaysian problem area is worth productizing.
+Production loop:
 
-The current repo is not a generic “social listening” toy.  
-It is a source-backed decision engine with a live transport-focused surface.
-
-Core loop:
-
-`collect -> filter -> normalize -> cluster -> score -> choose the wedge`
-
-## Current Wedge
-
-The broad project is `AduanMY`.  
-The current strongest wedge is `TrafficMY`.
+`collect → reject noise → normalize → cluster → corroborate → professional public summary`
 
 TrafficMY focuses on:
-- public transport disruption signals
-- station and line extraction
-- freshness-aware incident surfacing
-- official grounding without pretending official sources are enough on their own
+- nationwide public transport disruption signals (KV, KTM, Penang, Johor, east MY)
+- station, line, and negeri extraction with strict freshness gates
+- 15-minute unattended collection, per-source health, 90-day history, rotating SQLite backups
+- official grounding (MyRapid + KTMB) without treating operators as automatic all-clear
+- Stitch Play UI: glance card, live feed, MapLibre map, travel planner, installable PWA
+
+## Trust Boundary
+
+- A rider post is an early signal, never automatic truth.
+- `No current signal` is not an all-clear.
+- Raw posts and handles stay internal; public output is synthesized and source-linked.
+- GTFS never confirms an incident.
+- Official operator channels remain the final travel check.
 
 ## Current Source Strategy
 
-- Threads: strongest current public social lane
-- Reddit: useful, but noisier
-- X: narrow targeted service-account monitoring
-- Official/open data: grounding and verification only
-
-Current official reality:
-- MyRapid detail pages are often Imperva-blocked to plain HTTP fetches
-- MyRapid homepage and lightweight alert harvesting are still usable
-- Malaysia open-data GTFS-Realtime is useful context, but not yet a full rail incident truth source for this use case
-
-## Verified Current State
-
-- tests: `101/101` passing
-- live routes exist for refresh, overview, status, incidents, and incident detail
-- source freshness is tracked from event timestamps when available
-- official rows are separated from crowd signals in scoring logic
-- stale signals are hidden by default and exposed only when explicitly requested
-
-Recent verified ingest shape:
-- raw Threads rows: `5`
-- raw Reddit rows: `5`
-- raw X rows: `1`
-- raw official rows: `9`
-- written rows after filtering: `14`
-
-Current wedge ranking:
-1. `transport`
-2. `telco_internet`
-3. everything else trails materially
+| Source | Role |
+|--------|------|
+| Threads | Primary rider-signal lane (authenticated search + public fallback) |
+| Reddit | Secondary lane, two-hour minimum cadence |
+| RSS | Malaysian transport headlines |
+| Official / open data | Grounding and verification only |
+| X | Paused in unattended mode until authenticated |
+| GTFS static | Journey/map reference only; anomaly inference disabled |
 
 ## API Surface
 
-- `GET /api/health`
-- `GET /api/complaints`
-- `GET /api/clusters`
-- `GET /api/clusters/{cluster_id}`
-- `GET /api/scores`
-- `GET /api/trends`
-- `POST /api/refresh`
-- `GET /api/trafficmy/overview`
-- `GET /api/trafficmy/status`
-- `GET /api/trafficmy/incidents`
-- `GET /api/trafficmy/incidents/{cluster_id}`
+- `GET /api/health` · `GET /api/health/live` · `GET /api/health/ready`
+- `GET /api/trafficmy/overview` · `GET /api/trafficmy/status`
+- `GET /api/trafficmy/incidents` · `GET /api/trafficmy/incidents/{cluster_id}`
+- `GET /api/trafficmy/lines` · `GET /api/trafficmy/map/live`
+- `GET /api/trafficmy/journey/plan`
+- `POST /api/refresh` (API key in production)
+
+Full route list and architecture notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## Local Setup
 
@@ -84,15 +59,32 @@ python -m pytest tests -q
 uvicorn app.main:app --reload --port 8000
 ```
 
-Open:
+Open `http://127.0.0.1:8000/`
 
-- `http://127.0.0.1:8000/`
-
-Optional for better public-page collection:
+## Docker Deploy
 
 ```bash
-pip install playwright
-playwright install chromium
+docker compose up --build -d
+```
+
+Open `http://localhost:8002/`. Data persists in the `trafficmy_data` volume.
+
+Key environment knobs (see [.env.example](.env.example)):
+
+- `ADUANMY_FULL_REFRESH_INTERVAL_SECONDS` — background collection interval
+- `ADUANMY_REFRESH_API_KEY` — protect `POST /api/refresh`
+- `ADUANMY_THREADS_SESSION_PATH` — optional Playwright session (public search remains fallback)
+- `ADUANMY_GTFS_ANOMALY_ENABLED` — keep `false`
+
+## Repository Structure
+
+```text
+app/           FastAPI routes, collectors, pipeline, services
+configs/       categories, entities, queries, GTFS, discovery
+static/        Stitch Play UI (HTML/CSS/JS, mascots, map assets)
+scripts/       deploy, snapshot, reporting
+tests/         regression coverage (227 tests)
+docs/          architecture, production audit, transport reference
 ```
 
 ## Useful Commands
@@ -101,70 +93,26 @@ playwright install chromium
 python -m pytest tests -q
 python scripts/run_snapshot.py
 python scripts/audit_sources.py
-python scripts/generate_trend_report.py
+pip-audit -r requirements.production.txt
 ```
 
-## Repository Structure
+## Documentation
 
-```text
-app/
-  api/             FastAPI routes
-  collectors/      Threads, Reddit, X, official collectors
-  pipeline/        normalization, extraction, dedup
-  services/        ingest, scoring, incidents, trends, overview
-  db/              SQLite session and schema helpers
-configs/           categories, entities, queries, seed URLs
-data/reports/      generated reports and decision artifacts
-scripts/           snapshot and reporting scripts
-tests/             regression coverage
-static/            lightweight frontend
-```
+- [Architecture](docs/ARCHITECTURE.md)
+- [Production audit (2026-06-30)](docs/PRODUCTION_AUDIT_2026-06-30.md)
+- [Malaysia transport reference](docs/MALAYSIA_TRANSPORT_REFERENCE.md)
+- [Roadmap](ROADMAP.md)
+- [Contributing](CONTRIBUTING.md)
+- [Security policy](SECURITY.md)
 
-## What This Repo Is Not Claiming
+## Author
 
-- not a complete Malaysian incident truth layer
-- not a stable rail telemetry platform yet
-- not a replacement for official service-alert infrastructure
-- not a finished public product
+**Arif Aqyl** — Software Engineering student, UniKL MIIT (Class of 2028)
 
-The current repo is best understood as:
-- a real collection-and-decision engine
-- with a credible transport wedge
-- still being hardened source by source
-
-## Main Technical Decisions
-
-- FastAPI + SQLite for local-first iteration
-- narrow collectors over giant crawler frameworks
-- exact seeds and strict filters over broad noisy scraping
-- official sources used for grounding, not inflated complaint density
-- product freshness derived from source event time where possible
-
-## Known Limitations
-
-- Threads is strong but still brittle
-- X discovery is narrow without account-backed expansion
-- Reddit is usable but still noisy
-- official rail alert coverage is incomplete
-- MyRapid anti-bot protections limit plain-fetch detail scraping
-
-## Near-Term Roadmap
-
-See [ROADMAP.md](ROADMAP.md).
-
-Current priorities:
-- improve transport truth quality
-- tighten telco false-positive handling
-- strengthen official transport status ingestion
-- keep sharpening TrafficMY instead of drifting into a generic category dump
-
-## Reports
-
-Useful generated artifacts:
-- `data/reports/decision_memo.md`
-- `data/reports/source-capability-matrix.md`
-- `data/reports/source_audit_snapshot.md`
-- `data/reports/latest_trends.md`
+- Portfolio: [arifaqyl.me](https://arifaqyl.me)
+- LinkedIn: [linkedin.com/in/arifaqyl](https://linkedin.com/in/arifaqyl)
+- X: [@mindofaqyl](https://x.com/mindofaqyl)
+- Email: [hello@arifaqyl.me](mailto:hello@arifaqyl.me)
 
 ## License
 

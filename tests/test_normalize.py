@@ -101,6 +101,16 @@ def test_category_signal_ok_rejects_telco_ekyc_rant() -> None:
     assert not category_signal_ok(text, "telco_internet", "CelcomDigi")
 
 
+def test_category_signal_ok_rejects_telco_port_in_rant() -> None:
+    text = "maxis app keeps failing when i try to port in my number and the mnp request is stuck"
+    assert not category_signal_ok(text, "telco_internet", "Maxis")
+
+
+def test_category_signal_ok_rejects_telco_plan_upgrade_rant() -> None:
+    text = "unifi app crashes when i try to upgrade plan and change my postpaid package price"
+    assert not category_signal_ok(text, "telco_internet", "Unifi")
+
+
 def test_extract_issue_key_transport_incident() -> None:
     text = "lrt kelana jaya line is experiencing an incident and help and rescue is mobilising"
     assert extract_issue_key(text, "transport") == "incident"

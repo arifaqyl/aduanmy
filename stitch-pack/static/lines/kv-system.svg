@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 160" role="img" aria-label="Klang Valley rail schematic">
+<title>Klang Valley rail schematic</title>
+<rect width="360" height="160" fill="#111318"/>
+
+<!-- LRT3 (Purple) -->
+<path class="schem-line" data-line-id="lrt3" d="M80,30 V130" fill="none" stroke="#7b2d8e" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Kajang Line (Green) -->
+<path class="schem-line" data-line-id="kajang" d="M160,30 V130" fill="none" stroke="#007a33" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- KL Monorail (Light Green) -->
+<path class="schem-line" data-line-id="monorail" d="M200,30 V130" fill="none" stroke="#8dc63f" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Putrajaya Line (Yellow) -->
+<path class="schem-line" data-line-id="putrajaya" d="M240,30 V130" fill="none" stroke="#f4c300" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Kelana Jaya Line (Red) -->
+<path class="schem-line" data-line-id="kelana-jaya" d="M40,50 H320" fill="none" stroke="#e31837" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Ampang / Sri Petaling Line (Orange) -->
+<path class="schem-line" data-line-id="ampang-sri-petaling" d="M40,90 H320" fill="none" stroke="#f7941d" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- KTM Komuter (Blue) -->
+<path class="schem-line" data-line-id="ktm-komuter" d="M40,130 H320" fill="none" stroke="#0066b3" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+<!-- Cross-line transfer connectors (parallel lines that interchange via walkway, not a track crossing) -->
+<path d="M120,50 V90" fill="none" stroke="#ece8e1" stroke-width="1.5" stroke-dasharray="2,2"/>
+<path d="M284,50 V130" fill="none" stroke="#ece8e1" stroke-width="1.5" stroke-dasharray="2,2"/>
+
+<!-- Interchange station rings -->
+<!-- Glenmarie (LRT3 & Kelana Jaya) -->
+<g transform="translate(80.0,50.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+<!-- Pasar Seni (Kajang & Kelana Jaya) -->
+<g transform="translate(160.0,50.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+<!-- Maluri (Kajang & Ampang/Sri Petaling) -->
+<g transform="translate(160.0,90.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+<!-- Hang Tuah (Monorail & Ampang/Sri Petaling) -->
+<g transform="translate(200.0,90.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+<!-- Masjid Jamek (Kelana Jaya & Ampang/Sri Petaling, walkway link) -->
+<g transform="translate(120.0,50.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+<g transform="translate(120.0,90.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+<!-- KL Sentral (Kelana Jaya & KTM Komuter, walkway link) -->
+<g transform="translate(284.0,50.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+<g transform="translate(284.0,130.0)">
+  <circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+  <circle cx="0" cy="0" r="3" fill="#111318"/>
+</g>
+
+<!-- Labels -->
+<text class="schem-text-label" data-line-id="kelana-jaya" x="325" y="48" fill="#e31837" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">Kelana Jaya</text>
+<text class="schem-text-label" data-line-id="ampang-sri-petaling" x="325" y="88" fill="#f7941d" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">Ampang/SP</text>
+<text class="schem-text-label" data-line-id="ktm-komuter" x="325" y="128" fill="#0066b3" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="start" style="cursor:pointer">KTM Komuter</text>
+
+<text class="schem-text-label" data-line-id="lrt3" x="80" y="24" fill="#7b2d8e" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="middle" style="cursor:pointer">LRT3</text>
+<text class="schem-text-label" data-line-id="kajang" x="160" y="24" fill="#007a33" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="middle" style="cursor:pointer">Kajang</text>
+<text class="schem-text-label" data-line-id="monorail" x="200" y="24" fill="#8dc63f" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="middle" style="cursor:pointer">Monorail</text>
+<text class="schem-text-label" data-line-id="putrajaya" x="240" y="24" fill="#f4c300" font-size="7" font-family="IBM Plex Sans,sans-serif" font-weight="700" text-anchor="middle" style="cursor:pointer">Putrajaya</text>
+
+<text x="80" y="60" fill="#ece8e1" font-size="6" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="middle">Glenmarie</text>
+<text x="145" y="43" fill="#ece8e1" font-size="6" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="end">Pasar Seni</text>
+<text x="145" y="103" fill="#ece8e1" font-size="6" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="end">Maluri</text>
+<text x="215" y="93" fill="#ece8e1" font-size="6" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="start">H. Tuah</text>
+<text x="112" y="70" fill="#ece8e1" font-size="6" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="end">M. Jamek</text>
+<text x="290" y="92" fill="#ece8e1" font-size="6" font-family="IBM Plex Sans,sans-serif" font-weight="600" text-anchor="start">KL Sentral</text>
+
+<text x="8" y="154" fill="#6b6660" font-size="8" font-family="IBM Plex Sans,sans-serif">Schematic diagram · Tap any line to scroll to status</text>
+</svg>

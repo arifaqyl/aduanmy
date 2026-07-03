@@ -15,8 +15,8 @@ def test_overview_derives_live_entity_and_location_counts_from_clusters():
                 url="https://example.com/x1",
                 author_handle="askrapidkl",
                 created_at="2026-06-22T00:00:00Z",
-                raw_text="LRT incident at Kelana Jaya",
-                normalized_text="lrt incident at kelana jaya",
+                raw_text="LRT incident at Kelana Jaya — stuck again",
+                normalized_text="lrt incident at kelana jaya stuck again",
                 detected_language_mix="en",
                 category="transport",
                 entity="LRT",
@@ -47,8 +47,8 @@ def test_overview_derives_live_entity_and_location_counts_from_clusters():
                 url="https://example.com/r1",
                 author_handle="u2",
                 created_at="2026-06-22T00:20:00Z",
-                raw_text="MRT issue at Maluri",
-                normalized_text="mrt issue at maluri",
+                raw_text="MRT delay at Maluri this morning",
+                normalized_text="mrt delay at maluri this morning",
                 detected_language_mix="en",
                 category="transport",
                 entity="MRT",
@@ -156,8 +156,8 @@ def test_incidents_can_include_stale_when_requested():
         ]
     )
 
-    default_payload = get_trafficmy_incidents(sort_by="freshest")
-    full_payload = get_trafficmy_incidents(sort_by="freshest", include_stale=True)
+    default_payload = get_trafficmy_incidents(sort_by="freshest", freshness_band="all")
+    full_payload = get_trafficmy_incidents(sort_by="freshest", include_stale=True, freshness_band="all")
 
     assert default_payload["count"] == 1
     assert default_payload["stale_hidden_count"] == 1
@@ -225,8 +225,8 @@ def test_default_live_surface_keeps_aging_transport_incidents_inside_window():
                 url="https://example.com/aging",
                 author_handle="u1",
                 created_at=aging,
-                raw_text="Kelana Jaya line incident near Dang Wangi",
-                normalized_text="kelana jaya line incident near dang wangi",
+                raw_text="Kelana Jaya line incident near Dang Wangi today",
+                normalized_text="kelana jaya line incident near dang wangi today",
                 detected_language_mix="en",
                 category="transport",
                 entity="Kelana Jaya Line",
@@ -270,8 +270,8 @@ def test_strongest_transport_sort_prefers_recent_over_older_when_confidence_band
                 url="https://example.com/recent-1",
                 author_handle="u1",
                 created_at="2026-06-24T00:00:00Z",
-                raw_text="Kelana Jaya Line incident at Pasar Seni",
-                normalized_text="kelana jaya line incident at pasar seni",
+                raw_text="Kelana Jaya Line incident at Pasar Seni this morning",
+                normalized_text="kelana jaya line incident at pasar seni this morning",
                 detected_language_mix="en",
                 category="transport",
                 entity="Kelana Jaya Line",
@@ -286,8 +286,8 @@ def test_strongest_transport_sort_prefers_recent_over_older_when_confidence_band
                 url="https://example.com/aging-1",
                 author_handle="thesundaily",
                 created_at="2026-06-05T00:00:00Z",
-                raw_text="Kelana Jaya Line incident at Dang Wangi",
-                normalized_text="kelana jaya line incident at dang wangi",
+                raw_text="Kelana Jaya Line incident at Dang Wangi today",
+                normalized_text="kelana jaya line incident at dang wangi today",
                 detected_language_mix="en",
                 category="transport",
                 entity="Kelana Jaya Line",
@@ -347,3 +347,147 @@ def test_overview_top_incidents_prefers_reasonable_or_strong_over_weak_when_avai
 
     assert "transport:MRT:Maluri:incident" in top_ids
     assert "transport:Kelana Jaya Line:Bangsar:delay" not in top_ids
+
+
+def test_default_source_group_hides_gtfs_only_clusters():
+    reset_complaints()
+    upsert_complaints(
+        [
+            ComplaintSchema(
+                source_platform="gtfs_rt",
+                post_id="g1",
+                url="https://example.com/g1",
+                author_handle="gtfs:rapid-bus-kl",
+                created_at="2026-06-28T06:48:31Z",
+                raw_text="GTFS anomaly route 772",
+                normalized_text="gtfs anomaly route 772",
+                detected_language_mix="en",
+                category="transport",
+                entity="772",
+                location="Pasar Seni",
+                severity="medium",
+                confidence=0.8,
+                cluster_id="transport:772:Pasar Seni",
+            ),
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="t1",
+                url="https://example.com/t1",
+                author_handle="k.sam95",
+                created_at="2026-06-25T00:48:11Z",
+                raw_text="Kelana Jaya LRT line delay again this morning stuck at Bangsar",
+                normalized_text="kelana jaya lrt line delay again this morning stuck at bangsar",
+                detected_language_mix="en",
+                category="transport",
+                entity="Kelana Jaya Line",
+                location="Kelana Jaya",
+                severity="high",
+                confidence=0.8,
+                cluster_id="transport:Kelana Jaya Line:Kelana Jaya:delay",
+            ),
+        ]
+    )
+
+    social = get_trafficmy_incidents(source_group="social", freshness_band="all")
+    gps = get_trafficmy_incidents(source_group="gps", freshness_band="all")
+
+    assert social["count"] == 1
+    assert social["items"][0]["sources"] == "threads"
+    assert gps["count"] == 1
+    assert gps["items"][0]["sources"] == "gtfs_rt"
+
+
+def test_quality_only_hides_reply_thread_noise():
+    reset_complaints()
+    upsert_complaints(
+        [
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="noise",
+                url="https://example.com/noise",
+                author_handle="lelzilla45",
+                created_at="2026-06-16T00:51:16Z",
+                raw_text="lelzilla45 Replying to @x LRT Chan Sow Lin nice station",
+                normalized_text="lelzilla45 replying to @x lrt chan sow lin nice station",
+                detected_language_mix="en",
+                category="transport",
+                entity="LRT",
+                location="Chan Sow Lin",
+                severity="low",
+                confidence=0.5,
+                cluster_id="transport:LRT:Chan Sow Lin:delay",
+            ),
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="real",
+                url="https://example.com/real",
+                author_handle="k.sam95",
+                created_at="2026-06-25T00:48:11Z",
+                raw_text="Kelana Jaya LRT line delay again this morning stuck at Bangsar",
+                normalized_text="kelana jaya lrt line delay again this morning stuck at bangsar",
+                detected_language_mix="en",
+                category="transport",
+                entity="Kelana Jaya Line",
+                location="Bangsar",
+                severity="medium",
+                confidence=0.8,
+                cluster_id="transport:Kelana Jaya Line:Bangsar:delay",
+            ),
+        ]
+    )
+
+    payload = get_trafficmy_incidents(quality_only=True, freshness_band="all")
+    ids = {item["cluster_id"] for item in payload["items"]}
+    assert "transport:Kelana Jaya Line:Bangsar:delay" in ids
+    assert "transport:LRT:Chan Sow Lin:delay" not in ids
+
+
+def test_quality_only_hides_hypothetical_pasar_seni_post():
+    reset_complaints()
+    upsert_complaints(
+        [
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="hypo",
+                url="https://example.com/hypo",
+                author_handle="yyadnn",
+                created_at="2026-06-23T23:53:13Z",
+                raw_text=(
+                    "Bayangkan LRT3 dah start operate lepastu KJ line ada problem/delay, "
+                    "station Glenmarie akan jd macam Pasar Seni?"
+                ),
+                normalized_text=(
+                    "bayangkan lrt3 dah start operate lepastu kj line ada problem/delay "
+                    "station glenmarie akan jd macam pasar seni"
+                ),
+                detected_language_mix="en",
+                category="transport",
+                entity="",
+                location="Pasar Seni",
+                severity="medium",
+                confidence=0.5,
+                cluster_id="transport:Pasar Seni:delay",
+            ),
+            ComplaintSchema(
+                source_platform="reddit",
+                post_id="advisory",
+                url="https://example.com/advisory",
+                author_handle="news",
+                created_at="2026-06-24T03:35:05Z",
+                raw_text="Commuters on the Kelana Jaya Line can expect delays.",
+                normalized_text="commuters on the kelana jaya line can expect delays.",
+                detected_language_mix="en",
+                category="transport",
+                entity="Kelana Jaya Line",
+                location="",
+                severity="medium",
+                confidence=0.5,
+                cluster_id="transport:Kelana Jaya Line:delay",
+            ),
+        ]
+    )
+
+    payload = get_trafficmy_incidents(quality_only=True, freshness_band="all")
+    ids = {item["cluster_id"] for item in payload["items"]}
+    assert "transport:Pasar Seni:delay" not in ids
+    assert "transport:Kelana Jaya Line:delay" not in ids

@@ -1,3 +1,5 @@
+from datetime import UTC, datetime, timedelta
+
 from app.db.session import reset_complaints, upsert_complaints
 from app.schemas.complaint import ComplaintSchema
 from app.services.incident_service import get_cluster_detail, list_clusters
@@ -227,6 +229,47 @@ def test_list_clusters_requires_specific_official_match_for_corroboration():
     assert cluster["corroborated_by_official"] is True
 
 
+def test_old_official_notice_does_not_corroborate_new_rider_signal():
+    now = datetime.now(UTC)
+    reset_complaints()
+    upsert_complaints(
+        [
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="rider-new",
+                url="https://example.com/rider-new",
+                author_handle="rider",
+                created_at=now.isoformat().replace("+00:00", "Z"),
+                raw_text="Kelana Jaya Line train is delayed and not moving at Bangsar",
+                normalized_text="kelana jaya line train is delayed and not moving at bangsar",
+                category="transport",
+                entity="Kelana Jaya Line",
+                location="Bangsar",
+                severity="medium",
+                confidence=0.8,
+                cluster_id="transport:Kelana Jaya Line:Bangsar:delay",
+            ),
+            ComplaintSchema(
+                source_platform="official",
+                post_id="official-old",
+                url="https://myrapid.com.my/old-alert",
+                author_handle="official:myrapid",
+                created_at=(now - timedelta(days=10)).isoformat().replace("+00:00", "Z"),
+                raw_text="Kemas kini Laluan Kelana Jaya",
+                normalized_text="kemas kini laluan kelana jaya",
+                category="transport",
+                entity="Kelana Jaya Line",
+                severity="low",
+                confidence=0.8,
+                cluster_id="transport:official",
+            ),
+        ]
+    )
+
+    cluster = next(item for item in list_clusters() if item["sources"] == "threads")
+    assert cluster["corroborated_by_official"] is False
+
+
 def test_list_clusters_allows_line_level_official_corroboration_for_station_level_transport_incident():
     reset_complaints()
     upsert_complaints(
@@ -262,6 +305,49 @@ def test_list_clusters_allows_line_level_official_corroboration_for_station_leve
                 severity="low",
                 confidence=0.2,
                 cluster_id="transport:official",
+            ),
+        ]
+    )
+
+    cluster = list_clusters()[0]
+    assert cluster["corroborated_by_official"] is True
+
+
+def test_list_clusters_corroborates_via_official_rss_same_line():
+    reset_complaints()
+    upsert_complaints(
+        [
+            ComplaintSchema(
+                source_platform="threads",
+                post_id="t1",
+                url="https://example.com/threads",
+                author_handle="u1",
+                created_at="2026-06-22T00:00:00Z",
+                raw_text="KTM Komuter delay at KL Sentral",
+                normalized_text="ktm komuter delay at kl sentral",
+                detected_language_mix="en",
+                category="transport",
+                entity="KTM Komuter",
+                location="KL Sentral",
+                severity="medium",
+                confidence=0.8,
+                cluster_id="transport:KTM Komuter:KL Sentral:delay",
+            ),
+            ComplaintSchema(
+                source_platform="rss",
+                post_id="r1",
+                url="https://www.ktmb.com.my/alert",
+                author_handle="ktmb",
+                created_at="2026-06-22T00:30:00Z",
+                raw_text="KTMB Notis kelewatan Komuter",
+                normalized_text="ktmb notis kelewatan komuter",
+                detected_language_mix="ms",
+                category="transport",
+                entity="",
+                location="",
+                severity="low",
+                confidence=0.2,
+                cluster_id="transport:rss:ktmb",
             ),
         ]
     )
@@ -371,7 +457,7 @@ def test_list_clusters_exposes_source_roles_for_public_media_and_official():
                 post_id="o1",
                 url="https://example.com/official",
                 author_handle="official:myrapid",
-                created_at="",
+                created_at="2026-06-22T00:10:00Z",
                 raw_text="Kemas Kini Laluan Kelana Jaya",
                 normalized_text="kemas kini laluan kelana jaya",
                 detected_language_mix="ms",
@@ -497,6 +583,11 @@ def test_cluster_timestamps_prefer_source_created_at_over_inserted_at():
 
 
 def test_clusters_expose_freshness_bucket_and_age_days():
+    now = datetime.now(UTC)
+    recent_at = (now - timedelta(days=1)).isoformat().replace("+00:00", "Z")
+    aging_at = (now - timedelta(days=10)).isoformat().replace("+00:00", "Z")
+    stale_at = (now - timedelta(days=45)).isoformat().replace("+00:00", "Z")
+
     reset_complaints()
     upsert_complaints(
         [
@@ -505,7 +596,7 @@ def test_clusters_expose_freshness_bucket_and_age_days():
                 post_id="recent-1",
                 url="https://example.com/recent-1",
                 author_handle="u1",
-                created_at="2026-06-22T00:00:00Z",
+                created_at=recent_at,
                 raw_text="MRT fire alarm at Maluri",
                 normalized_text="mrt fire alarm at maluri",
                 detected_language_mix="en",
@@ -521,7 +612,7 @@ def test_clusters_expose_freshness_bucket_and_age_days():
                 post_id="aging-1",
                 url="https://example.com/aging-1",
                 author_handle="askrapidkl",
-                created_at="2026-06-12T00:00:00Z",
+                created_at=aging_at,
                 raw_text="Kelana Jaya Line delay",
                 normalized_text="kelana jaya line delay",
                 detected_language_mix="en",
@@ -537,7 +628,7 @@ def test_clusters_expose_freshness_bucket_and_age_days():
                 post_id="stale-1",
                 url="https://example.com/stale-1",
                 author_handle="u2",
-                created_at="2026-05-12T00:00:00Z",
+                created_at=stale_at,
                 raw_text="LRT disruption at Chan Sow Lin",
                 normalized_text="lrt disruption at chan sow lin",
                 detected_language_mix="en",

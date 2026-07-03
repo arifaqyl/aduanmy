@@ -47,11 +47,24 @@ OFFICIAL_SOURCES = [
 ]
 
 MYRAPID_HOME = "https://myrapid.com.my/"
+KTMB_HOME = "https://www.ktmb.com.my/"
+KTMB_ALERT_KEYWORDS = (
+    "delay",
+    "kelewatan",
+    "gangguan",
+    "cancellation",
+    "pembatalan",
+    "notis",
+    "disruption",
+    "technical",
+)
 MYRAPID_ALERT_KEYWORDS = ("kemas kini", "kelewatan", "gangguan", "line update", "service alert")
 MYRAPID_SEARCH_QUERIES = [
     'site:myrapid.com.my "kemas kini laluan" myrapid',
     'site:myrapid.com.my "kelewatan tren" myrapid',
     'site:myrapid.com.my "line update" "rapid kl"',
+    'site:myrapid.com.my "Kelewatan Bas" myrapid',
+    'site:myrapid.com.my "laluan terjejas" bas',
 ]
 MYRAPID_NORMAL_STATUS_TERMS = (
     "normal service",
@@ -343,8 +356,49 @@ def _collect_myrapid_alerts_from_search(limit: int = 4) -> list[dict]:
     return rows
 
 
+def _collect_ktmb_alerts(limit: int = 6) -> list[dict]:
+    rows: list[dict] = []
+    try:
+        html = fetch_html(KTMB_HOME, timeout=15)
+    except Exception:
+        return rows
+    soup = soup_from_html(html)
+    seen: set[str] = set()
+    for node in soup.select("a, h2, h3, h4, p, li"):
+        text = clean_text(node.get_text(" ", strip=True))
+        if len(text) < 18 or len(text) > 280:
+            continue
+        low = text.lower()
+        if not any(keyword in low for keyword in KTMB_ALERT_KEYWORDS):
+            continue
+        if not any(token in low for token in ["ktm", "ktmb", "komuter", "ets", "train", "tren", "rail"]):
+            continue
+        if text in seen:
+            continue
+        seen.add(text)
+        href = node.get("href", KTMB_HOME) if node.name == "a" else KTMB_HOME
+        if href.startswith("/"):
+            href = f"https://www.ktmb.com.my{href}"
+        rows.append(
+            {
+                "source_platform": "official",
+                "post_id": make_post_id(f"ktmb:{text[:80]}"),
+                "url": href if href.startswith("http") else KTMB_HOME,
+                "author_handle": "official:ktmb",
+                "created_at": "",
+                "raw_text": text,
+                "query": "ktmb_homepage",
+                "seed_category": "transport",
+            }
+        )
+        if len(rows) >= limit:
+            break
+    return rows
+
+
 def collect_official_sample() -> list[dict]:
     rows: list[dict] = []
+    rows.extend(_collect_ktmb_alerts())
     rows.extend(_collect_myrapid_alerts())
     if not rows:
         rows.extend(_collect_myrapid_alerts_from_search())

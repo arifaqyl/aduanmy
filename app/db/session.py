@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sqlite3
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from app.core.config import settings
@@ -22,6 +23,7 @@ CREATE TABLE IF NOT EXISTS complaints (
     subcategory TEXT NOT NULL,
     entity TEXT NOT NULL,
     location TEXT NOT NULL,
+    state TEXT NOT NULL DEFAULT '',
     severity TEXT NOT NULL,
     confidence REAL NOT NULL,
     engagement TEXT NOT NULL,
@@ -29,6 +31,22 @@ CREATE TABLE IF NOT EXISTS complaints (
     inserted_at TEXT DEFAULT CURRENT_TIMESTAMP,
     UNIQUE(source_platform, post_id)
 );
+
+CREATE TABLE IF NOT EXISTS collector_runs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    run_id TEXT NOT NULL,
+    source TEXT NOT NULL,
+    started_at TEXT NOT NULL,
+    finished_at TEXT NOT NULL,
+    status TEXT NOT NULL,
+    row_count INTEGER NOT NULL DEFAULT 0,
+    duration_seconds REAL NOT NULL DEFAULT 0,
+    error TEXT NOT NULL DEFAULT '',
+    UNIQUE(run_id, source)
+);
+
+CREATE INDEX IF NOT EXISTS idx_collector_runs_source_id
+ON collector_runs(source, id DESC);
 """
 
 
@@ -39,20 +57,49 @@ def db_path() -> Path:
 
 
 def connect() -> sqlite3.Connection:
-    conn = sqlite3.connect(db_path())
+    conn = sqlite3.connect(db_path(), timeout=30.0)
     conn.row_factory = sqlite3.Row
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("PRAGMA synchronous=NORMAL")
+    except Exception:
+        pass
     return conn
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    columns = {row[1] for row in conn.execute("PRAGMA table_info(complaints)")}
+    if "state" not in columns:
+        conn.execute("ALTER TABLE complaints ADD COLUMN state TEXT NOT NULL DEFAULT ''")
 
 
 def init_db() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA_SQL)
+        _migrate(conn)
 
 
 def reset_complaints() -> None:
     init_db()
     with connect() as conn:
         conn.execute("DELETE FROM complaints")
+
+
+def prune_old_complaints(*, retention_days: int | None = None) -> int:
+    days = retention_days if retention_days is not None else settings.retention_days
+    if days <= 0:
+        return 0
+    cutoff = (datetime.now(UTC) - timedelta(days=days)).isoformat()
+    init_db()
+    with connect() as conn:
+        cur = conn.execute(
+            """
+            DELETE FROM complaints
+            WHERE COALESCE(NULLIF(created_at, ''), inserted_at) < ?
+            """,
+            (cutoff,),
+        )
+        return int(cur.rowcount or 0)
 
 
 def upsert_complaints(rows: list[ComplaintSchema]) -> int:
@@ -73,6 +120,7 @@ def upsert_complaints(rows: list[ComplaintSchema]) -> int:
             row.subcategory,
             row.entity,
             row.location,
+            row.state,
             row.severity,
             row.confidence,
             row.engagement,
@@ -86,8 +134,8 @@ def upsert_complaints(rows: list[ComplaintSchema]) -> int:
             INSERT OR REPLACE INTO complaints (
                 source_platform, post_id, url, author_handle, created_at, raw_text,
                 normalized_text, detected_language_mix, category, subcategory,
-                entity, location, severity, confidence, engagement, cluster_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                entity, location, state, severity, confidence, engagement, cluster_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             payload,
         )
@@ -107,3 +155,74 @@ def fetch_category_counts() -> list[sqlite3.Row]:
                 """
             )
         )
+
+
+def record_collector_runs(run_id: str, runs: list[dict]) -> None:
+    if not runs:
+        return
+    init_db()
+    payload = [
+        (
+            run_id,
+            str(run.get("source", "")),
+            str(run.get("started_at", "")),
+            str(run.get("finished_at", "")),
+            str(run.get("status", "unknown")),
+            int(run.get("row_count", 0) or 0),
+            float(run.get("duration_seconds", 0) or 0),
+            str(run.get("error", ""))[:1000],
+        )
+        for run in runs
+        if run.get("source")
+    ]
+    with connect() as conn:
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO collector_runs (
+                run_id, source, started_at, finished_at, status,
+                row_count, duration_seconds, error
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            payload,
+        )
+        conn.execute(
+            "DELETE FROM collector_runs WHERE finished_at < ?",
+            ((datetime.now(UTC) - timedelta(days=30)).isoformat(),),
+        )
+
+
+def latest_collector_runs() -> list[dict]:
+    init_db()
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT cr.run_id, cr.source, cr.started_at, cr.finished_at,
+                   cr.status, cr.row_count, cr.duration_seconds, cr.error
+            FROM collector_runs AS cr
+            JOIN (
+                SELECT source, MAX(id) AS latest_id
+                FROM collector_runs
+                GROUP BY source
+            ) AS latest ON latest.latest_id = cr.id
+            ORDER BY cr.source
+            """
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+def latest_collector_run(source: str, *, include_paused: bool = True) -> dict | None:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT run_id, source, started_at, finished_at, status,
+                   row_count, duration_seconds, error
+            FROM collector_runs
+            WHERE source = ?
+              AND (? = 1 OR status != 'paused')
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (source, 1 if include_paused else 0),
+        ).fetchone()
+    return dict(row) if row else None

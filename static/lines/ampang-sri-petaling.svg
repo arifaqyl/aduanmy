@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 120" role="img" aria-label="Ampang / Sri Petaling Lines schematic">
+<title>Ampang / Sri Petaling Lines</title>
+<rect width="640" height="120" fill="#111318"/>
+<line x1="40" y1="72.0" x2="320.0" y2="72.0" stroke="#f7941d" stroke-width="6"/>
+<line x1="320.0" y1="72.0" x2="320.0" y2="28" stroke="#f7941d" stroke-width="6"/>
+<line x1="320.0" y1="28" x2="520" y2="28" stroke="#f7941d" stroke-width="6"/>
+<line x1="320.0" y1="72.0" x2="600" y2="72.0" stroke="#f7941d" stroke-width="6"/>
+<g transform="translate(40.0,72.0)"><!-- Terminal cap marker. Pattern: RapidKL linear diagram convention (reference only). -->
+<rect x="-4" y="-4" width="8" height="8" rx="1" fill="#ece8e1"/></g>
+<text x="40.0" y="90.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Sentul T.</text>
+<g transform="translate(520.0,28.0)"><!-- Terminal cap marker. Pattern: RapidKL linear diagram convention (reference only). -->
+<rect x="-4" y="-4" width="8" height="8" rx="1" fill="#ece8e1"/></g>
+<text x="520.0" y="18.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">Ampang</text>
+<g transform="translate(600.0,72.0)"><!-- Terminal cap marker. Pattern: RapidKL linear diagram convention (reference only). -->
+<rect x="-4" y="-4" width="8" height="8" rx="1" fill="#ece8e1"/></g>
+<text x="600.0" y="90.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">P.Heights</text>
+<g transform="translate(320.0,72.0)"><!-- Hollow interchange ring. Pattern: TfL line-diagram standard (reference only), original geometry. -->
+<circle cx="0" cy="0" r="5" fill="none" stroke="#ece8e1" stroke-width="2"/>
+<circle cx="0" cy="0" r="3" fill="#111318"/></g>
+<text x="320.0" y="90.0" fill="#9a958c" font-size="12" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">C.Sow Lin</text>
+<text x="320.0" y="14" fill="#6b6660" font-size="8" font-family="IBM Plex Sans,sans-serif" text-anchor="middle">3 branches · Chan Sow Lin</text>
+</svg>

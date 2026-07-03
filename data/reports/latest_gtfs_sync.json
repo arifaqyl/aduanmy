@@ -1,0 +1,10 @@
+{
+  "networks": {
+    "rapid-bus-kl": 140,
+    "rapid-bus-mrtfeeder": 91,
+    "rapid-bus-penang": 47,
+    "rapid-bus-kuantan": 17,
+    "rapid-rail-kl": 8
+  },
+  "synced_at": "2026-06-30T14:05:54.971538+00:00"
+}
