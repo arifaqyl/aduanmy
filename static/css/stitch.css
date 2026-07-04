@@ -1228,7 +1228,9 @@
   background: var(--stitch-surface);
   border-top: 2px solid var(--stitch-border);
   border-radius: 16px 16px 0 0;
-  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  /* Extra bottom padding beyond the active pill's 4px drop-shadow so the
+     "3D" shadow never gets flush against (or clipped by) the screen edge. */
+  padding: 8px 12px calc(14px + env(safe-area-inset-bottom));
   box-shadow: 0 -4px 0 rgba(0, 0, 0, 0.05);
   display: flex;
   justify-content: space-around;
