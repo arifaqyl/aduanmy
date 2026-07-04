@@ -1538,18 +1538,41 @@
     }).join('')}</div>`;
   }
 
+  const HOURS_STATUS_META = {
+    peak: { cls: 'hours-now--peak', icon: '🔴' },
+    off_peak: { cls: 'hours-now--running', icon: '🟢' },
+    before_service: { cls: 'hours-now--upcoming', icon: '🕐' },
+    after_service: { cls: 'hours-now--ended', icon: '⚪' },
+    not_operating: { cls: 'hours-now--upcoming', icon: '🕐' },
+    unknown: { cls: 'hours-now--unknown', icon: '' },
+  };
+
   function renderHoursSection(hours, svc) {
-    if (!hours) return '<p style="color:var(--text-dim);font-size:12px">Operating hours not published for this line.</p>';
-    const peaks = (hours.peak_hours || []).map(p =>
-      `<div>${esc(p.label || 'Peak')}: ${esc(p.start)}–${esc(p.end)}${p.headway_min ? ` · ~${esc(p.headway_min)} min` : ''}</div>`
-    ).join('');
+    if (!hours) return '<p class="guide-empty-hint">Operating hours not published for this line.</p>';
+    const meta = HOURS_STATUS_META[svc?.status] || HOURS_STATUS_META.unknown;
+    const nowChip = svc?.label
+      ? `<div class="hours-now-chip ${meta.cls}">${meta.icon ? `<span aria-hidden="true">${meta.icon}</span>` : ''}${esc(svc.label)}</div>`
+      : '';
+    const peakIcons = { 'Morning Peak': '🌅', 'Evening Peak': '🌆', 'Morning peak': '🌅', 'Evening peak': '🌆' };
+    const peakRows = (hours.peak_hours || []).map(p => {
+      const label = p.label || 'Peak';
+      return `<div class="hours-peak-row">
+        <span class="hours-peak-icon" aria-hidden="true">${peakIcons[label] || '⏱'}</span>
+        <span class="hours-peak-label">${esc(label)}</span>
+        <span class="hours-peak-time">${esc(p.start)}–${esc(p.end)}</span>
+        ${p.headway_min ? `<span class="hours-peak-headway">~${esc(p.headway_min)} min</span>` : ''}
+      </div>`;
+    }).join('');
     return `<div class="guide-hours">
-      <div><strong>First train</strong> ${esc(hours.first_train)} MYT · <strong>Last train</strong> ${esc(hours.last_train)} MYT</div>
-      ${hours.days ? `<div>${esc(hours.days)}</div>` : ''}
-      ${svc?.label ? `<div><strong>Now:</strong> ${esc(svc.label)}</div>` : ''}
-      ${peaks}
-      ${hours.off_peak_headway_min ? `<div>Off-peak headway ~${esc(hours.off_peak_headway_min)} min</div>` : ''}
-      ${hours.disclaimer ? `<div style="color:var(--text-dim);font-size:11px;margin-top:6px">${esc(hours.disclaimer)}</div>` : ''}
+      ${nowChip}
+      <div class="hours-grid">
+        <div class="hours-stat"><span class="hours-stat-label">First train</span><span class="hours-stat-value">${esc(hours.first_train)} MYT</span></div>
+        <div class="hours-stat"><span class="hours-stat-label">Last train</span><span class="hours-stat-value">${esc(hours.last_train)} MYT</span></div>
+      </div>
+      ${hours.days ? `<p class="hours-days">${esc(hours.days)}</p>` : ''}
+      ${peakRows ? `<div class="hours-peak-list">${peakRows}</div>` : ''}
+      ${hours.off_peak_headway_min ? `<div class="hours-peak-row hours-peak-row--offpeak"><span class="hours-peak-icon" aria-hidden="true">⏱</span><span class="hours-peak-label">Off-peak</span><span class="hours-peak-headway">~${esc(hours.off_peak_headway_min)} min headway</span></div>` : ''}
+      ${hours.disclaimer ? `<p class="hours-disclaimer">${esc(hours.disclaimer)}</p>` : ''}
     </div>`;
   }
 

@@ -1147,7 +1147,7 @@
   color: var(--text-secondary);
 }
 
-.play-app.stitch-app .stitch-travel-banner {
+.play-app.stitch-app .stitch-travel-banner:not(.stitch-travel-banner--native) {
   border: 2px solid var(--stitch-border);
   border-radius: var(--stitch-radius);
   overflow: hidden;
@@ -1156,7 +1156,7 @@
   background: #eaf6ff;
 }
 
-.play-app.stitch-app .stitch-travel-banner img {
+.play-app.stitch-app .stitch-travel-banner:not(.stitch-travel-banner--native) img {
   display: block;
   width: 100%;
   height: auto;
@@ -1474,6 +1474,135 @@
 
 .guide-capacity-line {
   margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+/* ── Operating hours (line guide panel) ── */
+.guide-hours {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hours-now-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  background: var(--tm-surface-2);
+  border: 1px solid var(--tm-line);
+  color: var(--text-primary, var(--tm-ink));
+}
+
+.hours-now-chip.hours-now--peak {
+  background: #ffe4d5;
+  border-color: #f97316;
+  color: #9a3412;
+}
+
+.hours-now-chip.hours-now--running {
+  background: var(--stitch-green-soft, #d7f7c8);
+  border-color: var(--stitch-green, #58cc02);
+  color: #2e5c04;
+}
+
+.hours-now-chip.hours-now--upcoming {
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #1e3a8a;
+}
+
+.hours-now-chip.hours-now--ended {
+  background: var(--tm-surface-2);
+  border-color: var(--tm-line);
+  color: var(--text-dim);
+}
+
+.hours-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.hours-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--tm-surface-2);
+  border: 1px solid var(--tm-line);
+}
+
+.hours-stat-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.hours-stat-value {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary, var(--tm-ink));
+}
+
+.hours-days {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.hours-peak-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.hours-peak-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  border-radius: 10px;
+  background: var(--tm-surface-2);
+  border: 1px solid var(--tm-line);
+  font-size: 12px;
+}
+
+.hours-peak-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.hours-peak-label {
+  font-weight: 700;
+  color: var(--text-primary, var(--tm-ink));
+}
+
+.hours-peak-time {
+  color: var(--text-secondary);
+}
+
+.hours-peak-headway {
+  margin-left: auto;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.hours-peak-row--offpeak .hours-peak-headway {
+  margin-left: 0;
+}
+
+.hours-disclaimer {
+  margin: 0;
   font-size: 11px;
   color: var(--text-dim);
 }
