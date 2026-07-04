@@ -13,6 +13,7 @@ from app.core.freshness import is_inside_myt_today
 from app.services.incident_service import list_clusters
 from app.services.journey_service import _graph, _normalise
 from app.services.line_status_service import LINE_COLORS, get_line_status_board
+from app.services.map_geometry import snap_coords_to_lines
 from app.services.public_incident_service import public_incident_copy
 from app.services.overview_service import (
     SOURCE_GROUP_SOCIAL,
@@ -151,6 +152,7 @@ def get_map_stations(*, limit: int = 120, layer: str = "rail") -> dict:
             label = graph["routes"].get(rid, {}).get("short_name", rid)
             if label and label not in line_labels:
                 line_labels.append(label)
+        lat, lon = snap_coords_to_lines(lat, lon, line_ids or None)
         label = stop["name"]
         has_incident = any(
             needle in label.lower() or label.lower() in needle for needle in incident_locations
@@ -278,21 +280,62 @@ def get_station_detail(name: str) -> dict | None:
     }
 
 
+def _resolve_hub_coords(graph: dict, stop_ids: list[str], line_ids: list[str]) -> tuple[float, float]:
+    """Pick route-aware stop coords for interchanges, then snap onto line geometry."""
+    points: list[tuple[float, float]] = []
+    for line_id in line_ids or []:
+        for sid in stop_ids:
+            route_id = graph["stops"][sid].get("route_id", "")
+            if ROUTE_SHORT_TO_LINE.get(route_id) == line_id:
+                stop = graph["stops"][sid]
+                points.append((stop["lat"], stop["lon"]))
+                break
+    if not points:
+        stop = graph["stops"][stop_ids[0]]
+        points = [(stop["lat"], stop["lon"])]
+    lat = sum(p[0] for p in points) / len(points)
+    lon = sum(p[1] for p in points) / len(points)
+    return snap_coords_to_lines(lat, lon, line_ids or None)
+
+
+def _pick_stop_for_line(graph: dict, stop_ids: list[str], line_id: str | None) -> dict:
+    if line_id:
+        for sid in stop_ids:
+            route_id = graph["stops"][sid].get("route_id", "")
+            if ROUTE_SHORT_TO_LINE.get(route_id) == line_id:
+                return graph["stops"][sid]
+    return graph["stops"][stop_ids[0]]
+
+
 def _cluster_coordinates(cluster: dict, graph: dict) -> tuple[float, float] | None:
     """Map a crowd cluster to GTFS station coords when possible."""
+    preferred_line = match_transport_line(cluster)
     needles = [cluster.get("location") or "", cluster.get("entity") or ""]
     for needle in needles:
         key = _normalise(needle)
         if not key:
             continue
         if key in graph["names"]:
-            stop = graph["stops"][graph["names"][key][0]]
-            return stop["lat"], stop["lon"]
+            stop_ids = graph["names"][key]
+            stop = _pick_stop_for_line(graph, stop_ids, preferred_line)
+            line_ids = [preferred_line] if preferred_line else _line_ids_for_stop(graph, stop_ids)
+            return snap_coords_to_lines(stop["lat"], stop["lon"], line_ids)
         for name_key, stop_ids in graph["names"].items():
             if key in name_key or name_key in key:
-                stop = graph["stops"][stop_ids[0]]
-                return stop["lat"], stop["lon"]
+                stop = _pick_stop_for_line(graph, stop_ids, preferred_line)
+                line_ids = [preferred_line] if preferred_line else _line_ids_for_stop(graph, stop_ids)
+                return snap_coords_to_lines(stop["lat"], stop["lon"], line_ids)
     return None
+
+
+def _line_ids_for_stop(graph: dict, stop_ids: list[str]) -> list[str]:
+    line_ids: list[str] = []
+    for sid in stop_ids:
+        route_id = graph["stops"][sid].get("route_id", "")
+        line_id = ROUTE_SHORT_TO_LINE.get(route_id)
+        if line_id and line_id not in line_ids:
+            line_ids.append(line_id)
+    return line_ids
 
 
 def _cluster_pin_status(cluster: dict) -> str:
@@ -378,8 +421,8 @@ def _interchange_map_pins(*, limit: int = 40) -> list[dict]:
                     break
         if not stop_ids:
             continue
-        stop = graph["stops"][stop_ids[0]]
-        lat, lon = stop["lat"], stop["lon"]
+        line_ids = hub.get("lines") or []
+        lat, lon = _resolve_hub_coords(graph, stop_ids, line_ids)
         if not _in_malaysia(lat, lon):
             continue
         transfers: list[dict] = []

@@ -19,6 +19,13 @@ def test_map_live_returns_threads_first_payload():
     assert payload["bounds"]["south"] < payload["bounds"]["north"]
     assert "disclaimers" in payload
     assert "vehicles" in payload["disclaimers"]
+    for report in payload["reports"]:
+        if report.get("lat") is not None and report.get("lon") is not None:
+            assert isinstance(report["lat"], (int, float))
+            assert isinstance(report["lon"], (int, float))
+    for hub in payload.get("interchanges") or []:
+        assert isinstance(hub.get("lat"), (int, float))
+        assert isinstance(hub.get("lon"), (int, float))
 
 
 def test_map_live_vehicles_optional():

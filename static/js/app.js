@@ -740,8 +740,9 @@
 
     const reportFeatures = [];
     if (mapLayers.reports) {
+      const reportsWithCoords = (data.reports || []).filter(r => r.lat != null && r.lon != null);
       const mapReports = liveRelevantReports(
-        boardSnapshot?.recent_reports?.length ? boardSnapshot.recent_reports : (data.reports || []),
+        reportsWithCoords.length ? reportsWithCoords : (boardSnapshot?.recent_reports || []),
         boardSnapshot?.lines || boardData?.lines,
       );
       mapReports.forEach(rep => {
@@ -855,6 +856,29 @@
         `<strong>${esc(p.station || 'Interchange')}</strong><br>${esc(p.lines || '')}`,
         { offset: 8 }
       );
+    });
+    mapInstance.on('click', 'trafficmy-rail-lines', event => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      const p = feature.properties || {};
+      const lineId = p.line_id || '';
+      const color = p.color || LINE_COLORS[lineId] || '#64748b';
+      const name = p.name || linesReferenceById[lineId]?.name || lineId || 'Rail line';
+      openMapPopup(
+        event.lngLat,
+        `<div class="map-line-popup">
+          <div class="map-line-popup-head">
+            <span class="map-line-dot" style="background:${esc(color)}"></span>
+            <strong>${esc(name)}</strong>
+          </div>
+          <button type="button" class="guide-btn primary map-popup-line-guide" data-line-id="${esc(lineId)}">Line guide</button>
+        </div>`,
+        { offset: 8, maxWidth: '280px' }
+      );
+      mapInstance.getContainer()?.querySelector('.map-popup-line-guide')?.addEventListener('click', () => {
+        activeMapPopup?.remove();
+        if (lineId) openLineGuide(lineId, { label: name });
+      });
     });
   }
 
@@ -1519,21 +1543,18 @@
       return '<p class="guide-empty-hint">No interchange data for this line yet.</p>';
     }
     return `<div class="interchange-list">${interchanges.map(ix => {
-      const dotColor = (ix.line_colours || [])[0]?.color;
+      const chips = (ix.line_colours || []).map(lc =>
+        `<span class="ix-line-chip" style="--chip-color:${esc(lc.color || '#64748b')}">${esc(lc.short_name || lc.name || lc.label || '')}</span>`
+      ).join('');
       const walk = ix.transfer_walk_min
-        ? `<span class="interchange-walk">~${esc(ix.transfer_walk_min)} min walk</span>` : '';
-      const steps = (ix.transfer_steps || []).length
-        ? `<ol class="transfer-steps">${ix.transfer_steps.map(step => `<li>${esc(step)}</li>`).join('')}</ol>`
-        : '';
-      return `<div class="interchange-item">
-        <div class="interchange-item-head">
-          ${dotColor ? `<span class="interchange-dot" style="--dot-color:${esc(dotColor)}"></span>` : ''}
-          <strong class="interchange-station">${esc(ix.station)}</strong>
+        ? `<span class="ix-walk">~${esc(ix.transfer_walk_min)} min walk</span>` : '';
+      return `<div class="interchange-row">
+        <div class="ix-row-top">
+          <strong class="ix-station">${esc(ix.station)}</strong>
           ${walk}
         </div>
-        <div class="interchange-connects">${pickLang('Connects to', 'Bersambung ke')} ${esc(ix.connects_to || 'other lines')}</div>
-        ${ix.walking_note ? `<div class="interchange-note">${esc(ix.walking_note)}</div>` : ''}
-        ${steps}
+        <div class="ix-chips">${chips || `<span class="ix-connects">${esc(ix.connects_to || 'Other lines')}</span>`}</div>
+        ${ix.walking_note ? `<p class="ix-note">${esc(ix.walking_note)}</p>` : ''}
       </div>`;
     }).join('')}</div>`;
   }
@@ -1661,10 +1682,11 @@
           <h3>Route diagram</h3>
           <p class="guide-schematic-hint">${pickLang('Tap to enlarge · dots mark interchange stations', 'Ketik untuk besarkan · titik menandakan pertukaran')}</p>
           <div class="guide-schematic-wrap"><img class="guide-schematic schematic-zoomable" src="${esc(schematic)}" alt="${esc(lineName)} route diagram" loading="lazy"></div>
-          ${ref.interchanges?.length ? `<div class="guide-interchange-compact"><h4>${pickLang('Interchanges', 'Pertukaran')}</h4>${interchangeHtml}</div>` : ''}
         </div>`
-        : `<div class="guide-section"><h3>Stations (${stations.length || '—'})</h3>${renderStationList(stations, ref.interchanges, color)}</div>
-        <div class="guide-section"><h3>Interchanges</h3>${interchangeHtml}</div>`;
+        : `<div class="guide-section"><h3>Stations (${stations.length || '—'})</h3>${renderStationList(stations, ref.interchanges, color)}</div>`;
+      const interchangeSection = ref.interchanges?.length
+        ? `<div class="guide-section guide-section--interchanges"><h3>Interchanges</h3>${interchangeHtml}</div>`
+        : '';
       const riderSection = riders
         ? `<div class="guide-section"><h3>Rider pulse</h3>${riders}</div>`
         : '';
@@ -1673,12 +1695,14 @@
       if (ref.length_km) statParts.push(pickLang(`${ref.length_km} km`, `${ref.length_km} km`));
       if (ref.stations_count) statParts.push(pickLang(`${ref.stations_count} stations`, `${ref.stations_count} stesen`));
       if (ref.journey_minutes) statParts.push(pickLang(`~${ref.journey_minutes} min end-to-end`, `~${ref.journey_minutes} min hujung ke hujung`));
-      const statLine = statParts.length ? `<p class="guide-stat-line">${statParts.join(' · ')}</p>` : '';
+      const statChips = statParts.map(part => `<span class="guide-stat-chip">${esc(part)}</span>`).join('');
+      const statLine = statParts.length ? `<div class="guide-stat-chips">${statChips}</div>` : '';
       const capacityLine = ref.capacity_note ? `<p class="guide-capacity-line">${esc(ref.capacity_note)}</p>` : '';
       $('panelBody').innerHTML = `
         ${riderSection}
         ${historySection}
         ${schematicSection}
+        ${interchangeSection}
         <div class="guide-section guide-section--facts">
           <h3>Route &amp; facts</h3>
           <p class="guide-endpoints">${endpoints}</p>
@@ -2194,11 +2218,19 @@
       const svcHtml = svc?.label
         ? `<span class="schedule-svc schedule-svc--${esc(svc.status || 'unknown')}">${esc(svc.label)}</span>`
         : '';
-      return `<div class="schedule-row" style="--line-color:${esc(color)}">
+      const ttLink = line.timetable_url
+        ? `<a class="schedule-tt" href="${esc(line.timetable_url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Timetable</a>`
+        : '';
+      const peak = oh.peak_hours?.[0]?.headway_min
+        ? `<span class="schedule-peak">Peak ~${esc(oh.peak_hours[0].headway_min)} min</span>`
+        : '';
+      return `<button type="button" class="schedule-row schedule-row--click" data-line-id="${esc(line.id)}" style="--line-color:${esc(color)}">
         <span class="schedule-line">${esc(line.name.replace(/ Line$/, ''))}</span>
         <span class="schedule-times">${esc(oh.first_train)} – ${esc(oh.last_train)} MYT</span>
         ${svcHtml}
-      </div>`;
+        ${peak}
+        ${ttLink}
+      </button>`;
     }).join('');
     el.innerHTML = `
       <div class="tm-travel-card-head">
@@ -2827,6 +2859,12 @@
   $('mapSidebarList')?.addEventListener('click', e => {
     const item = e.target.closest('.map-sidebar-item[data-line-id]');
     if (item) openLineGuide(item.dataset.lineId, { label: linesReferenceById[item.dataset.lineId]?.name });
+  });
+
+  $('trainScheduleCard')?.addEventListener('click', e => {
+    const row = e.target.closest('.schedule-row[data-line-id]');
+    if (!row) return;
+    openLineGuide(row.dataset.lineId, { label: linesReferenceById[row.dataset.lineId]?.name });
   });
 
   $('lineLegendToggle')?.addEventListener('click', () => {

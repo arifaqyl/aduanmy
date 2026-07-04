@@ -1109,6 +1109,51 @@
   background: rgba(255, 255, 255, 0.04);
   border-left: 4px solid var(--line-color, #64748b);
   font-size: 13px;
+  width: 100%;
+  text-align: left;
+  border-top: none;
+  border-right: none;
+  border-bottom: none;
+  color: inherit;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.play-app.stitch-app .schedule-row--click:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.play-app.stitch-app .schedule-peak {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.play-app.stitch-app .schedule-tt {
+  grid-column: 2;
+  grid-row: 1;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--tm-accent, #38bdf8);
+  text-decoration: none;
+}
+
+.map-line-popup-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.map-line-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.map-line-popup .guide-btn {
+  width: 100%;
 }
 
 .play-app.stitch-app .schedule-line {
@@ -1395,7 +1440,63 @@
 .interchange-list {
   display: flex;
   flex-direction: column;
+  gap: 6px;
+}
+
+.interchange-row {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--tm-surface-2);
+  border: 1px solid var(--tm-line);
+}
+
+.ix-row-top {
+  display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.ix-station {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, var(--tm-ink));
+}
+
+.ix-walk {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.ix-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.ix-line-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--chip-color, #64748b);
+}
+
+.ix-connects {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.ix-note {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: var(--text-dim);
 }
 
 .interchange-item {
@@ -1470,6 +1571,24 @@
   margin: 6px 0 0;
   font-size: 12px;
   color: var(--text-secondary);
+}
+
+.guide-stat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.guide-stat-chip {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--tm-line);
 }
 
 .guide-capacity-line {
