@@ -1046,7 +1046,7 @@
 }
 
 /* ── Travel banner ── */
-.play-app.stitch-app .stitch-travel-banner--native {
+.play-app.stitch-app .stitch-travel-banner.stitch-travel-banner--native {
   display: flex;
   align-items: center;
   gap: 14px;
