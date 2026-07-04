@@ -23,6 +23,7 @@
   const LINE_COLORS = {
     'kelana-jaya': '#e31837',
     'ampang-sri-petaling': '#f7941d',
+    'lrt3': '#7b2d8e',
     'kajang': '#007a33',
     'putrajaya': '#f4c300',
     'kajang-putrajaya': '#00a651',
@@ -57,6 +58,7 @@
   let isRefreshing = false;
   let boardSnapshot = null;
   let boardData = null;
+  let healthSnapshot = null;
   let activeFilter = 'all';
   let activeSort = 'severity';
   let placeFilter = '';
@@ -82,6 +84,7 @@
   let maplibrePromise = null;
   let mapEventsBound = false;
   let reportMarkers = [];
+  let reportMarkerCount = 0;
   let panelTouchStartY = 0;
   let notifyEnabled = localStorage.getItem('trafficmy:notify') === '1';
   let lastLineStatus = {};
@@ -336,20 +339,15 @@
     const el = $('pulseStrip');
     if (!el) return;
     const active = (lines || []).filter(l => ['minor', 'delay', 'disruption'].includes(l.status));
-    const threadsReports = (reports || []).filter(r => (r.sources || '').includes('threads')).slice(0, 4);
-    if (!active.length && !threadsReports.length) {
+    if (!active.length) {
       el.hidden = true;
       el.innerHTML = '';
       return;
     }
     el.hidden = false;
-    const chips = active.map(l =>
+    el.innerHTML = active.map(l =>
       `<button type="button" class="pulse-chip ${esc(l.status)}" data-line-id="${esc(l.id)}">${esc(l.name)} · ${esc(l.status_label)}</button>`
-    );
-    threadsReports.forEach(r => {
-      chips.push(`<button type="button" class="pulse-chip minor" data-cluster="${esc(r.cluster_id)}" data-name="${esc(r.headline || r.entity || 'Signal')}">${esc(r.headline || 'New rider signal')}</button>`);
-    });
-    el.innerHTML = chips.join('');
+    ).join('');
   }
 
   function healthClass(score) {
@@ -390,6 +388,12 @@
   function renderMapFloatCard(lines) {
     const el = $('mapFloatCard');
     if (!el) return;
+    if (mapLayers.reports && reportMarkerCount > 0) {
+      el.hidden = true;
+      el.innerHTML = '';
+      el.closest('.stitch-map-wrap')?.classList.remove('has-float-card');
+      return;
+    }
     const rank = { disruption: 3, delay: 2, minor: 1 };
     let items = (lines || []).filter(l => !l.planned && rank[l.status]);
     items = items.filter(line => {
@@ -612,6 +616,7 @@
 
   function drawReportMarkers(features) {
     clearReportMarkers();
+    reportMarkerCount = (features || []).length;
     if (!mapInstance || !mapLayers.reports) return;
     (features || []).forEach(feature => {
       const severity = feature.properties?.severity || 'minor';
@@ -715,7 +720,11 @@
 
     const reportFeatures = [];
     if (mapLayers.reports) {
-      (data.reports || []).forEach(rep => {
+      const mapReports = liveRelevantReports(
+        boardSnapshot?.recent_reports?.length ? boardSnapshot.recent_reports : (data.reports || []),
+        boardSnapshot?.lines || boardData?.lines,
+      );
+      mapReports.forEach(rep => {
         const net = getNetworkForLine(rep.line_id);
         if (!mapLayerActiveForNetwork(net)) return;
 
@@ -1519,6 +1528,43 @@
     </div>`;
   }
 
+  function renderLineHistorySection(history, color) {
+    if (!history || !history.daily_counts?.length) return '';
+    const days = history.daily_counts;
+    const max = Math.max(1, ...days.map(d => d.count));
+    const bars = days.map(d => {
+      const pct = Math.round((d.count / max) * 100);
+      const isToday = d.date === history.today?.date;
+      return `<div class="history-bar-wrap" title="${esc(d.weekday)} ${esc(d.date)} — ${d.count} signal${d.count === 1 ? '' : 's'}">
+        <div class="history-bar${isToday ? ' history-bar--today' : ''}" style="height:${Math.max(pct, d.count ? 6 : 2)}%;background:${esc(color)}"></div>
+        <span class="history-bar-label">${esc(d.weekday[0])}</span>
+      </div>`;
+    }).join('');
+    const cmp = history.today?.comparison;
+    const cmpCopy = {
+      elevated: { label: pickLang('More signals than usual', 'Lebih isyarat dari biasa'), cls: 'history-cmp--elevated' },
+      typical: { label: pickLang('Typical for today', 'Normal untuk hari ini'), cls: 'history-cmp--typical' },
+      quieter_than_usual: { label: pickLang('Quieter than usual', 'Lebih senyap dari biasa'), cls: 'history-cmp--quiet' },
+      no_baseline: { label: pickLang('Not enough history yet', 'Sejarah tidak mencukupi lagi'), cls: 'history-cmp--unknown' },
+    }[cmp] || { label: '', cls: '' };
+    const typical = history.today?.typical_for_weekday;
+    const compareLine = typical != null
+      ? pickLang(
+          `${history.today.count} today vs ~${typical} typical for ${history.today.weekday}`,
+          `${history.today.count} hari ini vs ~${typical} biasa untuk ${history.today.weekday}`
+        )
+      : pickLang('Building baseline from the last 2 weeks.', 'Membina asas dari 2 minggu lepas.');
+    return `<div class="guide-section guide-section--history">
+      <h3>${pickLang('Is this normal?', 'Adakah ini normal?')}</h3>
+      <div class="history-chart">${bars}</div>
+      <div class="history-summary">
+        ${cmpCopy.label ? `<span class="history-cmp ${cmpCopy.cls}">${esc(cmpCopy.label)}</span>` : ''}
+        <span class="history-compare-line">${esc(compareLine)}</span>
+      </div>
+      <p class="history-hint">${pickLang('Rider signal volume over the last 14 days — not official ridership stats.', 'Jumlah isyarat penumpang 14 hari lepas — bukan statistik penumpang rasmi.')}</p>
+    </div>`;
+  }
+
   async function openLineGuide(lineId, opts = {}) {
     const { clusterId, label, status } = opts;
     const lineName = label || linesReferenceById[lineId]?.name || lineId;
@@ -1533,9 +1579,13 @@
     $('panelBody').innerHTML = '<div class="skel-row"><div style="flex:1"><div class="skel skel-text"></div><div class="skel skel-text short" style="margin-top:8px"></div></div></div>';
     showPanel();
     try {
-      const res = await fetch(api(`/api/trafficmy/lines/${encodeURIComponent(lineId)}/info`));
+      const [res, historyRes] = await Promise.all([
+        fetch(api(`/api/trafficmy/lines/${encodeURIComponent(lineId)}/info`)),
+        fetch(api(`/api/trafficmy/lines/${encodeURIComponent(lineId)}/history`)).catch(() => null),
+      ]);
       if (!res.ok) throw new Error('not found');
       const info = await res.json();
+      const history = historyRes && historyRes.ok ? await historyRes.json().catch(() => null) : null;
       const ref = info.reference || {};
       const live = info.status || {};
       const schematic = info.schematic_url ? staticUrl(info.schematic_url.replace(/^\/static\//, '')) : '';
@@ -1544,27 +1594,37 @@
         ? `<button type="button" class="guide-btn primary" data-open-cluster="${esc(clusterId || live.top_cluster_id)}" data-line-label="${esc(lineName)}" data-line-status="${esc(status || live.status || '')}">View reports</button>`
         : '';
       const facts = (info.line_facts || []).map(f => `<li>${esc(f)}</li>`).join('');
-      const riders = (info.rider_reports || []).map(r => `
+      const color = LINE_COLORS[lineId] || ref.official_colour || '#64748b';
+      const stations = info.stations_ordered || ref.stations_ordered || [];
+      const interchangeHtml = renderInterchangeSection(ref.interchanges);
+      const activeStatuses = ['minor', 'delay', 'disruption'];
+      const lineQuiet = !activeStatuses.includes(live.status) && live.in_service !== false;
+      const filteredRiders = (info.rider_reports || []).filter(r => {
+        if (!lineQuiet) return true;
+        if (!r.last_seen_at) return false;
+        return (Date.now() - new Date(r.last_seen_at).getTime()) < 2 * 3600000;
+      });
+      const riders = filteredRiders.map(r => `
         <div class="ev" style="margin-bottom:8px">
           <div class="ev-text"><strong>${esc(r.headline || 'Rider signal')}</strong><br>${esc(r.summary || '')}</div>
           <div class="ev-meta" style="margin-top:6px"><span title="${r.last_seen_at ? esc(fmtMYT(r.last_seen_at)) + ' MYT' : ''}">${r.last_seen_at ? esc(relTime(r.last_seen_at)) : ''}</span>${r.from_threads ? ' · Threads' : ''}${r.example_url ? ` · <a href="${esc(r.example_url)}" target="_blank" rel="noopener noreferrer">Source</a>` : ''}</div>
         </div>`).join('');
-      const color = LINE_COLORS[lineId] || ref.official_colour || '#64748b';
-      const stations = info.stations_ordered || ref.stations_ordered || [];
-      const stationSection = `<div class="guide-section"><h3>Stations (${stations.length || '—'})</h3>${renderStationList(stations, ref.interchanges, color)}</div>`;
       const schematicSection = schematic
-        ? `<details class="schematic-details"><summary>Route diagram</summary><p style="font-size:11px;color:var(--text-dim);margin:6px 0 8px">Not a geographic map — tap image to enlarge.</p><div class="guide-schematic-wrap"><img class="guide-schematic schematic-zoomable" src="${esc(schematic)}" alt="${esc(lineName)} route diagram" loading="lazy"></div></details>`
+        ? `<div class="guide-section guide-section--schematic">
+          <h3>Route diagram</h3>
+          <p class="guide-schematic-hint">${pickLang('Tap to enlarge · dots mark interchange stations', 'Ketik untuk besarkan · titik menandakan pertukaran')}</p>
+          <div class="guide-schematic-wrap"><img class="guide-schematic schematic-zoomable" src="${esc(schematic)}" alt="${esc(lineName)} route diagram" loading="lazy"></div>
+          ${ref.interchanges?.length ? `<div class="guide-interchange-compact"><h4>${pickLang('Interchanges', 'Pertukaran')}</h4>${interchangeHtml}</div>` : ''}
+        </div>`
+        : `<div class="guide-section"><h3>Stations (${stations.length || '—'})</h3>${renderStationList(stations, ref.interchanges, color)}</div>
+        <div class="guide-section"><h3>Interchanges</h3>${interchangeHtml}</div>`;
+      const riderSection = riders
+        ? `<div class="guide-section"><h3>Rider pulse</h3>${riders}</div>`
         : '';
+      const historySection = renderLineHistorySection(history, color);
       $('panelBody').innerHTML = `
-        <div class="guide-section">
-          <h3>Rider pulse</h3>
-          ${riders || '<p style="color:var(--text-dim);font-size:12px">No qualifying rider signal in the current window.</p>'}
-        </div>
-        ${stationSection}
-        <div class="guide-section">
-          <h3>Interchanges</h3>
-          ${renderInterchangeSection(ref.interchanges)}
-        </div>
+        ${riderSection}
+        ${historySection}
         ${schematicSection}
         <div class="guide-section">
           <h3>Route &amp; facts</h3>
@@ -2046,8 +2106,59 @@
     ).join('');
   }
 
+  function liveRelevantReports(reports, lines) {
+    const byId = Object.fromEntries((lines || []).map(l => [l.id, l]));
+    const now = Date.now();
+    const activeStatuses = ['minor', 'delay', 'disruption'];
+    return (reports || []).filter(r => {
+      const ageMs = r.last_seen_at ? now - new Date(r.last_seen_at).getTime() : Infinity;
+      const lineId = r.line_id || guessLineIdFromReport(r);
+      const line = lineId ? byId[lineId] : null;
+      if (!line) return ageMs < 6 * 3600000;
+      if (activeStatuses.includes(line.status)) return true;
+      if (line.in_service === false) return false;
+      return ageMs < 2 * 3600000;
+    });
+  }
+
+  function renderTrainSchedule() {
+    const el = $('trainScheduleCard');
+    if (!el) return;
+    const lines = Object.values(linesReferenceById || {})
+      .filter(l => l.operating_hours?.first_train && l.operating_hours?.last_train && !l.planned)
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    if (!lines.length) {
+      el.hidden = true;
+      return;
+    }
+    el.hidden = false;
+    const rows = lines.map(line => {
+      const oh = line.operating_hours;
+      const svc = line.service_status_now;
+      const color = LINE_COLORS[line.id] || line.official_colour || '#64748b';
+      const svcHtml = svc?.label
+        ? `<span class="schedule-svc schedule-svc--${esc(svc.status || 'unknown')}">${esc(svc.label)}</span>`
+        : '';
+      return `<div class="schedule-row" style="--line-color:${esc(color)}">
+        <span class="schedule-line">${esc(line.name.replace(/ Line$/, ''))}</span>
+        <span class="schedule-times">${esc(oh.first_train)} – ${esc(oh.last_train)} MYT</span>
+        ${svcHtml}
+      </div>`;
+    }).join('');
+    el.innerHTML = `
+      <div class="tm-travel-card-head">
+        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
+        <div>
+          <h2 id="scheduleTitle">Service hours <span class="stitch-sub-en">(Waktu perkhidmatan)</span></h2>
+          <p class="tm-travel-lead">${pickLang('First & last trains · Rapid KL rail', 'Kereta pertama & terakhir · Rapid KL')}</p>
+        </div>
+      </div>
+      <div class="schedule-grid">${rows}</div>`;
+  }
+
   function renderReports(reports) {
-    const sorted = sortReportsThreadsFirst(reports || []);
+    const relevant = liveRelevantReports(reports, boardSnapshot?.lines || boardData?.lines);
+    const sorted = sortReportsThreadsFirst(relevant);
     const visible = filteredReports(sorted);
     renderOfficialStrip(sorted);
     const countLabel = visible.length
@@ -2055,22 +2166,27 @@
       : pickLang('Nothing reported today', 'Tiada laporan hari ini');
     $('reportCount').textContent = countLabel;
     if (!visible.length) {
+      const collectorState = placeFilter ? 'quiet' : threadsCollectorStatus();
+      const subtext = collectorState === 'broken'
+        ? pickLang('Rider signal collection is having trouble right now — official sources still shown. We\'re on it.', 'Pengumpulan isyarat penumpang bermasalah sekarang — sumber rasmi masih dipaparkan. Kami sedang membetulkannya.')
+        : placeFilter
+          ? pickLang('Nothing mentions this place — not an all-clear.', 'Tiada yang menyebut tempat ini — bukan pengesahan normal.')
+          : pickLang('Quiet does not mean trains are running fine.', 'Tenang tidak bermakna perkhidmatan normal.');
       $('reportFeed').innerHTML = `
-        <div class="empty tm-live-empty">
+        <div class="empty tm-live-empty${collectorState === 'broken' ? ' tm-live-empty--degraded' : ''}">
           <div class="empty-icon" aria-hidden="true">${ICON_SVG.train}</div>
           ${pickLang('No rider delays reported in the last 24 hours.', 'Tiada kelewatan dilaporkan dalam 24 jam terakhir.')}<br>
-          <span style="font-size:12px;color:var(--text-dim)">${placeFilter ? pickLang('Nothing mentions this place — not an all-clear.', 'Tiada yang menyebut tempat ini — bukan pengesahan normal.') : pickLang('Quiet does not mean trains are running fine.', 'Tenang tidak bermakna perkhidmatan normal.')}</span><br>
+          <span style="font-size:12px;color:var(--text-dim)">${subtext}</span><br>
           <button class="btn-retry" id="emptyReportRefresh" type="button" style="margin-top:14px">${pickLang('Check latest', 'Semak semula')}</button>
         </div>`;
       $('emptyReportRefresh')?.addEventListener('click', triggerRefresh);
       return;
     }
     $('reportFeed').innerHTML = `<div class="tm-report-scroll">${visible.map(r => {
-      const title = pickLang(r.headline, r.headline_ms) || r.entity || r.location || pickLang('Rider signal', 'Isyarat penumpang');
-      const summary = pickLang(r.summary, r.summary_ms) || '';
-      const quote = summary.length > 20 ? summary : title;
+      const glance = pickLang(r.glance_line, r.glance_line_ms) || pickLang(r.headline, r.headline_ms) || r.entity || pickLang('Rider signal', 'Isyarat penumpang');
+      const quote = pickLang(r.summary, r.summary_ms) || '';
       const lineLabel = r.entity || r.location || guessLineIdFromReport(r).replace(/-/g, ' ') || '';
-      const age = reportAgeLabel(r.last_seen_at);
+      const age = r.report_when || reportAgeLabel(r.last_seen_at);
       const src = reportSourceTag(r);
       const riding = ridingNowFromReport(r);
       const facility = r.facility_alert ? `<span class="stitch-tag stitch-tag--src" title="${esc(pickLang('Facility', 'Kemudahan'))}">♿</span>` : '';
@@ -2079,12 +2195,12 @@
         `<span class="stitch-tag ${src.cls}">${esc(src.label)}</span>`,
         facility,
       ].filter(Boolean).join('');
-      const foot = [age || relTime(r.last_seen_at), lineLabel].filter(Boolean).join(' · ');
+      const foot = [lineLabel, age || relTime(r.last_seen_at)].filter(Boolean).join(' · ');
       const stripe = reportStripeColor(r);
       return `
-      <div class="report report-card" style="--report-line-color:${esc(stripe)}" data-cluster="${esc(r.cluster_id)}" data-name="${esc(title)}" data-severity="${esc(r.severity || '')}">
+      <div class="report report-card" style="--report-line-color:${esc(stripe)}" data-cluster="${esc(r.cluster_id)}" data-name="${esc(glance)}" data-severity="${esc(r.severity || '')}">
         <div class="report-card-tags">${tags}</div>
-      <div class="report-card-quote"><span class="material-symbols-outlined report-card-transit" aria-hidden="true">directions_transit</span>${esc(quote)}</div>
+      <div class="report-card-quote"><span class="material-symbols-outlined report-card-transit" aria-hidden="true">directions_transit</span><strong class="report-glance">${esc(glance)}</strong>${quote && quote !== glance ? `<span class="report-card-detail">${esc(quote)}</span>` : ''}</div>
         <div class="report-card-foot" title="${esc(fmtMYT(r.last_seen_at))} MYT">${esc(foot)}</div>
       </div>`;
     }).join('')}</div>`;
@@ -2174,6 +2290,31 @@
     }, 1000);
   }
 
+  let healthCheckedAt = 0;
+  async function refreshHealthSnapshot() {
+    // Cheap, low-frequency check so the empty state can tell "quiet" from "collector broken"
+    // without hammering /health on every poll tick.
+    if (Date.now() - healthCheckedAt < 4 * 60 * 1000) return;
+    healthCheckedAt = Date.now();
+    try {
+      const res = await fetchWithTimeout(api('/health'));
+      if (res.ok) {
+        healthSnapshot = await res.json();
+        if (boardSnapshot) renderReports(boardSnapshot.recent_reports || []);
+      }
+    } catch {
+      // Health check is best-effort — never blocks the main board render.
+    }
+  }
+
+  function threadsCollectorStatus() {
+    const src = (healthSnapshot?.sources || []).find(s => s.source === 'threads');
+    if (!src) return 'unknown';
+    if (src.needs_attention || src.status === 'failed') return 'broken';
+    if (src.status === 'healthy') return 'healthy';
+    return 'quiet';
+  }
+
   async function loadAll() {
     const gen = ++loadGeneration;
     if (!boardData) showLoadingState();
@@ -2193,6 +2334,7 @@
         const refData = await refRes.json();
         linesReferenceById = Object.fromEntries((refData.lines || []).map(line => [line.id, line]));
         renderLineLegendGrid(refData.lines || []);
+        renderTrainSchedule();
       }
       boardSnapshot = board;
       boardData = board;
@@ -2211,6 +2353,7 @@
       updateSchematicHighlights();
       checkNotify(board.lines || []);
       startCountdown();
+      refreshHealthSnapshot();
     } catch (err) {
       if (gen !== loadGeneration) return;
       // Retry once after 3 seconds

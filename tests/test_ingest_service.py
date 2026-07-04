@@ -1,6 +1,15 @@
+from datetime import timedelta
+
+from app.core.freshness import myt_day_start
 from app.db.session import connect, init_db, upsert_complaints
 from app.schemas.complaint import ComplaintSchema
 from app.services.ingest_service import _collector_due, prune_rejected_threads_complaints, transform_rows
+
+
+def _today_iso(hours: int = 9) -> str:
+    """A timestamp guaranteed to fall on today's MYT calendar date — transform_rows
+    only accepts social-platform transport rows from today, so fixtures must be dynamic."""
+    return (myt_day_start() + timedelta(hours=hours)).isoformat().replace("+00:00", "Z")
 
 
 def test_gtfs_anomaly_collection_is_disabled_by_default():
@@ -109,7 +118,7 @@ def test_transform_rows_does_not_treat_duration_as_bus_route():
                     "post_id": "duration",
                     "url": "https://threads.example/duration",
                     "author_handle": "test",
-                    "created_at": "2026-06-21T09:58:02Z",
+                    "created_at": _today_iso(),
                     "raw_text": "RapidKL delay again, waited 1 hour 11 minutes for the van today",
                     "query": "rapidkl delay",
                     "seed_category": "transport",
@@ -130,7 +139,7 @@ def test_transform_rows_assigns_state_for_jb_sentral():
                     "post_id": "r-jb",
                     "url": "https://old.reddit.com/r/johor/comments/example",
                     "author_handle": "reddit:test",
-                    "created_at": "2026-06-21T04:18:43+00:00",
+                    "created_at": _today_iso(4),
                     "raw_text": "KTM komuter delay at JB Sentral again this morning, train stuck for 40 minutes",
                     "query": "jb sentral train",
                     "seed_category": "transport",
@@ -288,6 +297,8 @@ def test_transform_rows_rejects_transport_history_discussion_without_incident_la
 
 
 def test_transform_rows_keeps_source_timestamps_from_threads_and_reddit():
+    threads_ts = _today_iso(4).replace("Z", ".000Z")
+    reddit_ts = _today_iso(1).replace("Z", "+00:00")
     rows = transform_rows(
         {
             "threads": [
@@ -296,7 +307,7 @@ def test_transform_rows_keeps_source_timestamps_from_threads_and_reddit():
                     "post_id": "t-ts",
                     "url": "https://threads.example/post/1",
                     "author_handle": "threads:test",
-                    "created_at": "2026-06-21T04:18:43.000Z",
+                    "created_at": threads_ts,
                     "raw_text": "Tak boleh keluar stesen fire alarm kat MRT Maluri",
                     "query": "seed_url",
                     "seed_category": "transport",
@@ -308,8 +319,8 @@ def test_transform_rows_keeps_source_timestamps_from_threads_and_reddit():
                     "post_id": "r-ts",
                     "url": "https://old.reddit.com/r/malaysia/comments/abc",
                     "author_handle": "reddit:test",
-                    "created_at": "2026-06-19T01:19:08+00:00",
-                    "raw_text": "LRT3 Shah Alam Line has delays again this week",
+                    "created_at": reddit_ts,
+                    "raw_text": "LRT3 Shah Alam Line train stuck near Glenmarie right now, delay ongoing",
                     "query": "kelana jaya line delay",
                     "seed_category": "transport",
                 }
@@ -320,6 +331,6 @@ def test_transform_rows_keeps_source_timestamps_from_threads_and_reddit():
     assert len(rows) == 2
     assert rows[0].created_at or rows[1].created_at
     assert {row.created_at for row in rows} == {
-        "2026-06-21T04:18:43.000Z",
-        "2026-06-19T01:19:08+00:00",
+        threads_ts,
+        reddit_ts,
     }

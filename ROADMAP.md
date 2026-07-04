@@ -16,7 +16,13 @@ Live: [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)
 - [x] MapLibre map, journey planner, pass calculator, installable PWA
 - [x] Stitch Play UI (mascots, glance card, bottom nav, travel banner)
 - [x] Docker production deploy with scheduler, healthchecks, watchdog
-- [x] 227-test regression suite + CI on push/PR
+- [x] LRT3 (Shah Alam Line) live on the map from official GTFS shapes
+- [x] Threads collector health: time-budgeted runs, empty-run diagnostics, consecutive-failure alerting
+- [x] Reddit fallback lane runs on shorter cadence during KL peak hours (7–10am, 5–8pm MYT)
+- [x] Frontend empty-state differentiates "collector broken" from "genuinely quiet"
+- [x] `GET /lines/{id}/history` — "is this normal?" 14-day rider-signal trend per line
+- [x] B2B Signals API (`/api/trafficmy/signals/today`), developer docs, embed widget
+- [x] 236-test regression suite + CI on push/PR
 
 ## Next
 
@@ -25,6 +31,8 @@ Live: [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)
 - [ ] Session-backed X lane behind a controlled flag
 - [ ] Labelled incident-quality evaluation harness
 - [ ] Further scraper precision (ambiguous place names, numeric route collisions)
+- [ ] Surface source count / place / official-match trust badges directly on report cards
+- [ ] KTM Komuter shapes on the map once official GTFS publishes them
 
 ## Explicit Non-Goals
 

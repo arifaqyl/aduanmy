@@ -1,5 +1,15 @@
 from datetime import UTC, datetime, timedelta
 
+from app.core.freshness import myt_day_start
+
+
+def _recent_today_iso() -> str:
+    """A timestamp guaranteed to fall on today's MYT calendar date, regardless of
+    what wall-clock time the test suite happens to run at (avoids midnight-boundary
+    flakiness from a fixed "N hours ago" delta)."""
+    return (myt_day_start() + timedelta(hours=1)).isoformat().replace("+00:00", "Z")
+
+
 from app.collectors.threads.client import (
     _apply_text_created_at,
     _clean_search_preview,
@@ -223,6 +233,40 @@ def test_transport_rider_signal_rejects_latest_threads_false_positives():
     )
 
 
+def test_transport_rider_signal_rejects_qa_false_positives():
+    assert not transport_rider_signal_worthwhile("Dah lambat. Sesak.")
+    assert not transport_rider_signal_worthwhile(
+        "RM277 billion PTPTN debt is enough to build a whole new LRT4 line for Malaysia"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "My Selangorku rumah mampu milik harga rumah naik, nak beli rumah dekat LRT station pun susah"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "45 minute tunggu grab from MRT Kwasa Damansara station pagi ni"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "LRT3 was delayed multiple times over years in development before opening"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "Not recommend naik KTM Komuter, better MRT or LRT laju timing sgt lambat ye"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "budakwang 21m Rasuah is still a big problem. Malaysia lost RM277b due to corruption. enough to build a whole new LRT4"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "How long do we have to cope with this RapidKL? sikit2 delay bagaii"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "dandihusnah 10h Kecik sangat kalau sama size dgn kelana jaya line. X function kalau rumah sebelah lrt. Cuma yg terpaling terdesak je guna lrt. Dah lambat. Sesak. Apa faedah guna lrt?"
+    )
+    assert not transport_rider_signal_worthwhile(
+        "Dah kau kenselkan 5 stesen dan kecikkan saiz, pastu pulak 6 gerabak kau potong jadi 3 gerabak. Tu bukan jimat."
+    )
+    assert transport_rider_signal_worthwhile(
+        "Kelana Jaya Line delay again, waiting 25 minutes at Bangsar station hari ni"
+    )
+
+
 def test_transport_incident_signal_accepts_concrete_current_evidence():
     assert transport_rider_signal_worthwhile("Kelana Jaya Line delay again, waiting 25 minutes at Bangsar")
     assert transport_rider_signal_worthwhile("MRT Kajang delay due to a signal failure")
@@ -308,12 +352,18 @@ def test_threads_recent_filter_rejects_old_posts():
 
 
 def test_threads_recent_filter_accepts_recent_posts():
-    recent = (datetime.now(UTC) - timedelta(days=2)).isoformat().replace("+00:00", "Z")
+    # RECENT_WINDOW_DAYS is 1 — same-day rider reports only.
+    recent = _recent_today_iso()
     assert _is_recent_enough(recent) is True
 
 
 def test_threads_recent_filter_rejects_four_day_old_posts():
     old = (datetime.now(UTC) - timedelta(days=4)).isoformat().replace("+00:00", "Z")
+    assert _is_recent_enough(old) is False
+
+
+def test_threads_recent_filter_rejects_two_day_old_posts():
+    old = (datetime.now(UTC) - timedelta(days=2)).isoformat().replace("+00:00", "Z")
     assert _is_recent_enough(old) is False
 
 
@@ -356,9 +406,9 @@ def test_is_search_result_candidate_accepts_transport_complaint():
 
 def test_collect_threads_sample_prioritizes_keyword_search(monkeypatch):
     calls: list[str] = []
-    recent = (datetime.now(UTC) - timedelta(hours=6)).isoformat().replace("+00:00", "Z")
+    recent = _recent_today_iso()
 
-    def fake_keyword(seen):
+    def fake_keyword(seen, **kwargs):
         calls.append("keyword")
         return [{"url": "https://threads.com/@a/post/1", "raw_text": "LRT still delayed, waiting 20 minutes at Bangsar", "created_at": recent, "query": "lrt problem", "seed_category": "transport", "source_platform": "threads", "post_id": "abc", "author_handle": "a"}]
 
@@ -389,9 +439,9 @@ def test_collect_threads_sample_prioritizes_keyword_search(monkeypatch):
 
 
 def test_collect_threads_sample_skips_watchlist_when_keyword_enough(monkeypatch):
-    recent = (datetime.now(UTC) - timedelta(hours=6)).isoformat().replace("+00:00", "Z")
+    recent = _recent_today_iso()
 
-    def fake_keyword(seen):
+    def fake_keyword(seen, **kwargs):
         return [
             {
                 "url": f"https://threads.com/@a/post/{i}",
@@ -422,9 +472,9 @@ def test_collect_threads_sample_skips_watchlist_when_keyword_enough(monkeypatch)
 
 def test_collect_threads_sample_prioritizes_watchlist(monkeypatch):
     calls: list[str] = []
-    recent = (datetime.now(UTC) - timedelta(hours=6)).isoformat().replace("+00:00", "Z")
+    recent = _recent_today_iso()
 
-    def fake_keyword(seen):
+    def fake_keyword(seen, **kwargs):
         calls.append("keyword")
         return []
 

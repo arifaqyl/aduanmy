@@ -33,6 +33,7 @@ ROUTE_SHORT_TO_LINE = {
     "KGL": "kajang",
     "PYL": "putrajaya",
     "MRL": "monorail",
+    "SAL": "lrt3",
 }
 
 _REPORT_COLORS = {

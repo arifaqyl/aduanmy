@@ -3,7 +3,7 @@
 Malaysia-first public transport pulse built from rider and operator signals.
 
 **Live:** [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)  
-**Status:** production · **Tests:** 227 passing · **License:** [MIT](LICENSE)
+**Status:** production · **Tests:** 236 passing · **License:** [MIT](LICENSE)
 
 AduanMY is the research engine. **TrafficMY** is the shipped product surface: a mobile-first PWA that turns filtered crowd and official signals into line status, live incidents, maps, and journey helpers for Malaysian public transport.
 
@@ -41,12 +41,19 @@ TrafficMY focuses on:
 
 ## API Surface
 
+- `GET /api/trafficmy/signals/today` — **B2B/embed prototype**: today’s rider signals + line board (JSON v1)
+- `GET /developers` · `GET /embed` — human docs + iframe widget
 - `GET /api/health` · `GET /api/health/live` · `GET /api/health/ready`
 - `GET /api/trafficmy/overview` · `GET /api/trafficmy/status`
 - `GET /api/trafficmy/incidents` · `GET /api/trafficmy/incidents/{cluster_id}`
 - `GET /api/trafficmy/lines` · `GET /api/trafficmy/map/live`
+- `GET /api/trafficmy/lines/{line_id}/history` — 14-day rider-signal trend, "is this normal?"
 - `GET /api/trafficmy/journey/plan`
 - `POST /api/refresh` (API key in production)
+
+### Positioning
+
+TrafficMY is **live rider intelligence for today (MYT)** — not a ridership analytics dashboard. For historical passenger counts and DOSM-style trends, use official open-data products; for “is something wrong on my line right now?” use TrafficMY.
 
 Full route list and architecture notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
@@ -83,7 +90,7 @@ app/           FastAPI routes, collectors, pipeline, services
 configs/       categories, entities, queries, GTFS, discovery
 static/        Stitch Play UI (HTML/CSS/JS, mascots, map assets)
 scripts/       deploy, snapshot, reporting
-tests/         regression coverage (227 tests)
+tests/         regression coverage (236 tests)
 docs/          architecture, production audit, transport reference
 ```
 
@@ -107,7 +114,7 @@ pip-audit -r requirements.production.txt
 
 ## Author
 
-**Arif Aqyl** — Software Engineering student, UniKL MIIT (Class of 2028)
+**Arif Aqyl** — Backend developer · live products · Malaysia
 
 - Portfolio: [arifaqyl.me](https://arifaqyl.me)
 - LinkedIn: [linkedin.com/in/arifaqyl](https://linkedin.com/in/arifaqyl)

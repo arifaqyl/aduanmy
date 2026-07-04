@@ -58,6 +58,14 @@ def create_app() -> FastAPI:
         def methodology_page() -> FileResponse:
             return FileResponse(_STATIC / "methodology.html")
 
+        @app.get("/developers", include_in_schema=False)
+        def developers_page() -> FileResponse:
+            return FileResponse(_STATIC / "developers.html")
+
+        @app.get("/embed", include_in_schema=False)
+        def embed_page() -> FileResponse:
+            return FileResponse(_STATIC / "embed.html")
+
         @app.get("/manifest.webmanifest", include_in_schema=False)
         def manifest() -> FileResponse:
             return FileResponse(_STATIC / "manifest.webmanifest", media_type="application/manifest+json")

@@ -14,7 +14,7 @@ from app.collectors.threads.client import collect_threads_sample
 from app.collectors.x.client import collect_x_sample
 from app.core.config import settings
 from app.core.files import raw_path, report_path, write_json_atomic
-from app.core.freshness import parse_dt
+from app.core.freshness import is_myt_peak_hour, parse_dt
 from app.db.session import (
     connect,
     init_db,
@@ -25,6 +25,7 @@ from app.db.session import (
 )
 from app.pipeline.bus_alerts import classify_transport_mode, is_mass_bus_alert, is_rail_line_alert, parse_myrapid_official
 from app.pipeline.dedup import dedup_key
+from app.core.freshness import is_inside_myt_today
 from app.pipeline.extract import (
     category_signal_ok,
     extract_bus_route,
@@ -189,8 +190,15 @@ def _collector_due(name: str, *, respect_cadence: bool) -> tuple[bool, str]:
         return False, "disabled_until_authenticated"
     if not respect_cadence:
         return True, ""
+    # Reddit is the fallback lane when Threads goes quiet — run it more often during
+    # KL commute rush hours so a stalled Threads session doesn't leave the pulse blind.
+    reddit_interval = (
+        min(settings.reddit_min_interval_seconds, 1800)
+        if is_myt_peak_hour()
+        else settings.reddit_min_interval_seconds
+    )
     minimum = {
-        "reddit": settings.reddit_min_interval_seconds,
+        "reddit": reddit_interval,
         "x": settings.x_min_interval_seconds,
     }.get(name, 0)
     if minimum <= 0:
@@ -248,6 +256,13 @@ def collect_all_detailed(
                 results[name] = []
                 status = "failed"
                 error = f"{type(exc).__name__}: {exc}"
+            if name == "threads" and status != "healthy":
+                from app.collectors.threads.client import get_threads_diagnostics
+
+                diag = get_threads_diagnostics()
+                reasons = diag.get("reasons") or []
+                if reasons:
+                    error = (error + " | " if error else "") + "; ".join(reasons[:4])
             runs.append(
                 {
                     "source": name,
@@ -344,6 +359,9 @@ def transform_rows(collected: dict[str, list[dict]]) -> list[ComplaintSchema]:
                 ):
                     if not transport_rider_signal_worthwhile(normalized_text, entity):
                         continue
+                    created_at = row.get("created_at", "")
+                    if created_at and not is_inside_myt_today(created_at):
+                        continue
                 if category in {"banking_payments", "gov_portals", "telco_internet"} and not entity:
                     continue
                 if category == "flood_weather" and not any(
@@ -373,6 +391,14 @@ def transform_rows(collected: dict[str, list[dict]]) -> list[ComplaintSchema]:
                 )
             )
     return out
+
+
+def prune_gtfs_rt_complaints() -> int:
+    """GTFS-RT anomaly rows are reference telemetry, not rider incidents."""
+    init_db()
+    with connect() as conn:
+        cur = conn.execute("DELETE FROM complaints WHERE source_platform = 'gtfs_rt'")
+        return int(cur.rowcount or 0)
 
 
 def prune_rejected_social_complaints() -> int:
@@ -442,6 +468,7 @@ def run_ingest(*, respect_cadence: bool = False) -> dict:
     rows = transform_rows(collected)
     written = upsert_complaints(rows)
     pruned = prune_old_complaints()
+    gtfs_pruned = prune_gtfs_rt_complaints()
     threads_pruned = prune_rejected_social_complaints()
     category_counts = Counter(row.category or "uncategorized" for row in rows)
     state_counts = Counter(row.state for row in rows if row.state)
@@ -454,6 +481,7 @@ def run_ingest(*, respect_cadence: bool = False) -> dict:
         "duration_seconds": round((datetime.now(UTC) - run_started).total_seconds(), 2),
         "written": written,
         "pruned": pruned,
+        "gtfs_pruned": gtfs_pruned,
         "threads_pruned_rejected": threads_pruned,
         "threads": len(collected["threads"]),
         "reddit": len(collected["reddit"]),

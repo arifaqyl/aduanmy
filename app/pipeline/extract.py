@@ -524,6 +524,56 @@ TRANSPORT_CHATTER_PATTERNS = [
     r"\b(?:i think|rasanya|rasa macam)\b.{0,60}\b(?:delay|problem|gangguan)\b",
 ]
 
+# Infrastructure planning / budget debate — not a live rider report.
+TRANSPORT_PLANNING_OPINION_TERMS = [
+    "kenselkan",
+    "kecikkan saiz",
+    "gerabak",
+    "potong jadi",
+    "plan asal",
+    "bukan jimat",
+    "claim jimat",
+    "billiun",
+    "billion",
+    "downgrade",
+    "tanpa downgrade",
+    "zaman bn",
+    "cost cutting",
+    "pembinaan",
+    "projek ni",
+]
+
+# General “LRT is useless / too small” opinion — not an active incident today.
+TRANSPORT_USELESS_OPINION_TERMS = [
+    "apa faedah",
+    "x function",
+    "rumah sebelah lrt",
+    "rumah sebelah",
+    "terpaling terdesak",
+    "kecik sangat",
+    "sama size dgn",
+    "sama size dengan",
+    "cuma yg",
+    "how long do we have to cope",
+    "not recommend naik",
+]
+
+# Rider must signal they mean *today* (or a fresh relative time like “10h” on Threads).
+TRANSPORT_TODAY_RIDER_TERMS = [
+    "hari ni",
+    "harini",
+    "pagi ni",
+    "pagi ini",
+    "this morning",
+    "today",
+    "now",
+    "right now",
+    "currently",
+    "sekarang",
+    "skrg",
+    "baru ni",
+]
+
 
 def _contains_transport_marker(low: str, token: str) -> bool:
     if re.fullmatch(r"[a-z0-9]+", token):
@@ -924,6 +974,11 @@ def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
     if hypothetical_hit:
         return False
 
+    if any(token in low for token in TRANSPORT_PLANNING_OPINION_TERMS):
+        return False
+    if any(token in low for token in TRANSPORT_USELESS_OPINION_TERMS):
+        return False
+
     # Must describe something going wrong now — not just name-drop a line or station.
     if strong_hit and (present_active_hit or live_context_hit or not advisory_hit):
         return True
@@ -979,11 +1034,90 @@ def transport_rider_signal_worthwhile(text: str, entity_hint: str = "") -> bool:
     incident_now_hit = any(token in low for token in ["incident", "gangguan", "disruption"]) and present_hit
     if riding_delay_hit or incident_now_hit:
         observable_hit = True
+
+    # Politics, housing, or infrastructure hypotheticals — never a live rider signal.
+    if any(
+        token in low
+        for token in [
+            "rasuah",
+            "corruption",
+            "ptptn",
+            "rm277",
+            "enough to build",
+            "enough to clear",
+            "my selangorku",
+            "harga rumah",
+            "nak beli rumah",
+            "mampu buat",
+            "minute tunggu grab",
+            "tunggu grab",
+            "years in development",
+            "was delayed multiple times",
+            "better mrt or lrt laju",
+            "timing sgt lambat ye, better",
+        ]
+    ):
+        return False
+
+    if any(token in low for token in TRANSPORT_PLANNING_OPINION_TERMS):
+        return False
+    if any(token in low for token in TRANSPORT_USELESS_OPINION_TERMS):
+        return False
+
+    # Habitual gripe without a today signal ("dah lambat", "selalu sesak").
+    if re.search(r"\b(?:dah lambat|sesak penuh|selalu)\b", low) and not (
+        present_hit or measured_hit or direct_hit or riding_delay_hit
+    ):
+        return False
+
+    # Crowding / generic “sesak” alone is not enough — need a live rider cue today.
+    if (
+        impact_hit
+        and not (direct_hit or measured_hit or riding_delay_hit or cause_hit)
+        and not transport_rider_today_context_ok(text)
+    ):
+        return False
+
+    # A concrete cause or measured/direct evidence is itself proof of a live incident —
+    # only fall back to requiring an explicit "today" cue for weaker, cause-less reports.
+    if not (cause_hit or direct_hit or measured_hit) and not transport_rider_today_context_ok(text):
+        return False
+
+    # Aggregated Threads search previews (multiple handles + relative timestamps).
+    if len(re.findall(r"\b[a-z0-9_\.]{3,24}\s+\d+[hm]\b", low)) >= 2 and not (direct_hit or measured_hit):
+        return False
+
     if chatter_hit and not (present_hit and observable_hit):
         return False
     if "?" in low and not observable_hit:
         return False
     return observable_hit
+
+
+def transport_rider_today_context_ok(text: str) -> bool:
+    """True when the post reads like a same-day rider experience (not evergreen opinion)."""
+    low = text.lower()
+    if any(token in low for token in TRANSPORT_TODAY_RIDER_TERMS):
+        return True
+    if re.search(r"\b\d{1,2}[hm]\b", low):
+        return True
+    if re.search(r"\b\d{1,3}\s*(?:min|mins|minute|minutes|minit|jam|hour|hours)\b", low):
+        return True
+    direct_hit = any(
+        token in low
+        for token in [
+            "stuck",
+            "tak gerak",
+            "tak bergerak",
+            "kena tunggu",
+            "waiting for",
+            "not moving",
+            "pintu tak bukak",
+            "cannot board",
+            "tak boleh naik",
+        ]
+    )
+    return direct_hit
 
 
 def category_signal_ok(text: str, category: str, entity: str = "") -> bool:

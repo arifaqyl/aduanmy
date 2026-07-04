@@ -61,7 +61,7 @@ def test_line_info_never_republishes_raw_rider_copy():
     assert "DISTINCTIVE PRIVATE RIDER WORDING" not in response.text
     assert "private-user" not in response.text
     report = response.json()["rider_reports"][0]
-    assert report["headline"] == "Possible delays on Kelana Jaya Line"
+    assert report["headline"] == "Kelana Jaya Line · Bangsar · delay"
     assert "summary" in report
 
 

@@ -55,6 +55,12 @@ def myt_today_date(*, now: datetime | None = None):
     return (now or datetime.now(UTC)).astimezone(MYT).date()
 
 
+def is_myt_peak_hour(*, now: datetime | None = None) -> bool:
+    """True during KL commute rush — 07:00-10:00 and 17:00-20:00 MYT."""
+    hour = (now or datetime.now(UTC)).astimezone(MYT).hour
+    return (7 <= hour < 10) or (17 <= hour < 20)
+
+
 def is_inside_myt_today(
     value: str | None,
     *,

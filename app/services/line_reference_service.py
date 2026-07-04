@@ -6,9 +6,11 @@ from datetime import UTC, datetime, time, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
 
+from app.core.freshness import is_inside_myt_today
 from app.core.transport_lines import LINE_CATALOG, match_transport_line
 from app.services.incident_service import list_clusters
 from app.services.line_status_service import LINE_COLORS, get_line_status_board
+from app.services.overview_service import _is_real_transport_complaint
 from app.services.public_incident_service import public_incident_copy
 
 _REFERENCE_PATH = Path(__file__).resolve().parents[2] / "static" / "data" / "lines-reference.json"
@@ -215,6 +217,10 @@ def _rider_reports(line_id: str, *, limit: int = 5) -> list[dict]:
     for cluster in list_clusters(category="transport"):
         if cluster.get("subcategory") == "line_info":
             continue
+        if not _is_real_transport_complaint(cluster):
+            continue
+        if not is_inside_myt_today(cluster.get("last_seen_at") or cluster.get("first_seen_at")):
+            continue
         matched = match_transport_line(cluster) == line_id
         if not matched:
             blob = (cluster.get("example_text") or "").lower()
@@ -228,6 +234,7 @@ def _rider_reports(line_id: str, *, limit: int = 5) -> list[dict]:
                 "cluster_id": cluster.get("cluster_id"),
                 "headline": copy["headline"],
                 "summary": copy["summary"],
+                "glance_line": copy.get("glance_line", copy["headline"]),
                 "last_seen_at": cluster.get("last_seen_at"),
                 "sources": sources,
                 "example_url": cluster.get("example_url"),

@@ -9,6 +9,7 @@ from app.services.line_status_service import get_line_status_board
 from app.services.incident_service import get_cluster_detail, list_clusters, list_complaints
 from app.services.overview_service import get_trafficmy_incidents, get_trafficmy_overview
 from app.services.methodology_service import get_methodology
+from app.services.signals_api_service import get_today_signals
 from app.services.status_service import get_trafficmy_status
 from app.services.scheduler_service import trigger_full_ingest_async, run_full_now
 from app.services.public_incident_service import public_cluster, public_evidence
@@ -127,6 +128,17 @@ def trafficmy_line_info(line_id: str) -> dict:
     return info
 
 
+@router.get("/trafficmy/lines/{line_id}/history")
+def trafficmy_line_history(line_id: str, days: int = Query(default=14, ge=1, le=30)) -> dict:
+    """Daily rider-signal counts for a line — "is today normal for this line?" """
+    from app.services.line_history_service import get_line_history
+
+    history = get_line_history(line_id, days=days)
+    if history is None:
+        raise HTTPException(status_code=404, detail="Line not found")
+    return history
+
+
 @router.get("/trafficmy/lines")
 def trafficmy_lines(
     source_group: str = Query(default="social", pattern="^(social|gps|all)$"),
@@ -215,6 +227,14 @@ def trafficmy_overview(
 @router.get("/trafficmy/methodology")
 def trafficmy_methodology() -> dict:
     return get_methodology()
+
+
+@router.get("/trafficmy/signals/today")
+def trafficmy_signals_today(
+    limit: int = Query(default=25, ge=1, le=100),
+) -> dict:
+    """Machine-readable live rider signals for today (MYT). Embed / integrations / B2B."""
+    return get_today_signals(limit=limit)
 
 
 @router.get("/trafficmy/status")

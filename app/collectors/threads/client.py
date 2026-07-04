@@ -3,6 +3,7 @@ from __future__ import annotations
 import html
 import re
 import threading
+import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import UTC, datetime, timedelta
@@ -12,7 +13,7 @@ from urllib.parse import quote_plus, unquote
 from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
 from app.collectors.date_hints import created_at_from_text
 from app.collectors.threads.session import load_storage_state, save_storage_state
-from app.core.freshness import RECENT_DAYS
+from app.core.freshness import RECENT_DAYS, is_inside_myt_today
 from app.collectors.discovery import threads_queries, threads_watchlist
 from app.core.files import load_yaml
 from app.pipeline.extract import (
@@ -28,7 +29,7 @@ except Exception:  # pragma: no cover - optional dependency at runtime
     sync_playwright = None
 
 
-RECENT_WINDOW_DAYS = RECENT_DAYS
+RECENT_WINDOW_DAYS = 1  # Today MYT only — rider reports must be same-day.
 PROFILE_POST_LIMIT = 20
 SEARCH_RESULT_LIMIT = 10
 SEARCH_ROWS_PER_CATEGORY = 24
@@ -49,6 +50,40 @@ MANDATORY_TRANSPORT_QUERIES = (
 )
 SEARCH_POST_SELECTOR = "a[href*='/post/'], a[href*='/video/']"
 _PLAYWRIGHT_LOCK = threading.Lock()
+
+# Threads is the primary signal lane but the slowest — a stuck run must never eat the
+# whole 15-min ingest cadence. Once the budget is spent we stop opening new pages and
+# return whatever rows were already collected instead of blocking the scheduler.
+THREADS_TIME_BUDGET_SECONDS = 150
+
+_diagnostics_lock = threading.Lock()
+_last_diagnostics: dict = {}
+
+
+def _reset_diagnostics() -> None:
+    with _diagnostics_lock:
+        _last_diagnostics.clear()
+        _last_diagnostics["reasons"] = []
+
+
+def _note(key: str, value) -> None:
+    with _diagnostics_lock:
+        _last_diagnostics[key] = value
+
+
+def _note_reason(reason: str) -> None:
+    with _diagnostics_lock:
+        _last_diagnostics.setdefault("reasons", []).append(reason)
+
+
+def get_threads_diagnostics() -> dict:
+    """Snapshot of why the most recent collect_threads_sample() run behaved as it did."""
+    with _diagnostics_lock:
+        return dict(_last_diagnostics)
+
+
+def _budget_expired(deadline: float) -> bool:
+    return time.monotonic() > deadline
 SEARCH_POST_JS = """
 els => els.map(a => {
   const href = a.href || '';
@@ -515,6 +550,8 @@ def _is_recent_enough(created_at: str, *, max_age_days: int = RECENT_WINDOW_DAYS
     parsed = _parse_created_at(created_at)
     if parsed is None:
         return False
+    if max_age_days <= 1:
+        return is_inside_myt_today(created_at)
     return parsed >= datetime.now(UTC) - timedelta(days=max_age_days)
 
 
@@ -556,11 +593,14 @@ def _resolve_threads_text(url: str, preview_text: str = "", snippet: str = "") -
     return _extract_threads_text(page_html) or clean_text(snippet)
 
 
-def _collect_keyword_search_posts(seen_urls: set[str]) -> list[dict]:
+def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None = None) -> list[dict]:
     """Primary lane: native Threads keyword search for latest complaint posts."""
     if sync_playwright is None:
+        _note_reason("playwright_not_installed")
         return []
     rows: list[dict] = []
+    queries_run = 0
+    queries_with_hits = 0
     try:
         with _PLAYWRIGHT_LOCK:
             with sync_playwright() as p:
@@ -573,13 +613,23 @@ def _collect_keyword_search_posts(seen_urls: set[str]) -> list[dict]:
                     category_rows = 0
                     queries = _transport_queries_for_run()
                     for query_index, query in enumerate(queries):
+                        if deadline is not None and _budget_expired(deadline):
+                            _note_reason(f"keyword_search_time_budget_exceeded_after_{queries_run}_queries")
+                            break
                         mandatory = query_index < len(MANDATORY_TRANSPORT_QUERIES)
                         if not mandatory and category_rows >= SEARCH_ROWS_PER_CATEGORY:
                             break
                         hits = _scrape_threads_search_page(page, query)
+                        queries_run += 1
+                        if hits:
+                            queries_with_hits += 1
                         if not session_checked:
                             authenticated = session_loaded and _page_has_authenticated_session(page)
                             session_checked = True
+                            _note("session_loaded", session_loaded)
+                            _note("authenticated", authenticated)
+                            if session_loaded and not authenticated:
+                                _note_reason("session_expired_or_login_wall")
                         query_rows = 0
                         for item in hits:
                             if query_rows >= SEARCH_ROWS_PER_QUERY or category_rows >= SEARCH_ROWS_PER_CATEGORY:
@@ -618,8 +668,15 @@ def _collect_keyword_search_posts(seen_urls: set[str]) -> list[dict]:
                     save_storage_state(context.storage_state())
                 context.close()
                 browser.close()
-    except Exception:
+    except Exception as exc:
+        _note_reason(f"keyword_search_exception:{type(exc).__name__}")
         return rows
+    finally:
+        _note("keyword_search_queries_run", queries_run)
+        _note("keyword_search_queries_with_hits", queries_with_hits)
+        _note("keyword_search_rows", len(rows))
+        if queries_run and queries_with_hits == 0:
+            _note_reason("search_blocked_or_no_results_all_queries")
     return rows
 
 
@@ -780,23 +837,42 @@ def _collect_seed_posts(seen_urls: set[str], *, skip_profile_discovery: bool = F
 
 
 def collect_threads_sample() -> list[dict]:
+    _reset_diagnostics()
+    started = time.monotonic()
+    deadline = started + THREADS_TIME_BUDGET_SECONDS
     seen_urls: set[str] = set()
     rows: list[dict] = []
-    rows.extend(_collect_keyword_search_posts(seen_urls))
-    if len(rows) < 6:
+    rows.extend(_collect_keyword_search_posts(seen_urls, deadline=deadline))
+    if len(rows) < 6 and not _budget_expired(deadline):
         rows.extend(_collect_latest_watchlist_posts(seen_urls))
-    if len(rows) < 6:
+    elif _budget_expired(deadline):
+        _note_reason("skipped_watchlist_lane_time_budget")
+    if len(rows) < 6 and not _budget_expired(deadline):
         rows.extend(_collect_search_discovered_posts(seen_urls))
-    rows.extend(_collect_seed_posts(seen_urls, skip_profile_discovery=len(rows) >= 10))
+    elif _budget_expired(deadline):
+        _note_reason("skipped_web_search_fallback_lane_time_budget")
+    if not _budget_expired(deadline):
+        rows.extend(_collect_seed_posts(seen_urls, skip_profile_discovery=len(rows) >= 10))
+    else:
+        _note_reason("skipped_seed_posts_lane_time_budget")
+
+    _note("raw_rows_before_filter", len(rows))
     rows = _fill_missing_created_at(rows)
     rows = _sort_rows_by_created_at(rows)
-    return [
+    filtered = [
         row
         for row in rows
         if _is_usable_threads_row(row)
-        and _is_recent_enough(row.get("created_at", ""))
+        and _is_recent_enough(row.get("created_at", ""), max_age_days=1)
         and (
             row.get("seed_category") != "transport"
             or transport_rider_signal_worthwhile(row.get("raw_text", ""))
         )
     ]
+    _note("filtered_rows", len(filtered))
+    _note("duration_seconds", round(time.monotonic() - started, 1))
+    if rows and not filtered:
+        _note_reason("all_candidate_rows_rejected_by_today_or_rider_signal_filters")
+    if not rows:
+        _note_reason("no_posts_discovered_today")
+    return filtered

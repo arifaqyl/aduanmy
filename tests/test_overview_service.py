@@ -1,8 +1,13 @@
 from datetime import UTC, datetime, timedelta
 
+from app.core.freshness import myt_day_start
 from app.db.session import reset_complaints, upsert_complaints
 from app.schemas.complaint import ComplaintSchema
 from app.services.overview_service import get_trafficmy_incidents, get_trafficmy_overview
+
+
+def _today_iso(hours: int = 0, minutes: int = 0) -> str:
+    return (myt_day_start() + timedelta(hours=hours, minutes=minutes)).isoformat().replace("+00:00", "Z")
 
 
 def test_overview_derives_live_entity_and_location_counts_from_clusters():
@@ -14,7 +19,7 @@ def test_overview_derives_live_entity_and_location_counts_from_clusters():
                 post_id="x1",
                 url="https://example.com/x1",
                 author_handle="askrapidkl",
-                created_at="2026-06-22T00:00:00Z",
+                created_at=_today_iso(),
                 raw_text="LRT incident at Kelana Jaya — stuck again",
                 normalized_text="lrt incident at kelana jaya stuck again",
                 detected_language_mix="en",
@@ -30,9 +35,9 @@ def test_overview_derives_live_entity_and_location_counts_from_clusters():
                 post_id="t1",
                 url="https://example.com/t1",
                 author_handle="u1",
-                created_at="2026-06-22T00:10:00Z",
-                raw_text="LRT incident at Kelana Jaya again",
-                normalized_text="lrt incident at kelana jaya again",
+                created_at=_today_iso(minutes=10),
+                raw_text="LRT incident at Kelana Jaya again, train stuck now",
+                normalized_text="lrt incident at kelana jaya again, train stuck now",
                 detected_language_mix="en",
                 category="transport",
                 entity="LRT",
@@ -46,7 +51,7 @@ def test_overview_derives_live_entity_and_location_counts_from_clusters():
                 post_id="r1",
                 url="https://example.com/r1",
                 author_handle="u2",
-                created_at="2026-06-22T00:20:00Z",
+                created_at=_today_iso(minutes=20),
                 raw_text="MRT delay at Maluri this morning",
                 normalized_text="mrt delay at maluri this morning",
                 detected_language_mix="en",

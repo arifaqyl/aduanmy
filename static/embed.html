@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrafficMY Embed</title>
+  <meta name="robots" content="noindex" />
+  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; }
+    body {
+      font-family: "Nunito Sans", system-ui, sans-serif;
+      background: #0f172a;
+      color: #e2e8f0;
+      padding: 12px 14px;
+      min-height: 100px;
+    }
+    .bar { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #2dd4bf; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .brand { font-size: 11px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #94a3b8; }
+    .headline { font-size: 15px; font-weight: 800; line-height: 1.35; }
+    .sub { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+    .signals { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+    .sig {
+      font-size: 11px;
+      line-height: 1.35;
+      padding: 8px 10px;
+      border-radius: 8px;
+      background: rgba(255,255,255,.05);
+      border-left: 3px solid #2dd4bf;
+    }
+    a { color: #2dd4bf; font-weight: 800; text-decoration: none; font-size: 11px; }
+  </style>
+</head>
+<body>
+  <div class="bar">
+    <span class="dot" aria-hidden="true"></span>
+    <span class="brand">TrafficMY · live today</span>
+  </div>
+  <div class="headline" id="headline">Loading rider signals…</div>
+  <div class="sub" id="sub"></div>
+  <div class="signals" id="signals"></div>
+  <p style="margin-top:10px"><a id="appLink" href="#" target="_blank" rel="noopener">Open full app →</a></p>
+  <script>
+    (function () {
+      const base = location.pathname.replace(/\/?embed\/?$/, '') || '';
+      const appUrl = location.origin + base + '/';
+      document.getElementById('appLink').href = appUrl;
+      fetch(base + '/api/trafficmy/signals/today?limit=4')
+        .then(r => r.json())
+        .then(data => {
+          const s = data.summary || {};
+          document.getElementById('headline').textContent =
+            s.active_lines > 0
+              ? s.active_lines + ' line(s) with rider reports today'
+              : 'No active delay signals today';
+          document.getElementById('sub').textContent =
+            (s.headline || '') + ' · Quiet ≠ all-clear';
+          const el = document.getElementById('signals');
+          (data.signals || []).slice(0, 3).forEach(sig => {
+            const div = document.createElement('div');
+            div.className = 'sig';
+            div.textContent = sig.glance_line || sig.headline || sig.entity;
+            el.appendChild(div);
+          });
+          if (!el.children.length) {
+            el.innerHTML = '<div class="sig" style="border-color:#64748b">Nothing qualifying today — check app for line board.</div>';
+          }
+        })
+        .catch(() => {
+          document.getElementById('headline').textContent = 'Signals unavailable';
+        });
+    })();
+  </script>
+</body>
+</html>

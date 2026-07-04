@@ -62,7 +62,14 @@ def health() -> dict:
 
     age_minutes = _ingest_age_minutes(ingest)
     stale = age_minutes is None or age_minutes > settings.stale_after_minutes
-    status = "ok" if db_ok and not stale else "degraded"
+
+    sources = get_source_health()
+    alerts = [
+        f"{src['source']}: {src['consecutive_empty_runs']} consecutive empty/failed ingests — {src.get('error') or 'no reason logged'}"
+        for src in sources
+        if src.get("needs_attention")
+    ]
+    status = "ok" if db_ok and not stale and not alerts else "degraded"
 
     threads_count = int(ingest.get("threads", 0))
     threads_rows_last_ingest = threads_count
@@ -78,9 +85,10 @@ def health() -> dict:
         "ingest_age_minutes": round(age_minutes, 1) if age_minutes is not None else None,
         "stale_after_minutes": settings.stale_after_minutes,
         "is_stale": stale,
+        "alerts": alerts,
         "last_ingest": ingest,
         "scheduler": scheduler_state(),
-        "sources": get_source_health(),
+        "sources": sources,
     }
 
 

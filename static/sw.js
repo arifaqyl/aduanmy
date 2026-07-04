@@ -1,4 +1,4 @@
-const CACHE = 'trafficmy-shell-v16';
+const CACHE = 'trafficmy-shell-v20';
 const scopeUrl = new URL(self.registration.scope);
 const base = scopeUrl.pathname.replace(/\/$/, '');
 const shell = [
@@ -13,7 +13,6 @@ const shell = [
   `${base}/static/js/app.js`,
   `${base}/static/mascots/stitch-mascot.png`,
   `${base}/static/mascots/stitch-mascot-worried.png`,
-  `${base}/static/mascots/travel-banner.jpg`,
 ];
 
 self.addEventListener('install', event => {

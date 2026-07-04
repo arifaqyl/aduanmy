@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TrafficMY · Malaysia Transport</title>
-  <meta name="description" content="See if your line is delayed — at a glance." />
+  <title>TrafficMY · Live Malaysia Transit Signals</title>
+  <meta name="description" content="Live rider delay signals across Malaysian LRT, MRT, KTM and monorail — today MYT. Not ridership stats." />
   <meta name="theme-color" content="#58CC02" />
-  <meta property="og:title" content="TrafficMY · Malaysia Transport" />
-  <meta property="og:description" content="See if your line is delayed — at a glance." />
+  <meta property="og:title" content="TrafficMY · Live Malaysia Transit Signals" />
+  <meta property="og:description" content="What riders report on Malaysia transit today — delays, crowding, disruptions. Not passenger count charts." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="static/og-image.png" />
   <meta property="og:image:alt" content="TrafficMY" />
@@ -73,6 +73,14 @@
               <span>Checking your lines</span>
             </div>
           </div>
+
+          <aside class="stitch-positioning" aria-label="What TrafficMY is">
+            <div class="stitch-positioning-copy">
+              <strong>Live rider signals · today MYT</strong>
+              <span>Not ridership stats · not operator all-clear</span>
+            </div>
+            <a class="stitch-positioning-link" href="developers" target="_blank" rel="noopener noreferrer">API &amp; embed →</a>
+          </aside>
 
           <div id="riskStrip" class="play-risk-strip" hidden aria-label="My lines during rush hour"></div>
 
@@ -224,9 +232,17 @@
 
     <div class="tm-view tab-panel" id="tabTravel" role="tabpanel" aria-labelledby="tabBtnTravel" hidden>
       <div class="tm-travel-layout">
-        <div class="stitch-travel-banner" role="img" aria-label="Malaysia Adventures — explore the rail network">
-          <img src="static/mascots/travel-banner.jpg" alt="" loading="lazy" width="840" height="468" />
+        <div class="stitch-travel-banner stitch-travel-banner--native" role="img" aria-label="Malaysia Adventures — explore the rail network">
+          <div class="stitch-travel-banner-art">
+            <img src="static/mascots/stitch-mascot.png" alt="" loading="lazy" width="72" height="72" />
+          </div>
+          <div class="stitch-travel-banner-copy">
+            <span class="stitch-travel-banner-kicker">Malaysia Adventures</span>
+            <strong>Plan your rail journey</strong>
+            <span>Stations · interchanges · service hours</span>
+          </div>
         </div>
+        <section class="tm-travel-card tm-schedule-card" id="trainScheduleCard" hidden aria-labelledby="scheduleTitle"></section>
         <section class="tm-travel-card" aria-labelledby="journeyTitle">
           <div class="tm-travel-card-head">
             <span class="material-symbols-outlined" aria-hidden="true">route</span>

@@ -5,6 +5,33 @@ from datetime import UTC, datetime
 from app.core.freshness import parse_dt
 from app.db.session import connect, init_db
 
+# Threads is the primary rider-signal lane. If it comes back empty this many
+# consecutive ingests (roughly 45 min at a 15-min cadence), flag it loudly rather
+# than silently degrading into an official-notice mirror.
+CONSECUTIVE_EMPTY_ALERT_THRESHOLD = 3
+
+
+def _consecutive_empty_counts(conn) -> dict[str, int]:
+    rows = conn.execute(
+        """
+        SELECT source, status, row_count
+        FROM collector_runs
+        WHERE status != 'paused'
+        ORDER BY source, id DESC
+        """
+    ).fetchall()
+    counts: dict[str, int] = {}
+    seen_break: set[str] = set()
+    for row in rows:
+        source = row["source"]
+        if source in seen_break:
+            continue
+        if row["status"] == "failed" or int(row["row_count"] or 0) == 0:
+            counts[source] = counts.get(source, 0) + 1
+        else:
+            seen_break.add(source)
+    return counts
+
 
 def get_source_health() -> list[dict]:
     init_db()
@@ -33,6 +60,7 @@ def get_source_health() -> list[dict]:
                 """
             ).fetchall()
         }
+        consecutive_empty = _consecutive_empty_counts(conn)
 
     now = datetime.now(UTC)
     items: list[dict] = []
@@ -43,5 +71,7 @@ def get_source_health() -> list[dict]:
         item["age_minutes"] = round(age_minutes, 1) if age_minutes is not None else None
         item["last_nonempty_at"] = nonempty.get(item["source"])
         item["available"] = item["status"] not in {"failed"}
+        item["consecutive_empty_runs"] = consecutive_empty.get(item["source"], 0)
+        item["needs_attention"] = item["consecutive_empty_runs"] >= CONSECUTIVE_EMPTY_ALERT_THRESHOLD
         items.append(item)
     return items
