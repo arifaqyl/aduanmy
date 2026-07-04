@@ -1493,21 +1493,23 @@
 
   function renderInterchangeSection(interchanges) {
     if (!interchanges?.length) {
-      return '<p style="color:var(--text-dim);font-size:12px">No interchange data for this line yet.</p>';
+      return '<p class="guide-empty-hint">No interchange data for this line yet.</p>';
     }
     return `<div class="interchange-list">${interchanges.map(ix => {
-      const walk = ix.transfer_walk_min ? ` · ~${esc(ix.transfer_walk_min)} min walk` : '';
-      const dots = (ix.line_colours || []).map(lc =>
-        `<span class="interchange-line-dot" style="--dot-color:${esc(lc.color)}">${esc(lc.id.replace(/-/g, ' '))}</span>`
-      ).join('');
+      const dotColor = (ix.line_colours || [])[0]?.color;
+      const walk = ix.transfer_walk_min
+        ? `<span class="interchange-walk">~${esc(ix.transfer_walk_min)} min walk</span>` : '';
       const steps = (ix.transfer_steps || []).length
         ? `<ol class="transfer-steps">${ix.transfer_steps.map(step => `<li>${esc(step)}</li>`).join('')}</ol>`
         : '';
       return `<div class="interchange-item">
-        <strong>${esc(ix.station)}</strong>
-        <div>${esc(ix.connects_to || 'Other lines')}${walk}</div>
-        ${ix.walking_note ? `<div style="font-size:11px;color:var(--text-dim);margin-top:4px">${esc(ix.walking_note)}</div>` : ''}
-        ${dots ? `<div class="interchange-lines">${dots}</div>` : ''}
+        <div class="interchange-item-head">
+          ${dotColor ? `<span class="interchange-dot" style="--dot-color:${esc(dotColor)}"></span>` : ''}
+          <strong class="interchange-station">${esc(ix.station)}</strong>
+          ${walk}
+        </div>
+        <div class="interchange-connects">${pickLang('Connects to', 'Bersambung ke')} ${esc(ix.connects_to || 'other lines')}</div>
+        ${ix.walking_note ? `<div class="interchange-note">${esc(ix.walking_note)}</div>` : ''}
         ${steps}
       </div>`;
     }).join('')}</div>`;
@@ -1593,7 +1595,6 @@
       const reportBtn = (clusterId || live.top_cluster_id)
         ? `<button type="button" class="guide-btn primary" data-open-cluster="${esc(clusterId || live.top_cluster_id)}" data-line-label="${esc(lineName)}" data-line-status="${esc(status || live.status || '')}">View reports</button>`
         : '';
-      const facts = (info.line_facts || []).map(f => `<li>${esc(f)}</li>`).join('');
       const color = LINE_COLORS[lineId] || ref.official_colour || '#64748b';
       const stations = info.stations_ordered || ref.stations_ordered || [];
       const interchangeHtml = renderInterchangeSection(ref.interchanges);
@@ -1622,14 +1623,22 @@
         ? `<div class="guide-section"><h3>Rider pulse</h3>${riders}</div>`
         : '';
       const historySection = renderLineHistorySection(history, color);
+      const statParts = [];
+      if (ref.length_km) statParts.push(pickLang(`${ref.length_km} km`, `${ref.length_km} km`));
+      if (ref.stations_count) statParts.push(pickLang(`${ref.stations_count} stations`, `${ref.stations_count} stesen`));
+      if (ref.journey_minutes) statParts.push(pickLang(`~${ref.journey_minutes} min end-to-end`, `~${ref.journey_minutes} min hujung ke hujung`));
+      const statLine = statParts.length ? `<p class="guide-stat-line">${statParts.join(' · ')}</p>` : '';
+      const capacityLine = ref.capacity_note ? `<p class="guide-capacity-line">${esc(ref.capacity_note)}</p>` : '';
       $('panelBody').innerHTML = `
         ${riderSection}
         ${historySection}
         ${schematicSection}
-        <div class="guide-section">
+        <div class="guide-section guide-section--facts">
           <h3>Route &amp; facts</h3>
-          <p style="margin:0;color:var(--text-secondary)">${endpoints}</p>
-          ${facts ? `<ul style="margin:8px 0 0;padding-left:18px;font-size:12px;color:var(--text-secondary)">${facts}</ul>` : ''}
+          <p class="guide-endpoints">${endpoints}</p>
+          ${statLine}
+          ${capacityLine}
+          <p class="guide-source-note">${pickLang('Public rider posts &amp; operator references — not live headway data.', 'Laporan penumpang awam &amp; rujukan operator — bukan data selang masa langsung.')}</p>
         </div>
         <div class="guide-section">
           <h3>Operating hours</h3>

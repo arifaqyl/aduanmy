@@ -1388,6 +1388,101 @@
   color: var(--text-dim);
 }
 
+/* ── Interchange cards (line guide panel) ── */
+.interchange-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.interchange-item {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--tm-surface-2);
+  border: 1px solid var(--tm-line);
+}
+
+.interchange-item-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.interchange-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--dot-color, #64748b);
+  flex-shrink: 0;
+}
+
+.interchange-station {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary, var(--tm-ink));
+}
+
+.interchange-walk {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.interchange-connects {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.interchange-note {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.transfer-steps {
+  margin: 6px 0 0;
+  padding-left: 16px;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.guide-empty-hint {
+  color: var(--text-dim);
+  font-size: 12px;
+  margin: 0;
+}
+
+/* ── Route & facts (line guide panel) ── */
+.guide-section--facts .guide-endpoints {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.guide-stat-line {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.guide-capacity-line {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
+.guide-source-note {
+  margin: 8px 0 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--tm-line);
+  font-size: 11px;
+  color: var(--text-dim);
+}
+
 /* ── Collector-degraded empty state (distinct from a genuinely quiet line) ── */
 .tm-live-empty--degraded {
   border: 1px solid rgba(251, 191, 36, 0.35);
