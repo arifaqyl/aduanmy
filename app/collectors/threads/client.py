@@ -338,6 +338,19 @@ def _transport_queries_for_run() -> list[str]:
     return core + window
 
 
+# Threads' DOM often glues "<handle> <relative_time>" onto the caption with
+# no separator — e.g. "pixel.stuck 9m Another hard race on...". Left in place,
+# a username fragment like ".stuck" or ".delayed" reads as post content and
+# has previously caused unrelated posts (foreign motocross races, etc.) to be
+# misread as live rider signals. Strip it before any keyword classification.
+_LEADING_HANDLE_TIME = re.compile(r"^@?[a-z0-9_.]{2,40}\s+\d{1,3}\s*[smhdw]\b\s*", re.IGNORECASE)
+
+
+def _strip_leading_handle_time(text: str) -> str:
+    stripped = _LEADING_HANDLE_TIME.sub("", text, count=1).strip()
+    return stripped or text
+
+
 def _clean_search_preview(preview_text: str) -> str:
     """Pick the most content-like line from a Threads search card blob."""
     lines = [clean_text(line) for line in preview_text.splitlines() if clean_text(line)]
@@ -347,7 +360,8 @@ def _clean_search_preview(preview_text: str) -> str:
     candidates = [line for line in lines if not blocked.match(line) and len(line) >= 12]
     if not candidates:
         candidates = lines
-    return max(candidates, key=len)
+    best = max(candidates, key=len)
+    return _strip_leading_handle_time(best)
 
 
 def _is_search_result_candidate(text: str, category: str) -> bool:
@@ -583,14 +597,15 @@ def _make_threads_row(
 
 
 def _resolve_threads_text(url: str, preview_text: str = "", snippet: str = "") -> str:
-    text = clean_text(preview_text)
+    text = _strip_leading_handle_time(clean_text(preview_text))
     if text and len(text) >= 20:
         return text
     try:
         page_html = fetch_html(url, timeout=10)
     except Exception:
         page_html = ""
-    return _extract_threads_text(page_html) or clean_text(snippet)
+    resolved = _extract_threads_text(page_html) or clean_text(snippet)
+    return _strip_leading_handle_time(resolved)
 
 
 def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None = None) -> list[dict]:
@@ -642,7 +657,7 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
                             created_at = item.get("created_at", "") or created_at_from_text(preview_text) or created_at_from_text(link_text)
                             if created_at and not _is_recent_enough(created_at):
                                 continue
-                            snippet = _clean_search_preview(preview_text) or link_text
+                            snippet = _clean_search_preview(preview_text) or _strip_leading_handle_time(link_text)
                             text = snippet if len(snippet) >= 20 else _resolve_threads_text(href, preview_text=snippet)
                             if not text:
                                 continue

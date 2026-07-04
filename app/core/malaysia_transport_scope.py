@@ -1,6 +1,18 @@
 """Malaysia-only transport scope for TrafficMY (exclude foreign transit noise)."""
 from __future__ import annotations
 
+import re
+
+
+def _token_hit(token: str, blob: str) -> bool:
+    """Plain substring matching lets short tokens like "ktm" false-positive
+    inside unrelated compounds/handles (e.g. "ktm_switzerland"). Multi-word
+    phrases already have natural boundaries via spaces; single-word tokens
+    get a regex word boundary that also treats "_" as a separator."""
+    if " " in token:
+        return token in blob
+    return re.search(r"(?<![a-z0-9_])" + re.escape(token) + r"(?![a-z0-9_])", blob) is not None
+
 # Overseas systems — reject when no Malaysia anchor present.
 FOREIGN_TRANSPORT_BLOCKERS = [
     "smrt",
@@ -136,8 +148,8 @@ def is_malaysia_transport_text(
     if not blob.strip():
         return False
 
-    foreign_hit = any(token in blob for token in FOREIGN_TRANSPORT_BLOCKERS)
-    malaysia_hit = any(token in blob for token in MALAYSIA_TRANSPORT_SIGNALS)
+    foreign_hit = any(_token_hit(token, blob) for token in FOREIGN_TRANSPORT_BLOCKERS)
+    malaysia_hit = any(_token_hit(token, blob) for token in MALAYSIA_TRANSPORT_SIGNALS)
     state_hit = state.lower() in MALAYSIAN_STATES if state else False
 
     if foreign_hit and not (malaysia_hit or state_hit):
@@ -147,7 +159,7 @@ def is_malaysia_transport_text(
 
     # Collectors are MY-focused; generic rail/bus terms without foreign anchor are OK.
     generic_my = any(
-        token in blob
+        _token_hit(token, blob)
         for token in ["lrt", "mrt", "ktm", "komuter", "rapid", "tren", "bas rapid", "gangguan"]
     )
     return generic_my and not foreign_hit
@@ -174,7 +186,7 @@ def has_strict_malaysia_transport_anchor(
     if entity_low and entity_low not in GENERIC_TRANSPORT_ENTITIES:
         return True
 
-    return any(token in blob for token in STRICT_MALAYSIA_TRANSPORT_SIGNALS)
+    return any(_token_hit(token, blob) for token in STRICT_MALAYSIA_TRANSPORT_SIGNALS)
 
 
 def is_malaysia_transport_cluster(cluster: dict) -> bool:

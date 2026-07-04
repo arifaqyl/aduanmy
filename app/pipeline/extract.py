@@ -577,7 +577,9 @@ TRANSPORT_TODAY_RIDER_TERMS = [
 
 def _contains_transport_marker(low: str, token: str) -> bool:
     if re.fullmatch(r"[a-z0-9]+", token):
-        return bool(re.search(r"(?<![a-z0-9])" + re.escape(token) + r"(?![a-z0-9])", low))
+        # Also guard against underscores — social handles like "ktm_switzerland"
+        # or "mrt_bangkok" would otherwise read as a bare "ktm"/"mrt" mention.
+        return bool(re.search(r"(?<![a-z0-9_])" + re.escape(token) + r"(?![a-z0-9_])", low))
     return token in low
 
 

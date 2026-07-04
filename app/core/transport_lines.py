@@ -1,5 +1,17 @@
 from __future__ import annotations
 
+import re
+
+
+def _token_hit(token: str, blob: str) -> bool:
+    """Word-boundary token check — plain substring matching lets short line
+    codes like "ktm" false-positive inside unrelated handles/compounds
+    (e.g. "ktm_switzerland")."""
+    if " " in token:
+        return token in blob
+    return re.search(r"(?<![a-z0-9_])" + re.escape(token) + r"(?![a-z0-9_])", blob) is not None
+
+
 # Operational services shown on the live status board. Static service details are
 # context only; users should follow the operator timetable link before travelling.
 LINE_CATALOG: list[dict] = [
@@ -259,7 +271,7 @@ def match_transport_line(cluster: dict) -> str | None:
         ]
     ).lower()
     if cluster.get("subcategory") == "bus" and not any(
-        marker in blob for marker in ["kelana", "kajang", "mrt", "lrt", "ktm", "monorail", "brt"]
+        _token_hit(marker, blob) for marker in ["kelana", "kajang", "mrt", "lrt", "ktm", "monorail", "brt"]
     ):
         if "penang" in blob:
             return "penang"
@@ -270,7 +282,7 @@ def match_transport_line(cluster: dict) -> str | None:
         return "rapid-bus"
     generic_ids = {"ktm-komuter", "rapid-bus"}
     for line in sorted(LINE_CATALOG, key=lambda item: item["id"] in generic_ids):
-        if any(token in blob for token in line["match"]):
+        if any(_token_hit(token, blob) for token in line["match"]):
             return line["id"]
     return None
 

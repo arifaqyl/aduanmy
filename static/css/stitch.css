@@ -849,7 +849,8 @@
   cursor: pointer;
 }
 
-.play-app.stitch-app .stitch-map-wrap.has-float-card .stitch-map-search {
+.play-app.stitch-app .stitch-map-wrap.has-float-card .stitch-map-search,
+.play-app.stitch-app .stitch-map-wrap.has-map-popup .stitch-map-search {
   bottom: calc(128px + env(safe-area-inset-bottom, 0px));
 }
 

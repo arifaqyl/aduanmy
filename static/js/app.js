@@ -85,6 +85,7 @@
   let mapEventsBound = false;
   let reportMarkers = [];
   let reportMarkerCount = 0;
+  let activeMapPopup = null;
   let panelTouchStartY = 0;
   let notifyEnabled = localStorage.getItem('trafficmy:notify') === '1';
   let lastLineStatus = {};
@@ -609,6 +610,24 @@
     $('placeSearch')?.focus();
   }
 
+  function openMapPopup(lngLat, html, opts = {}) {
+    if (!mapInstance) return;
+    activeMapPopup?.remove();
+    // Popups can land anywhere on the map, including right over the "Where
+    // to?" search bar — reuse the float-card push-up treatment so the search
+    // bar always stays clear of whatever is currently showing.
+    const wrap = mapInstance.getContainer()?.closest('.stitch-map-wrap');
+    wrap?.classList.add('has-map-popup');
+    activeMapPopup = new maplibregl.Popup({ offset: 12, maxWidth: '300px', ...opts })
+      .setLngLat(lngLat)
+      .setHTML(html)
+      .addTo(mapInstance);
+    activeMapPopup.on('close', () => {
+      wrap?.classList.remove('has-map-popup');
+      activeMapPopup = null;
+    });
+  }
+
   function clearReportMarkers() {
     reportMarkers.forEach(m => m.remove());
     reportMarkers = [];
@@ -633,10 +652,11 @@
           return;
         }
         const link = p.url ? `<div style="margin-top:8px"><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Open source</a></div>` : '';
-        new maplibregl.Popup({ offset: 12, maxWidth: '300px', className: 'stitch-map-popup' })
-          .setLngLat(feature.geometry.coordinates)
-          .setHTML(`<strong>${esc(p.headline || 'Rider signal')}</strong><div style="margin-top:6px;font-size:13px">${esc(p.summary || '')}</div>${link}`)
-          .addTo(mapInstance);
+        openMapPopup(
+          feature.geometry.coordinates,
+          `<strong>${esc(p.headline || 'Rider signal')}</strong><div style="margin-top:6px;font-size:13px">${esc(p.summary || '')}</div>${link}`,
+          { className: 'stitch-map-popup' }
+        );
       });
       const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
         .setLngLat(feature.geometry.coordinates)
@@ -814,24 +834,27 @@
       if (!feature) return;
       const p = feature.properties || {};
       const link = p.url ? `<div style="margin-top:8px"><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Open source evidence</a></div>` : '';
-      new maplibregl.Popup({ offset: 10, maxWidth: '320px' })
-        .setLngLat(event.lngLat)
-        .setHTML(`<strong>${esc(p.headline || 'Rider signal')}</strong><div style="margin-top:5px">${esc(p.summary || '')}</div>${link}`)
-        .addTo(mapInstance);
+      openMapPopup(
+        event.lngLat,
+        `<strong>${esc(p.headline || 'Rider signal')}</strong><div style="margin-top:5px">${esc(p.summary || '')}</div>${link}`,
+        { offset: 10, maxWidth: '320px' }
+      );
     });
     mapInstance.on('click', 'trafficmy-vehicles', event => {
       const p = event.features?.[0]?.properties || {};
-      new maplibregl.Popup({ offset: 8 })
-        .setLngLat(event.lngLat)
-        .setHTML(`<strong>${esc(p.label || 'Vehicle')}</strong><br>Official GPS · ${esc(p.age || '')}<br><em>Reference telemetry, not incident truth.</em>`)
-        .addTo(mapInstance);
+      openMapPopup(
+        event.lngLat,
+        `<strong>${esc(p.label || 'Vehicle')}</strong><br>Official GPS · ${esc(p.age || '')}<br><em>Reference telemetry, not incident truth.</em>`,
+        { offset: 8 }
+      );
     });
     mapInstance.on('click', 'trafficmy-hubs', event => {
       const p = event.features?.[0]?.properties || {};
-      new maplibregl.Popup({ offset: 8 })
-        .setLngLat(event.lngLat)
-        .setHTML(`<strong>${esc(p.station || 'Interchange')}</strong><br>${esc(p.lines || '')}`)
-        .addTo(mapInstance);
+      openMapPopup(
+        event.lngLat,
+        `<strong>${esc(p.station || 'Interchange')}</strong><br>${esc(p.lines || '')}`,
+        { offset: 8 }
+      );
     });
   }
 

@@ -26,6 +26,7 @@ from app.collectors.threads.client import (
     _looks_like_threads_signup_bait,
     _sort_rows_by_created_at,
     _scrape_threads_search_page,
+    _strip_leading_handle_time,
     _transport_queries_for_run,
 )
 from app.pipeline.extract import (
@@ -514,3 +515,33 @@ def test_transit_launch_bypass():
     assert transport_line_info_signal_ok("LRT Kelana Jaya line start operations today")
     assert transport_line_info_signal_ok("LRT3 free rides today")
     assert transport_line_info_signal_ok("LRT3 line start operations today")
+
+
+def test_strip_leading_handle_time_removes_scrape_chrome():
+    # Threads' DOM glues "<handle> <relative_time>" onto the caption with no
+    # separator; a username fragment like ".stuck" or ".delayed" must not be
+    # readable as post content by downstream keyword filters.
+    raw = "pixel.stuck 9m Another hard race on msc_obernheim for the MXOpen boys"
+    assert _strip_leading_handle_time(raw) == "Another hard race on msc_obernheim for the MXOpen boys"
+
+
+def test_strip_leading_handle_time_leaves_normal_captions_alone():
+    caption = "LRT Kelana Jaya stuck at Bangsar for 20 minutes now"
+    assert _strip_leading_handle_time(caption) == caption
+
+
+def test_unrelated_foreign_motocross_post_is_not_a_transport_signal():
+    """Regression: a Threads search hit for KTM-brand motocross content in
+    Switzerland was misread as a Malaysian rail incident. Two contributing
+    bugs: (1) the scraped preview glued the author handle "pixel.stuck" onto
+    the caption, so a naive "stuck" substring check fired on the username,
+    and (2) the "@ktm_switzerland" handle mention matched a bare "ktm" token
+    without a word boundary. Both must stay fixed."""
+    raw = (
+        "pixel.stuck 9m Another hard race on msc_obernheim for the MXOpen boys "
+        "msc_obernheim sam_schweiz mxmagazine.ch ktm_switzerland kawasakischweiz "
+        "#motocross #motocrosslife #raceday"
+    )
+    cleaned = _strip_leading_handle_time(raw)
+    assert not transport_incident_signal_ok(cleaned)
+    assert not transport_rider_signal_worthwhile(cleaned)
