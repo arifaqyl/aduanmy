@@ -124,7 +124,19 @@ def _enrich_interchange(item: dict) -> dict:
     out["line_colours"] = [
         {"id": lid, "color": LINE_COLORS.get(lid, "#64748b")} for lid in line_ids
     ]
+    from app.services.malaysia_journey_hints import lookup_station_hint
+    hint = lookup_station_hint(item.get("station") or "")
+    if hint:
+        if "walk_min" in hint and "transfer_walk_min" not in out:
+            out["transfer_walk_min"] = hint["walk_min"]
+        if "paid_separate" in hint and "paid_separate" not in out:
+            out["paid_separate"] = hint["paid_separate"]
+        if "note_en" in hint and "walking_note" not in out:
+            out["walking_note"] = hint["note_en"]
+        if "note_ms" in hint and "walking_note_ms" not in out:
+            out["walking_note_ms"] = hint["note_ms"]
     return out
+
 
 
 def get_all_interchanges() -> dict:

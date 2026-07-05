@@ -1,4 +1,4 @@
-﻿  const APP_BASE = (() => { const m = location.pathname.match(/^(.*?\/traffic)\/?/); return m ? m[1] : ''; })();
+  const APP_BASE = (() => { const m = location.pathname.match(/^(.*?\/traffic)\/?/); return m ? m[1] : ''; })();
   const api = p => `${APP_BASE}${p.startsWith('/') ? p : '/' + p}`;
   const $ = id => document.getElementById(id);
   const staticUrl = p => `${APP_BASE}/static/${p.replace(/^\//, '')}`;
@@ -637,31 +637,107 @@
     clearReportMarkers();
     reportMarkerCount = (features || []).length;
     if (!mapInstance || !mapLayers.reports) return;
+
+    const zoom = mapInstance.getZoom();
+    const shouldCluster = zoom < 13;
+    const clusterRadius = zoom < 7 ? 0.2 : zoom < 10 ? 0.08 : 0.02;
+
+    const clusters = [];
     (features || []).forEach(feature => {
-      const severity = feature.properties?.severity || 'minor';
-      const el = document.createElement('button');
-      el.type = 'button';
-      el.className = `stitch-map-pin stitch-map-pin--${severity}`;
-      el.setAttribute('aria-label', feature.properties?.headline || 'Rider report');
-      el.innerHTML = `<span class="stitch-map-pin-bubble"><img src="${stitchMascot(severity !== 'minor')}" width="30" height="30" alt="" /></span><span class="stitch-map-pin-tail" aria-hidden="true"></span>`;
-      el.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const p = feature.properties || {};
-        if (p.cluster_id) {
-          openPanel(p.cluster_id, p.headline || 'Rider signal');
-          return;
+      const coords = feature.geometry.coordinates;
+      let added = false;
+      if (shouldCluster) {
+        for (const cluster of clusters) {
+          const dx = coords[0] - cluster.center[0];
+          const dy = coords[1] - cluster.center[1];
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < clusterRadius) {
+            cluster.features.push(feature);
+            const count = cluster.features.length;
+            cluster.center[0] = (cluster.center[0] * (count - 1) + coords[0]) / count;
+            cluster.center[1] = (cluster.center[1] * (count - 1) + coords[1]) / count;
+            added = true;
+            break;
+          }
         }
-        const link = p.url ? `<div style="margin-top:8px"><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Open source</a></div>` : '';
-        openMapPopup(
-          feature.geometry.coordinates,
-          `<strong>${esc(p.headline || 'Rider signal')}</strong><div style="margin-top:6px;font-size:13px">${esc(p.summary || '')}</div>${link}`,
-          { className: 'stitch-map-popup' }
-        );
-      });
-      const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
-        .setLngLat(feature.geometry.coordinates)
-        .addTo(mapInstance);
-      reportMarkers.push(marker);
+      }
+      if (!added) {
+        clusters.push({
+          center: [coords[0], coords[1]],
+          features: [feature]
+        });
+      }
+    });
+
+    clusters.forEach(cluster => {
+      if (cluster.features.length === 1) {
+        const feature = cluster.features[0];
+        const severity = feature.properties?.severity || 'minor';
+        const isCorroborated = feature.properties?.corroborated_by_official || false;
+        const ageHours = feature.properties?.last_seen_at 
+          ? (Date.now() - new Date(feature.properties.last_seen_at).getTime()) / 3600000 
+          : 0;
+
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = `stitch-map-pin stitch-map-pin--${severity}`;
+        if (isCorroborated) el.classList.add('stitch-map-pin--corroborated');
+        if (ageHours > 2) el.classList.add('stitch-map-pin--stale');
+
+        el.setAttribute('aria-label', feature.properties?.headline || 'Rider report');
+        el.innerHTML = `
+          <span class="stitch-map-pin-bubble">
+            <img src="${stitchMascot(severity !== 'minor')}" width="30" height="30" alt="" />
+            ${isCorroborated ? '<span class="pin-corroborated-badge" title="Official Corroboration">✔</span>' : ''}
+          </span>
+          <span class="stitch-map-pin-tail" aria-hidden="true"></span>
+        `;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const p = feature.properties || {};
+          if (p.cluster_id) {
+            openPanel(p.cluster_id, p.headline || 'Rider signal');
+            return;
+          }
+          const link = p.url ? `<div style="margin-top:8px"><a href="${esc(p.url)}" target="_blank" rel="noopener noreferrer">Open source</a></div>` : '';
+          openMapPopup(
+            feature.geometry.coordinates,
+            `<strong>${esc(p.headline || 'Rider signal')}</strong><div style="margin-top:6px;font-size:13px">${esc(p.summary || '')}</div>${link}`,
+            { className: 'stitch-map-popup' }
+          );
+        });
+        const marker = new maplibregl.Marker({ element: el, anchor: 'bottom' })
+          .setLngLat(feature.geometry.coordinates)
+          .addTo(mapInstance);
+        reportMarkers.push(marker);
+      } else {
+        const el = document.createElement('button');
+        el.type = 'button';
+        el.className = 'stitch-map-cluster-badge';
+        el.setAttribute('aria-label', `${cluster.features.length} reports`);
+        let maxSeverity = 'minor';
+        cluster.features.forEach(f => {
+          const s = f.properties?.severity || 'minor';
+          if (SEVERITY_RANK[s] > SEVERITY_RANK[maxSeverity]) maxSeverity = s;
+        });
+        el.classList.add(`stitch-map-cluster-badge--${maxSeverity}`);
+
+        el.innerHTML = `
+          <span class="cluster-count">${cluster.features.length}</span>
+          <span class="cluster-label">${pickLang('REPORTS', 'LAPORAN')}</span>
+        `;
+        el.addEventListener('click', (e) => {
+          e.stopPropagation();
+          mapInstance.easeTo({
+            center: cluster.center,
+            zoom: Math.min(15, mapInstance.getZoom() + 2)
+          });
+        });
+        const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+          .setLngLat(cluster.center)
+          .addTo(mapInstance);
+        reportMarkers.push(marker);
+      }
     });
   }
 
@@ -771,6 +847,8 @@
             severity: rep.severity || 'minor',
             url: rep.example_url || '',
             sources: rep.sources || '',
+            corroborated_by_official: rep.corroborated_by_official || false,
+            last_seen_at: rep.last_seen_at || '',
           },
         });
       });
@@ -826,7 +904,7 @@
   function bindMapEvents() {
     if (mapEventsBound || !mapInstance) return;
     mapEventsBound = true;
-    ['trafficmy-reports', 'trafficmy-vehicles', 'trafficmy-hubs', 'trafficmy-rail-lines'].forEach(layerId => {
+    ['trafficmy-reports', 'trafficmy-vehicles', 'trafficmy-hubs', 'trafficmy-rail-lines', 'trafficmy-rail-lines-disrupted'].forEach(layerId => {
       mapInstance.on('mouseenter', layerId, () => { mapInstance.getCanvas().style.cursor = 'pointer'; });
       mapInstance.on('mouseleave', layerId, () => { mapInstance.getCanvas().style.cursor = ''; });
     });
@@ -851,13 +929,30 @@
     });
     mapInstance.on('click', 'trafficmy-hubs', event => {
       const p = event.features?.[0]?.properties || {};
+      let chipsHtml = '';
+      if (p.lines_json) {
+        try {
+          const lines = JSON.parse(p.lines_json);
+          chipsHtml = `<div class="ix-chips" style="margin-top: 8px; justify-content: center;">` + 
+            lines.map(lc => {
+              const name = lc.name.replace(/ Line$/, '').replace(/LRT |MRT |KTM /, '');
+              return `<span class="ix-line-chip" style="--chip-color:${esc(lc.color)}">${esc(name)}</span>`;
+            }).join('') + `</div>`;
+        } catch (e) {
+          chipsHtml = `<div style="margin-top:5px;font-size:12px">${esc(p.lines || '')}</div>`;
+        }
+      }
       openMapPopup(
         event.lngLat,
-        `<strong>${esc(p.station || 'Interchange')}</strong><br>${esc(p.lines || '')}`,
+        `<div style="text-align:center">
+          <strong style="font-size:14px">${esc(p.station || 'Interchange')}</strong>
+          ${chipsHtml}
+        </div>`,
         { offset: 8 }
       );
     });
-    mapInstance.on('click', 'trafficmy-rail-lines', event => {
+
+    const handleLineClick = event => {
       const feature = event.features?.[0];
       if (!feature) return;
       const p = feature.properties || {};
@@ -879,7 +974,10 @@
         activeMapPopup?.remove();
         if (lineId) openLineGuide(lineId, { label: name });
       });
-    });
+    };
+
+    mapInstance.on('click', 'trafficmy-rail-lines', handleLineClick);
+    mapInstance.on('click', 'trafficmy-rail-lines-disrupted', handleLineClick);
   }
 
   function drawInterchangeMarkers(hubs) {
@@ -887,19 +985,28 @@
       const lineIds = hub.lines || [];
       if (!lineIds.length) return true;
       return lineIds.some(id => mapLayerActiveForNetwork(getNetworkForLine(id)));
-    }).map(hub => ({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [hub.lon, hub.lat] },
-      properties: {
-        station: hub.station || '',
-        lines: (hub.line_labels || []).map(line => line.name).join(' · '),
-      },
-    }));
+    }).map(hub => {
+      const linesData = (hub.line_labels || []).map(line => ({
+        id: line.id,
+        name: line.name,
+        color: LINE_COLORS[line.id] || '#64748b'
+      }));
+      return {
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [hub.lon, hub.lat] },
+        properties: {
+          station: hub.station || '',
+          lines: (hub.line_labels || []).map(line => line.name).join(' · '),
+          lines_json: JSON.stringify(linesData)
+        },
+      };
+    });
+
     setMapGeoJSON('trafficmy-hubs', features, 'circle', {
-      'circle-radius': 5,
-      'circle-color': '#ece8e1',
-      'circle-stroke-color': '#0f1117',
-      'circle-stroke-width': 2,
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 9, 4, 14, 8],
+      'circle-color': '#ffffff',
+      'circle-stroke-width': ['interpolate', ['linear'], ['zoom'], 9, 2, 14, 4],
+      'circle-stroke-color': '#111111',
     });
   }
 
@@ -958,6 +1065,26 @@
     }
   }
 
+  let polylinePulseVal = 0.8;
+  let polylinePulseDir = -1;
+  function animateDisruptedLines() {
+    if (!mapInstance) return;
+    polylinePulseVal += polylinePulseDir * 0.03;
+    if (polylinePulseVal <= 0.25) {
+      polylinePulseVal = 0.25;
+      polylinePulseDir = 1;
+    } else if (polylinePulseVal >= 0.9) {
+      polylinePulseVal = 0.9;
+      polylinePulseDir = -1;
+    }
+    try {
+      if (mapInstance.getLayer('trafficmy-rail-lines-disrupted')) {
+        mapInstance.setPaintProperty('trafficmy-rail-lines-disrupted', 'line-opacity', polylinePulseVal);
+      }
+    } catch (e) {}
+    requestAnimationFrame(animateDisruptedLines);
+  }
+
   function drawRailPolylines(geojson) {
     if (!mapInstance) return;
     const query = (placeFilter || '').toLowerCase().trim();
@@ -981,12 +1108,32 @@
       };
       return true;
     });
+
     setMapGeoJSON('trafficmy-rail-lines', features, 'line', {
       'line-color': ['get', 'color'],
       'line-width': ['interpolate', ['linear'], ['zoom'], 9, 4, 14, 9],
       'line-opacity': 0.92,
       'line-blur': 0.4,
     });
+
+    const disruptedFeatures = features.filter(feature => {
+      const lineId = feature.properties?.line_id;
+      if (!lineId) return false;
+      const lineStatus = (boardSnapshot?.lines || []).find(l => l.id === lineId)?.status;
+      return ['delay', 'disruption'].includes(lineStatus);
+    });
+
+    setMapGeoJSON('trafficmy-rail-lines-disrupted', disruptedFeatures, 'line', {
+      'line-color': '#DC143C',
+      'line-width': ['interpolate', ['linear'], ['zoom'], 9, 6, 14, 12],
+      'line-opacity': 0.8,
+      'line-dasharray': [2, 2],
+    });
+
+    if (disruptedFeatures.length && !window._linesPulseStarted) {
+      window._linesPulseStarted = true;
+      animateDisruptedLines();
+    }
   }
 
   function formatIntervalLabel(seconds) {
@@ -1493,6 +1640,206 @@
     return '';
   }
 
+  function _parse_hm(str) {
+    if (!str) return null;
+    const match = str.trim().match(/^(\d{1,2}):(\d{2})$/);
+    if (!match) return null;
+    return { hour: parseInt(match[1], 10), minute: parseInt(match[2], 10) };
+  }
+
+  function computeClientServiceStatus(oh) {
+    if (!oh || !oh.first_train || !oh.last_train) {
+      return { status: 'unknown', label: pickLang('Hours not available', 'Waktu tidak tersedia'), in_service: null };
+    }
+    const mytNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+    const nowMin = mytNow.getHours() * 60 + mytNow.getMinutes();
+
+    const first = _parse_hm(oh.first_train);
+    const last = _parse_hm(oh.last_train);
+    if (!first || !last) {
+      return { status: 'unknown', label: pickLang('Hours not available', 'Waktu tidak tersedia'), in_service: null };
+    }
+
+    const firstMin = first.hour * 60 + first.minute;
+    let lastMin = last.hour * 60 + last.minute;
+    if (lastMin <= firstMin) lastMin += 1440;
+
+    let testNowMin = nowMin;
+    if (testNowMin < firstMin && lastMin > 1440) {
+      testNowMin += 1440;
+    }
+
+    const timeToLast = lastMin - testNowMin;
+    if (timeToLast > 0 && timeToLast <= 30) {
+      return {
+        status: 'warning',
+        label: pickLang(`LAST TRAIN IN ${timeToLast} MIN`, `TREN TERAKHIR DALAM ${timeToLast} MIN`),
+        in_service: true,
+        last_train_warning: true,
+        next_change_min: timeToLast
+      };
+    }
+
+    if (testNowMin < firstMin) {
+      const diff = firstMin - testNowMin;
+      return {
+        status: 'before_service',
+        label: pickLang(`Starts in ${diff} min`, `Mula dalam ${diff} min`),
+        in_service: false,
+        next_change_min: diff
+      };
+    }
+    if (testNowMin > lastMin) {
+      return {
+        status: 'after_service',
+        label: pickLang('Service ended', 'Perkhidmatan tamat'),
+        in_service: false
+      };
+    }
+
+    for (const peak of oh.peak_hours || []) {
+      const start = _parse_hm(peak.start);
+      const end = _parse_hm(peak.end);
+      if (start && end) {
+        let ps = start.hour * 60 + start.minute;
+        let pe = end.hour * 60 + end.minute;
+        if (ps < firstMin) ps += 1440;
+        if (pe < firstMin) pe += 1440;
+
+        if (ps <= testNowMin && testNowMin <= pe) {
+          const diff = pe - testNowMin;
+          const headway = peak.headway_min;
+          const freq = headway ? `~${headway} min` : 'Peak';
+          return {
+            status: 'peak',
+            label: pickLang(`Peak · ${freq} (ends in ${diff}m)`, `Puncak · ${freq} (tamat ${diff}m)`),
+            in_service: true,
+            next_change_min: diff
+          };
+        }
+      }
+    }
+
+    let nextEventMin = lastMin;
+    for (const peak of oh.peak_hours || []) {
+      const start = _parse_hm(peak.start);
+      if (start) {
+        let ps = start.hour * 60 + start.minute;
+        if (ps < firstMin) ps += 1440;
+        if (ps > testNowMin && ps < nextEventMin) {
+          nextEventMin = ps;
+        }
+      }
+    }
+
+    const diff = nextEventMin - testNowMin;
+    const isNextPeak = nextEventMin < lastMin;
+    const labelSuffix = isNextPeak 
+      ? pickLang(`peak in ${diff}m`, `puncak dlm ${diff}m`)
+      : pickLang(`ends in ${diff}m`, `tamat dlm ${diff}m`);
+
+    const offPeakFreq = oh.off_peak_headway_min ? ` ~${oh.off_peak_headway_min}m` : '';
+    return {
+      status: 'off_peak',
+      label: pickLang(`Off-peak${offPeakFreq} (${labelSuffix})`, `Luar Puncak${offPeakFreq} (${labelSuffix})`),
+      in_service: true,
+      next_change_min: diff
+    };
+  }
+
+  function renderHoursTimeline(hours, svc) {
+    if (!hours || !hours.first_train || !hours.last_train) return '';
+    const first = _parse_hm(hours.first_train);
+    const last = _parse_hm(hours.last_train);
+    if (!first || !last) return '';
+
+    const firstMin = first.hour * 60 + first.minute;
+    let lastMin = last.hour * 60 + last.minute;
+    if (lastMin <= firstMin) lastMin += 1440;
+
+    const totalMin = lastMin - firstMin;
+    if (totalMin <= 0) return '';
+
+    const zones = [];
+    (hours.peak_hours || []).forEach(p => {
+      const start = _parse_hm(p.start);
+      const end = _parse_hm(p.end);
+      if (start && end) {
+        let sMin = start.hour * 60 + start.minute;
+        let eMin = end.hour * 60 + end.minute;
+        if (sMin < firstMin) sMin += 1440;
+        if (eMin < firstMin) eMin += 1440;
+        if (sMin >= firstMin && eMin <= lastMin) {
+          const leftPct = ((sMin - firstMin) / totalMin) * 100;
+          const widthPct = ((eMin - sMin) / totalMin) * 100;
+          zones.push({ label: p.label || 'Peak', left: leftPct, width: widthPct, cls: 'timeline-zone--peak' });
+        }
+      }
+    });
+
+    const mytNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
+    let curMin = mytNow.getHours() * 60 + mytNow.getMinutes();
+    if (curMin < firstMin && lastMin > 1440) {
+      curMin += 1440;
+    }
+
+    let indicatorHtml = '';
+    if (curMin >= firstMin && curMin <= lastMin) {
+      const curPct = ((curMin - firstMin) / totalMin) * 100;
+      indicatorHtml = `<div class="hours-timeline-now" style="left: ${curPct}%" title="Now (${mytNow.getHours().toString().padStart(2,'0')}:${mytNow.getMinutes().toString().padStart(2,'0')})"></div>`;
+    }
+
+    const zonesHtml = zones.map(z => 
+      `<div class="hours-timeline-zone ${z.cls}" style="left: ${z.left}%; width: ${z.width}%" title="${esc(z.label)}"></div>`
+    ).join('');
+
+    return `
+      <div class="hours-timeline-container">
+        <div class="hours-timeline-labels">
+          <span>${esc(hours.first_train)}</span>
+          <span class="timeline-middle-label">${pickLang('Active Timeline', 'Garis Masa Perkhidmatan')}</span>
+          <span>${esc(hours.last_train)}</span>
+        </div>
+        <div class="hours-timeline-track">
+          <div class="hours-timeline-fill" style="width: ${curMin >= firstMin && curMin <= lastMin ? ((curMin - firstMin) / totalMin * 100).toFixed(0) : 0}%"></div>
+          ${zonesHtml}
+          ${indicatorHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderKeyInterchanges(interchanges) {
+    if (!interchanges?.length) return '';
+    const keyIxs = interchanges.slice(0, 4);
+    const items = keyIxs.map(ix => {
+      const walk = ix.transfer_walk_min ? `<span class="key-ix-walk">🚶 ${esc(ix.transfer_walk_min)}m</span>` : '';
+      const chips = (ix.line_colours || []).map(lc => {
+        const shortName = lc.short_name || lc.name || lc.label || '';
+        const miniName = shortName.replace(/LRT |MRT |KTM /, '').replace(/ Line$/, '');
+        return `<span class="ix-line-chip" style="--chip-color:${esc(lc.color || '#64748b')}">${esc(miniName)}</span>`;
+      }).join('');
+      return `
+        <div class="key-ix-item">
+          <div class="key-ix-station-row">
+            <strong class="key-ix-station-name">${esc(ix.station)}</strong>
+            ${walk}
+          </div>
+          <div class="key-ix-lines">${chips || `<span class="ix-connects">${esc(ix.connects_to || 'Other lines')}</span>`}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="guide-section guide-section--key-interchanges">
+        <h3>${pickLang('Key Interchanges', 'Pertukaran Utama')}</h3>
+        <div class="key-interchanges-grid">
+          ${items}
+        </div>
+      </div>
+    `;
+  }
+
   function renderStationList(stations, interchanges, color) {
     if (!stations?.length) {
       return '<p style="color:var(--text-dim);font-size:12px">Station list not available yet.</p>';
@@ -1508,8 +1855,23 @@
     };
     return `<ol class="station-list" style="--line-color:${esc(color)}">${stations.map(name => {
       const ix = lookupIx(name);
-      const changeHint = ix?.connects_to ? `<span class="station-change">Change → ${esc(ix.connects_to)}</span>` : '';
-      return `<li class="station-item${ix ? ' interchange' : ''}"><span class="station-rail" aria-hidden="true"></span><span><span class="station-name">${esc(name)}</span>${changeHint}</span>${ix ? '<span class="station-tag">Change</span>' : ''}</li>`;
+      let changeHint = '';
+      if (ix) {
+        const chips = (ix.line_colours || []).map(lc => {
+          const shortName = lc.short_name || lc.name || lc.label || '';
+          const miniName = shortName.replace(/LRT |MRT |KTM /, '').replace(/ Line$/, '');
+          return `<span class="ix-line-chip" style="--chip-color:${esc(lc.color || '#64748b')}">${esc(miniName)}</span>`;
+        }).join('');
+        const walk = ix.transfer_walk_min ? `<span class="station-walk-hint">🚶 ${esc(ix.transfer_walk_min)}m</span>` : '';
+        changeHint = `<div class="station-interchange-info">${chips}${walk}</div>`;
+      }
+      return `<li class="station-item${ix ? ' interchange' : ''}">
+        <span class="station-rail" aria-hidden="true"></span>
+        <div class="station-item-content">
+          <span class="station-name">${esc(name)}</span>
+          ${changeHint}
+        </div>
+      </li>`;
     }).join('')}</ol>`;
   }
 
@@ -1565,6 +1927,7 @@
     before_service: { cls: 'hours-now--upcoming', icon: '🕐' },
     after_service: { cls: 'hours-now--ended', icon: '⚪' },
     not_operating: { cls: 'hours-now--upcoming', icon: '🕐' },
+    warning: { cls: 'schedule-svc--warning', icon: '⚠️' },
     unknown: { cls: 'hours-now--unknown', icon: '' },
   };
 
@@ -1584,8 +1947,10 @@
         ${p.headway_min ? `<span class="hours-peak-headway">~${esc(p.headway_min)} min</span>` : ''}
       </div>`;
     }).join('');
+    const timelineHtml = renderHoursTimeline(hours, svc);
     return `<div class="guide-hours">
       ${nowChip}
+      ${timelineHtml}
       <div class="hours-grid">
         <div class="hours-stat"><span class="hours-stat-label">First train</span><span class="hours-stat-value">${esc(hours.first_train)} MYT</span></div>
         <div class="hours-stat"><span class="hours-stat-label">Last train</span><span class="hours-stat-value">${esc(hours.last_train)} MYT</span></div>
@@ -1640,7 +2005,7 @@
     $('panelTitle').textContent = lineName;
     const statusLabels = { unknown: 'No current signal', minor: 'Minor', delay: 'Delay', disruption: 'Disruption' };
     const svc = linesReferenceById[lineId]?.service_status_now;
-    const svcBadge = svc?.label && ['before_service', 'after_service', 'not_operating'].includes(svc.status)
+    const svcBadge = svc?.label && ['before_service', 'after_service', 'not_operating', 'warning'].includes(svc.status)
       ? `<span class="service-hint ${esc(svc.status)}">${esc(svc.label)}</span>` : '';
     $('panelSub').innerHTML = status && statusLabels[status]
       ? `<span class="badge ${esc(status)}" style="display:inline-block;min-width:auto">${esc(statusLabels[status])}</span>${svcBadge}`
@@ -1677,15 +2042,33 @@
           <div class="ev-text"><strong>${esc(r.headline || 'Rider signal')}</strong><br>${esc(r.summary || '')}</div>
           <div class="ev-meta" style="margin-top:6px"><span title="${r.last_seen_at ? esc(fmtMYT(r.last_seen_at)) + ' MYT' : ''}">${r.last_seen_at ? esc(relTime(r.last_seen_at)) : ''}</span>${r.from_threads ? ' · Threads' : ''}${r.example_url ? ` · <a href="${esc(r.example_url)}" target="_blank" rel="noopener noreferrer">Source</a>` : ''}</div>
         </div>`).join('');
+
+      const stationListSection = `<div class="guide-section guide-section--stations">
+        <details class="guide-stations-details" ${schematic ? '' : 'open'}>
+          <summary class="guide-stations-summary">
+            <h3>${pickLang(`Stations (${stations.length || '—'})`, `Stesen (${stations.length || '—'})`)}</h3>
+            <span class="guide-stations-chevron">▼</span>
+          </summary>
+          <div class="guide-stations-content" style="margin-top:10px">
+            ${renderStationList(stations, ref.interchanges, color)}
+          </div>
+        </details>
+      </div>`;
+
       const schematicSection = schematic
         ? `<div class="guide-section guide-section--schematic">
           <h3>Route diagram</h3>
           <p class="guide-schematic-hint">${pickLang('Tap to enlarge · dots mark interchange stations', 'Ketik untuk besarkan · titik menandakan pertukaran')}</p>
           <div class="guide-schematic-wrap"><img class="guide-schematic schematic-zoomable" src="${esc(schematic)}" alt="${esc(lineName)} route diagram" loading="lazy"></div>
-        </div>`
-        : `<div class="guide-section"><h3>Stations (${stations.length || '—'})</h3>${renderStationList(stations, ref.interchanges, color)}</div>`;
+        </div>
+        ${stationListSection}`
+        : stationListSection;
+
+      const keyInterchangesSection = ref.interchanges?.length
+        ? renderKeyInterchanges(ref.interchanges)
+        : '';
       const interchangeSection = ref.interchanges?.length
-        ? `<div class="guide-section guide-section--interchanges"><h3>Interchanges</h3>${interchangeHtml}</div>`
+        ? `<div class="guide-section guide-section--interchanges"><h3>All Interchanges</h3>${interchangeHtml}</div>`
         : '';
       const riderSection = riders
         ? `<div class="guide-section"><h3>Rider pulse</h3>${riders}</div>`
@@ -1700,6 +2083,7 @@
       const capacityLine = ref.capacity_note ? `<p class="guide-capacity-line">${esc(ref.capacity_note)}</p>` : '';
       $('panelBody').innerHTML = `
         ${riderSection}
+        ${keyInterchangesSection}
         ${historySection}
         ${schematicSection}
         ${interchangeSection}
@@ -1712,7 +2096,7 @@
         </div>
         <div class="guide-section">
           <h3>Operating hours</h3>
-          ${renderHoursSection(info.operating_hours, info.service_status_now)}
+          ${renderHoursSection(info.operating_hours, info.service_status_now || svc)}
         </div>
         ${(info.social_info || []).length ? `<div class="guide-section"><h3>Line notices</h3>${info.social_info.map(s => `<div class="ev" style="margin-bottom:8px"><div class="ev-text"><strong>${esc(s.headline || 'Line notice')}</strong><br>${esc(s.summary || '')}</div><div class="ev-meta" style="margin-top:6px">${s.last_seen_at ? esc(relTime(s.last_seen_at)) : ''}</div></div>`).join('')}</div>` : ''}
         <div class="guide-actions">
@@ -2211,25 +2595,43 @@
       return;
     }
     el.hidden = false;
+
+    function renderHeadways(oh, status) {
+      const peakMin = oh.peak_hours?.[0]?.headway_min;
+      const offPeakMin = oh.off_peak_headway_min;
+      if (!peakMin && !offPeakMin) return '';
+      const peakText = peakMin ? `<span class="headway-item${status === 'peak' ? ' active' : ''}">${pickLang('Peak', 'Puncak')}: <strong>~${esc(peakMin)}m</strong></span>` : '';
+      const offPeakText = offPeakMin ? `<span class="headway-item${status === 'off_peak' ? ' active' : ''}">${pickLang('Off-peak', 'Luar Puncak')}: <strong>~${esc(offPeakMin)}m</strong></span>` : '';
+      if (peakText && offPeakText) {
+        return `<div class="schedule-headways">${peakText} <span class="headway-sep">·</span> ${offPeakText}</div>`;
+      }
+      return `<div class="schedule-headways">${peakText || offPeakText}</div>`;
+    }
+
     const rows = lines.map(line => {
       const oh = line.operating_hours;
-      const svc = line.service_status_now;
+      const svc = computeClientServiceStatus(oh);
       const color = LINE_COLORS[line.id] || line.official_colour || '#64748b';
       const svcHtml = svc?.label
         ? `<span class="schedule-svc schedule-svc--${esc(svc.status || 'unknown')}">${esc(svc.label)}</span>`
         : '';
       const ttLink = line.timetable_url
-        ? `<a class="schedule-tt" href="${esc(line.timetable_url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">Timetable</a>`
+        ? `<a class="schedule-tt" href="${esc(line.timetable_url)}" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">${pickLang('Timetable ↗', 'Jadual waktu ↗')}</a>`
         : '';
-      const peak = oh.peak_hours?.[0]?.headway_min
-        ? `<span class="schedule-peak">Peak ~${esc(oh.peak_hours[0].headway_min)} min</span>`
-        : '';
+      const headwaysHtml = renderHeadways(oh, svc.status);
+
       return `<button type="button" class="schedule-row schedule-row--click" data-line-id="${esc(line.id)}" style="--line-color:${esc(color)}">
-        <span class="schedule-line">${esc(line.name.replace(/ Line$/, ''))}</span>
-        <span class="schedule-times">${esc(oh.first_train)} – ${esc(oh.last_train)} MYT</span>
-        ${svcHtml}
-        ${peak}
-        ${ttLink}
+        <div class="schedule-row-header">
+          <span class="schedule-line">${esc(line.name.replace(/ Line$/, ''))}</span>
+          ${ttLink}
+        </div>
+        <div class="schedule-row-times">
+          ${esc(oh.first_train)} – ${esc(oh.last_train)} MYT
+        </div>
+        <div class="schedule-row-status-line">
+          ${svcHtml}
+          ${headwaysHtml}
+        </div>
       </button>`;
     }).join('');
     el.innerHTML = `
@@ -2255,10 +2657,10 @@
     if (!visible.length) {
       const collectorState = placeFilter ? 'quiet' : threadsCollectorStatus();
       const subtext = collectorState === 'broken'
-        ? pickLang('Rider signal collection is having trouble right now — official sources still shown. We\'re on it.', 'Pengumpulan isyarat penumpang bermasalah sekarang — sumber rasmi masih dipaparkan. Kami sedang membetulkannya.')
+        ? pickLang('Rider signal collection is temporarily degraded — official notices are still active. We are investigating.', 'Pengumpulan isyarat penumpang terganggu seketika — notis rasmi masih aktif. Kami sedang menyiasat.')
         : placeFilter
-          ? pickLang('Nothing mentions this place — not an all-clear.', 'Tiada yang menyebut tempat ini — bukan pengesahan normal.')
-          : pickLang('Quiet does not mean trains are running fine.', 'Tenang tidak bermakna perkhidmatan normal.');
+          ? pickLang('No active rider reports found for this station/line. Remember: quiet lines are not confirmed normal service.', 'Tiada laporan aktif ditemui untuk stesen/laluan ini. Ingat: laluan senyap bukanlah jaminan perkhidmatan normal.')
+          : pickLang('Quiet lines mean no recent crowd reports are captured. It is not an operator all-clear.', 'Laluan senyap bermakna tiada laporan penumpang diterima baru-baru ini. Ia bukan pengesahan rasmi perkhidmatan lancar.');
       $('reportFeed').innerHTML = `
         <div class="empty tm-live-empty${collectorState === 'broken' ? ' tm-live-empty--degraded' : ''}">
           <div class="empty-icon" aria-hidden="true">${ICON_SVG.train}</div>
@@ -2284,10 +2686,25 @@
       ].filter(Boolean).join('');
       const foot = [lineLabel, age || relTime(r.last_seen_at)].filter(Boolean).join(' · ');
       const stripe = reportStripeColor(r);
+
+      const timeToken = `<span class="report-token report-token--time">${esc(pickLang(r.report_when, r.report_when_ms) || reportAgeLabel(r.last_seen_at))}</span>`;
+      const lineToken = `<span class="report-token report-token--line" style="border-color:${esc(stripe)};color:${esc(stripe)}">${esc(r.entity || '')}</span>`;
+      const placeToken = r.location ? `<span class="report-token report-token--place">${esc(r.location)}</span>` : '';
+      const issueText = pickLang(r.report_issue, r.report_issue_ms) || 'issue';
+      const issueToken = `<span class="report-token report-token--issue severity-${esc(r.severity || 'minor')}">${esc(issueText)}</span>`;
+
       return `
       <div class="report report-card" style="--report-line-color:${esc(stripe)}" data-cluster="${esc(r.cluster_id)}" data-name="${esc(glance)}" data-severity="${esc(r.severity || '')}">
         <div class="report-card-tags">${tags}</div>
-      <div class="report-card-quote"><span class="material-symbols-outlined report-card-transit" aria-hidden="true">directions_transit</span><strong class="report-glance">${esc(glance)}</strong>${quote && quote !== glance ? `<span class="report-card-detail">${esc(quote)}</span>` : ''}</div>
+        <div class="report-card-quote">
+          <div class="report-glance-tokens">
+            ${timeToken}
+            ${lineToken}
+            ${placeToken}
+            ${issueToken}
+          </div>
+          ${quote ? `<span class="report-card-detail">“${esc(quote)}”</span>` : ''}
+        </div>
         <div class="report-card-foot" title="${esc(fmtMYT(r.last_seen_at))} MYT">${esc(foot)}</div>
       </div>`;
     }).join('')}</div>`;
