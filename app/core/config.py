@@ -61,6 +61,10 @@ class Settings(BaseSettings):
     retention_days: int = 90
     discovery_depth: str = "normal"  # minimal | normal | full
 
+    # Saved-commute Telegram alerts. Leave token empty to disable.
+    telegram_bot_token: str = ""
+    telegram_webhook_secret: str = ""
+
     @property
     def db_file(self) -> Path:
         return Path(self.db_path)

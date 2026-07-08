@@ -178,6 +178,39 @@ def test_transport_incident_signal_rejects_property_and_lifestyle_mentions():
     )
 
 
+def test_transport_rider_signal_rejects_speculative_opinion_all_lines():
+    """Future/predictive debate and sarcastic wait — any line, not LRT3-only phrases."""
+    posts = [
+        # Original LRT3 false positive
+        "Dgn 3 koc tren LRT3 tu ko tunggu je la dia akan ada problem cepat rosak mcm LRT2 KJ. "
+        "Keh3. Kos penjimatan konon. Tp sebab keputusan bodoh",
+        "nabiledler92 20h Dgn 3 koc tren LRT3 tu ko tunggu je la dia akan ada problem cepat rosak",
+        "Makin lama lah menunggu tren. Semua sebab benda yg dah expected akan jadi bila downscope.",
+        # Same failure mode on other lines
+        "KTM komuter ko tunggu je la nanti akan rosak macam dulu jugak",
+        "MRT Kajang akan ada problem cepat rosak lepas 10 tahun guna",
+        "Monorail downscope memang akan delay lagi nanti kalau maintenance kurang",
+        "Kelana Jaya line expected akan jadi macam hell bila kekerapan tren kurang",
+        "budakwang 21m If MRT Putrajaya will become like Pasar Seni when crowd picks up?",
+    ]
+    for text in posts:
+        assert not transport_incident_signal_ok(text), text[:60]
+        assert not transport_rider_signal_worthwhile(text), text[:60]
+
+
+def test_transport_rider_signal_accepts_live_waiting_all_lines():
+    """Real rider waits still pass after tightening weak-term gates."""
+    assert transport_rider_signal_worthwhile(
+        "KTM stuck tadi dekat KL Sentral, kena tunggu 40 minit"
+    )
+    assert transport_rider_signal_worthwhile(
+        "Kelana Jaya Line delay sekarang, menunggu tren dekat Bangsar station"
+    )
+    assert transport_rider_signal_worthwhile(
+        "MRT Kajang rosak tadi, tunggu lama dekat platform Kwasa Damansara"
+    )
+
+
 def test_transport_incident_signal_rejects_hypothetical_and_advisory_posts():
     assert not transport_incident_signal_ok(
         "Bayangkan LRT3 dah start operate lepastu KJ line ada problem/delay, "

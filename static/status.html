@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Status · TrafficMY collector health</title>
+  <meta name="description" content="Live status of TrafficMY's signal collectors — Threads, Reddit, RSS and official notices." />
+  <meta name="theme-color" content="#171c1a" />
+  <link rel="icon" href="static/favicon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&family=Barlow+Condensed:wght@700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --board: #171c1a;
+      --board-ink: #eef1ea;
+      --board-dim: #8fa398;
+      --surface: #f7f5ee;
+      --surface-soft: #efebe0;
+      --ink: #171b1a;
+      --ink-2: #5b6460;
+      --border: #d8d3c6;
+      --amber: #f2a900;
+      --green: #1f7a4d;
+      --red: #a3342c;
+      --mono: 'IBM Plex Mono', ui-monospace, monospace;
+      --sans: 'Work Sans', system-ui, sans-serif;
+      --display: 'Barlow Condensed', var(--sans);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--sans); background: var(--surface-soft); color: var(--ink); line-height: 1.5; }
+    .wrap { max-width: 640px; margin: 0 auto; padding: 0 18px 64px; }
+    header.board {
+      background: var(--board);
+      color: var(--board-ink);
+      padding: 28px 18px 22px;
+      margin-bottom: 24px;
+    }
+    header.board .inner { max-width: 640px; margin: 0 auto; }
+    .kicker { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--board-dim); }
+    h1 { font-family: var(--display); font-weight: 700; font-size: clamp(26px, 6vw, 34px); margin: 6px 0 4px; }
+    .lead { color: var(--board-dim); font-size: 14px; max-width: 52ch; }
+    .overall { display: flex; align-items: center; gap: 8px; margin-top: 16px; font-family: var(--mono); font-size: 13px; }
+    .dot { width: 8px; height: 8px; flex-shrink: 0; }
+    .dot.ok { background: var(--green); }
+    .dot.degraded { background: var(--amber); }
+    .dot.down { background: var(--red); }
+    a { color: inherit; }
+    .row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface);
+      margin-bottom: 10px;
+    }
+    .row .name { font-family: var(--display); font-size: 17px; font-weight: 700; text-transform: capitalize; }
+    .row .meta { font-family: var(--mono); font-size: 12px; color: var(--ink-2); text-align: right; }
+    .row .state { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; padding: 3px 7px; border-radius: 3px; margin-left: 8px; }
+    .state.ok { background: var(--green); color: #fff; }
+    .state.attention { background: var(--amber); color: #171c1a; }
+    .state.failed { background: var(--red); color: #fff; }
+    .legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--ink-2); margin: 8px 0 24px; }
+    .legend span { display: inline-flex; align-items: center; gap: 6px; }
+    .legend i { width: 8px; height: 8px; display: inline-block; border-radius: 2px; }
+    h2 { font-family: var(--mono); font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-2); margin: 28px 0 10px; }
+    .empty, .err { font-size: 13px; color: var(--ink-2); padding: 16px; border: 1px dashed var(--border); border-radius: 6px; }
+    footer { margin-top: 32px; font-size: 12px; color: var(--ink-2); }
+    footer a { color: var(--green); text-decoration: none; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <header class="board">
+    <div class="inner">
+      <span class="kicker">TrafficMY · Ops</span>
+      <h1>Collector status</h1>
+      <p class="lead">What's actually feeding the board right now — Threads, Reddit, RSS and official notices. Not the rider-facing page.</p>
+      <div class="overall" id="overall"><span class="dot" id="overallDot"></span><span id="overallText">Checking…</span></div>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="legend">
+      <span><i style="background:#1f7a4d"></i> Healthy — running, rows landing</span>
+      <span><i style="background:#f2a900"></i> Needs attention — several empty/failed runs in a row</span>
+      <span><i style="background:#a3342c"></i> Failed — last run errored</span>
+    </div>
+
+    <h2>Sources</h2>
+    <div id="sources"><div class="empty">Loading collector health…</div></div>
+
+    <footer>
+      Pulled live from <code>/api/health</code>, refreshed every 60s. Rider-facing board: <a href="index.html">trafficmy.arifaqyl.me</a>
+    </footer>
+  </div>
+
+  <script>
+    const APP_BASE = (() => {
+      const path = window.location.pathname;
+      const i = path.indexOf('/status.html');
+      return i > -1 ? path.slice(0, i) : '';
+    })();
+
+    function fmtAge(mins) {
+      if (mins === null || mins === undefined) return 'no run yet';
+      if (mins < 1) return 'just now';
+      if (mins < 60) return Math.round(mins) + 'm ago';
+      return Math.round(mins / 60) + 'h ago';
+    }
+
+    function stateFor(src) {
+      if (src.status === 'failed') return { cls: 'failed', label: 'Failed' };
+      if (src.needs_attention) return { cls: 'attention', label: 'Attention' };
+      return { cls: 'ok', label: 'Healthy' };
+    }
+
+    async function load() {
+      try {
+        const res = await fetch(APP_BASE + '/api/health', { cache: 'no-store' });
+        const data = await res.json();
+        const dot = document.getElementById('overallDot');
+        const text = document.getElementById('overallText');
+        dot.className = 'dot ' + (data.status === 'ok' ? 'ok' : 'degraded');
+        text.textContent = data.status === 'ok'
+          ? 'All systems reporting'
+          : (data.alerts && data.alerts.length ? data.alerts.length + ' source(s) need attention' : 'Degraded');
+
+        const sources = data.sources || [];
+        const el = document.getElementById('sources');
+        if (!sources.length) {
+          el.innerHTML = '<div class="empty">No collector runs recorded yet.</div>';
+          return;
+        }
+        el.innerHTML = sources.map(src => {
+          const st = stateFor(src);
+          return `
+            <div class="row">
+              <div>
+                <span class="name">${src.source}</span>
+                <span class="state ${st.cls}">${st.label}</span>
+              </div>
+              <div class="meta">
+                last run ${fmtAge(src.age_minutes)}<br>
+                ${src.row_count ?? 0} rows
+              </div>
+            </div>`;
+        }).join('');
+      } catch (err) {
+        document.getElementById('overallText').textContent = 'Could not load status';
+        document.getElementById('sources').innerHTML = '<div class="err">Status feed unavailable right now — try refreshing.</div>';
+      }
+    }
+
+    load();
+    setInterval(load, 60000);
+  </script>
+</body>
+</html>

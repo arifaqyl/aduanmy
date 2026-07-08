@@ -1,4 +1,4 @@
-const CACHE = 'trafficmy-shell-v26';
+const CACHE = 'trafficmy-shell-v28';
 const scopeUrl = new URL(self.registration.scope);
 const base = scopeUrl.pathname.replace(/\/$/, '');
 const shell = [
@@ -7,13 +7,18 @@ const shell = [
   `${base}/static/favicon.svg`,
   `${base}/static/icon-512.png`,
   `${base}/static/og-image.png`,
-  `${base}/static/css/play.css`,
-  `${base}/static/css/stitch.css`,
+  `${base}/static/css/components.css?v=28`,
+  `${base}/static/css/play.css?v=28`,
+  `${base}/static/css/stitch.css?v=28`,
   `${base}/static/lines/kv-system.svg`,
-  `${base}/static/js/app.js`,
+  `${base}/static/js/app.js?v=28`,
   `${base}/static/mascots/stitch-mascot.png`,
   `${base}/static/mascots/stitch-mascot-worried.png`,
 ];
+
+function isStyleOrScript(pathname) {
+  return /\.(?:css|js)(?:\?|$)/.test(pathname);
+}
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(shell)).then(() => self.skipWaiting()));
@@ -47,6 +52,21 @@ self.addEventListener('fetch', event => {
   }
 
   if (url.pathname.includes('/static/')) {
+    // CSS/JS: network-first so redesigns and fixes land without a stale shell.
+    if (isStyleOrScript(url.pathname)) {
+      event.respondWith(
+        fetch(request)
+          .then(response => {
+            if (response.ok) {
+              caches.open(CACHE).then(cache => cache.put(request, response.clone()));
+            }
+            return response;
+          })
+          .catch(() => caches.match(request)),
+      );
+      return;
+    }
+
     event.respondWith(
       caches.match(request).then(hit => hit || fetch(request).then(response => {
         if (response.ok) caches.open(CACHE).then(cache => cache.put(request, response.clone()));

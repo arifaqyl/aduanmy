@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TrafficMY · Live Malaysia Transit Signals</title>
   <meta name="description" content="Live rider delay signals across Malaysian LRT, MRT, KTM and monorail — today MYT. Not ridership stats." />
-  <meta name="theme-color" content="#58CC02" />
+  <meta name="theme-color" content="#171c1a" />
   <meta property="og:title" content="TrafficMY · Live Malaysia Transit Signals" />
   <meta property="og:description" content="What riders report on Malaysia transit today — delays, crowding, disruptions. Not passenger count charts." />
   <meta property="og:type" content="website" />
@@ -16,11 +16,11 @@
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <!-- Type system (Work Sans / IBM Plex Mono / Barlow Condensed) is imported inside static/css/stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css" />
-  <link rel="stylesheet" href="static/css/play.css" />
-  <link rel="stylesheet" href="static/css/stitch.css" />
+  <link rel="stylesheet" href="static/css/components.css?v=28" />
+  <link rel="stylesheet" href="static/css/play.css?v=28" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=28" />
 </head>
 <body class="tm-app play-app stitch-app">
 
@@ -154,13 +154,13 @@
 
           <div class="tm-filters filters" id="filters">
             <button class="tm-chip chip active" data-mode="all">All</button>
-            <button class="tm-chip chip" data-mode="favorites">⭐ Saved</button>
-            <button class="tm-chip chip" data-mode="rail">🚆 Rail</button>
-            <button class="tm-chip chip" data-mode="lrt">🚇 LRT</button>
-            <button class="tm-chip chip" data-mode="mrt">🚊 MRT</button>
-            <button class="tm-chip chip" data-mode="ktm">🚂 KTM</button>
-            <button class="tm-chip chip" data-mode="monorail">🛤 Mono</button>
-            <button class="tm-chip chip" data-mode="bus">🚌 Bus</button>
+            <button class="tm-chip chip" data-mode="favorites">Saved</button>
+            <button class="tm-chip chip" data-mode="rail">Rail</button>
+            <button class="tm-chip chip" data-mode="lrt">LRT</button>
+            <button class="tm-chip chip" data-mode="mrt">MRT</button>
+            <button class="tm-chip chip" data-mode="ktm">KTM</button>
+            <button class="tm-chip chip" data-mode="monorail">Mono</button>
+            <button class="tm-chip chip" data-mode="bus">Bus</button>
           </div>
           <p class="tm-filter-hint filter-hint" id="filterHint" hidden></p>
 
@@ -414,6 +414,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js" defer></script>
+  <script src="static/js/app.js?v=28" defer></script>
 </body>
 </html>

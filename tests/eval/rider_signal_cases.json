@@ -1,0 +1,157 @@
+[
+  {
+    "text": "Kelana Jaya Line delay memang teruk",
+    "expected": false,
+    "note": "generic complaint, no live evidence"
+  },
+  {
+    "text": "Korang rasa MRT Kajang selalu delay tak?",
+    "expected": false,
+    "note": "opinion poll"
+  },
+  {
+    "text": "Throwback dulu LRT Ampang selalu rosak",
+    "expected": false,
+    "note": "nostalgia/throwback"
+  },
+  {
+    "text": "Unpopular opinion: RapidKL delay hari2",
+    "expected": false,
+    "note": "generic complaint"
+  },
+  {
+    "text": "That magnificent finish by Mbappe is a great example of how the game could be improved by changing the offside rule. Or... he could just delay his run, like every other striker.",
+    "expected": false,
+    "note": "football, word 'delay' unrelated"
+  },
+  {
+    "text": "Lord, go before me and make every crooked path straight. Where there has been delay, bring divine acceleration.",
+    "expected": false,
+    "note": "religious post"
+  },
+  {
+    "text": "Rebuilding requires you to show up daily. Each day that passes by with no work put in is another day that delays the finish line.",
+    "expected": false,
+    "note": "motivational post"
+  },
+  {
+    "text": "Gold Line is operating on a 12 minute westbound delay due to a track blockage.",
+    "expected": false,
+    "note": "non-Malaysia transit line"
+  },
+  {
+    "text": "benda ni hype awal2 je sis. sy dah rasa mrt kajang 2017. bila dah byk issue, tak maintenance, tobat dah nak naik. nak ke office kena tukar line lrt kelana jaya",
+    "expected": false,
+    "note": "historical/discussion, not live"
+  },
+  {
+    "text": "Harini ramai orang belakang tabir LRT 3 post gambar. Kalau LRT problem, janganlah maki-maki orang bawah.",
+    "expected": false,
+    "note": "meta-commentary about posting"
+  },
+  {
+    "text": "LRT3 Shah Alam Line Day 1 experience. Glenmarie ke TRX, 60 minit, 2 pertukaran laluan.",
+    "expected": false,
+    "note": "trip-report, not an incident"
+  },
+  {
+    "text": "Dah lambat. Sesak.",
+    "expected": false,
+    "note": "too vague, no anchor"
+  },
+  {
+    "text": "RM277 billion PTPTN debt is enough to build a whole new LRT4 line for Malaysia",
+    "expected": false,
+    "note": "policy/finance commentary"
+  },
+  {
+    "text": "My Selangorku rumah mampu milik harga rumah naik, nak beli rumah dekat LRT station pun susah",
+    "expected": false,
+    "note": "housing affordability, not transit"
+  },
+  {
+    "text": "45 minute tunggu grab from MRT Kwasa Damansara station pagi ni",
+    "expected": false,
+    "note": "grab wait time, not train delay"
+  },
+  {
+    "text": "LRT3 was delayed multiple times over years in development before opening",
+    "expected": false,
+    "note": "construction history"
+  },
+  {
+    "text": "Not recommend naik KTM Komuter, better MRT or LRT laju timing sgt lambat ye",
+    "expected": false,
+    "note": "general opinion/recommendation"
+  },
+  {
+    "text": "budakwang 21m Rasuah is still a big problem. Malaysia lost RM277b due to corruption. enough to build a whole new LRT4",
+    "expected": false,
+    "note": "corruption/politics"
+  },
+  {
+    "text": "How long do we have to cope with this RapidKL? sikit2 delay bagaii",
+    "expected": false,
+    "note": "generic frustration"
+  },
+  {
+    "text": "dandihusnah 10h Kecik sangat kalau sama size dgn kelana jaya line. X function kalau rumah sebelah lrt. Cuma yg terpaling terdesak je guna lrt. Dah lambat. Sesak. Apa faedah guna lrt?",
+    "expected": false,
+    "note": "housing size comparison"
+  },
+  {
+    "text": "Dah kau kenselkan 5 stesen dan kecikkan saiz, pastu pulak 6 gerabak kau potong jadi 3 gerabak. Tu bukan jimat.",
+    "expected": false,
+    "note": "planning/budget complaint"
+  },
+  {
+    "text": "nabiledler92 20h Dgn 3 koc tren LRT3 tu ko tunggu je la dia akan ada problem cepat rosak",
+    "expected": false,
+    "note": "predictive downscope opinion, not live delay"
+  },
+  {
+    "text": "KTM komuter ko tunggu je la nanti akan rosak macam dulu jugak",
+    "expected": false,
+    "note": "sarcastic future prediction, any line"
+  },
+  {
+    "text": "Kelana Jaya line expected akan jadi macam hell bila kekerapan tren kurang",
+    "expected": false,
+    "note": "speculative opinion"
+  },
+  {
+    "text": "Kelana Jaya Line delay again, waiting 25 minutes at Bangsar station hari ni",
+    "expected": true,
+    "note": "present-tense, measured delay, station anchor"
+  },
+  {
+    "text": "Kelana Jaya Line delay again, waiting 25 minutes at Bangsar",
+    "expected": true,
+    "note": "present-tense, measured delay"
+  },
+  {
+    "text": "MRT Kajang delay due to a signal failure",
+    "expected": true,
+    "note": "concrete cause"
+  },
+  {
+    "text": "LRT Ampang tak gerak sekarang, penuh dekat platform",
+    "expected": true,
+    "note": "present, direct-hit phrase"
+  },
+  {
+    "text": "Kepada yang stuck traffic jam drpd Kg Melayu Subang menuju ke MRT Kwasa, guna jalan alternatif",
+    "expected": true,
+    "note": "stuck + live context"
+  },
+  {
+    "text": "Lrt kelana jaya line elok smpai masjid jamek ko tak bukak pintu lepas tu jalan je. sampai pasar seni jem dgn manusia, extra cost hari ni, sampai lambat ke opis",
+    "expected": true,
+    "note": "doors-not-opening, present"
+  },
+  {
+    "text": "LRT buat hal harini. Train duk jerking after KLCC station. Sampai Masjid Jamek stop lama, pintu tak buka. Manusia dah macam semut dekat platform.",
+    "expected": true,
+    "note": "today, concrete symptoms"
+  }
+]

@@ -76,6 +76,12 @@ def run_full_now(*, respect_cadence: bool = True) -> dict | None:
         report = run_ingest(respect_cadence=respect_cadence)
         _last_full_at = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
         logger.info("full ingest complete: %s rows", report.get("written", 0))
+        try:
+            from app.services.telegram_alerts import check_and_notify
+
+            check_and_notify()
+        except Exception:  # pragma: no cover - alerts must never break ingest
+            logger.exception("telegram check_and_notify failed after ingest")
         return report
     except Exception as exc:  # pragma: no cover
         _last_error = str(exc)

@@ -47,6 +47,23 @@ CREATE TABLE IF NOT EXISTS collector_runs (
 
 CREATE INDEX IF NOT EXISTS idx_collector_runs_source_id
 ON collector_runs(source, id DESC);
+
+CREATE TABLE IF NOT EXISTS telegram_subscriptions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    chat_id TEXT NOT NULL,
+    line_id TEXT NOT NULL,
+    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(chat_id, line_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_telegram_subscriptions_line
+ON telegram_subscriptions(line_id);
+
+CREATE TABLE IF NOT EXISTS line_status_snapshots (
+    line_id TEXT PRIMARY KEY,
+    status TEXT NOT NULL,
+    updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 

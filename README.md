@@ -1,125 +1,153 @@
-# AduanMY / TrafficMY
+# TrafficMY
 
-Malaysia-first public transport pulse built from rider and operator signals.
+### Live rider signals for Malaysia transit — today, MYT.
 
-**Live:** [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)  
-**Status:** production · **Tests:** 236 passing · **License:** [MIT](LICENSE)
+> Not ridership charts. Not an operator all-clear.  
+> **What are riders reporting on LRT / MRT / KTM right now?**
 
-AduanMY is the research engine. **TrafficMY** is the shipped product surface: a mobile-first PWA that turns filtered crowd and official signals into line status, live incidents, maps, and journey helpers for Malaysian public transport.
+[![Live](https://img.shields.io/badge/live-arifaqyl.me%2Ftraffic-1f7a4d?style=flat-square)](https://arifaqyl.me/traffic/)
+[![Tests](https://img.shields.io/badge/tests-270%20passing-1f7a4d?style=flat-square)](https://github.com/arifaqyl/aduanmy/actions)
+[![License](https://img.shields.io/badge/license-MIT-171c1a?style=flat-square)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.10%2B-2b6a8a?style=flat-square)](pyproject.toml)
 
-## What It Does
+**Try it:** [arifaqyl.me/traffic](https://arifaqyl.me/traffic/) · **Ops status:** [/status](https://arifaqyl.me/traffic/status) · **API / embed:** [/developers](https://arifaqyl.me/traffic/developers)
 
-Production loop:
+---
 
-`collect → reject noise → normalize → cluster → corroborate → professional public summary`
+## Why this exists
 
-TrafficMY focuses on:
-- nationwide public transport disruption signals (KV, KTM, Penang, Johor, east MY)
-- station, line, and negeri extraction with strict freshness gates
-- 15-minute unattended collection, per-source health, 90-day history, rotating SQLite backups
-- official grounding (MyRapid + KTMB) without treating operators as automatic all-clear
-- Stitch Play UI: glance card, live feed, MapLibre map, travel planner, installable PWA
+Malaysia’s rail apps tell you the timetable.  
+They don’t tell you *“Bangsar is stuck for 25 minutes right now.”*
 
-## Trust Boundary
+TrafficMY watches rider posts (Threads + Reddit + RSS), runs them through **strict gates**, and publishes a clean line board:
 
-- A rider post is an early signal, never automatic truth.
-- `No current signal` is not an all-clear.
-- Raw posts and handles stay internal; public output is synthesized and source-linked.
-- GTFS never confirms an incident.
-- Official operator channels remain the final travel check.
+| Quiet | Delayed | Disruption |
+|-------|---------|------------|
+| No qualifying rider signal today | Live wait / delay reports | Strong multi-signal incident |
 
-## Current Source Strategy
+**Quiet ≠ all-clear.** Absence of signal is not proof trains are fine.
 
-| Source | Role |
-|--------|------|
-| Threads | Primary rider-signal lane (authenticated search + public fallback) |
-| Reddit | Secondary lane, two-hour minimum cadence |
-| RSS | Malaysian transport headlines |
-| Official / open data | Grounding and verification only |
-| X | Paused in unattended mode until authenticated |
-| GTFS static | Journey/map reference only; anomaly inference disabled |
+---
 
-## API Surface
+## Demo — Threads Terminal (ops console)
 
-- `GET /api/trafficmy/signals/today` — **B2B/embed prototype**: today’s rider signals + line board (JSON v1)
-- `GET /developers` · `GET /embed` — human docs + iframe widget
-- `GET /api/health` · `GET /api/health/live` · `GET /api/health/ready`
-- `GET /api/trafficmy/overview` · `GET /api/trafficmy/status`
-- `GET /api/trafficmy/incidents` · `GET /api/trafficmy/incidents/{cluster_id}`
-- `GET /api/trafficmy/lines` · `GET /api/trafficmy/map/live`
-- `GET /api/trafficmy/lines/{line_id}/history` — 14-day rider-signal trend, "is this normal?"
-- `GET /api/trafficmy/journey/plan`
-- `POST /api/refresh` (API key in production)
-
-### Positioning
-
-TrafficMY is **live rider intelligence for today (MYT)** — not a ridership analytics dashboard. For historical passenger counts and DOSM-style trends, use official open-data products; for “is something wrong on my line right now?” use TrafficMY.
-
-Full route list and architecture notes: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
-
-## Local Setup
+The scraper is the product. **Threads Terminal** is how you keep it honest:
 
 ```bash
-cd D:\aduanmy
-pip install -e .[dev]
+python scripts/threads_terminal.py replay "Kelana Jaya Line delay again, waiting 25 minutes at Bangsar station hari ni"
+```
+
+```
+ACCEPTED  entity=Kelana Jaya Line  location=Bangsar
+  PASS  non_live_opinion
+  PASS  transport_incident_signal_ok     matched: delay
+  PASS  malaysia_transport_anchor        matched: Kelana Jaya Line, Bangsar
+  PASS  today_context                    matched: hari ni
+  PASS  rider_signal_worthwhile          matched: waiting, hari ni
+```
+
+Opinion / sarcasm / “akan rosak nanti” threads get **rejected** — not shown as Delayed:
+
+```bash
+python scripts/threads_terminal.py replay "ko tunggu je la dia akan ada problem cepat rosak"
+# → REJECTED  non_live_opinion  matched: TRANSPORT_SARCASTIC_WAIT_RE, …
+```
+
+Full ops pack: [docs/THREADS_TERMINAL.md](docs/THREADS_TERMINAL.md)
+
+```bash
+python scripts/threads_terminal.py dashboard --prod
+python scripts/threads_terminal.py guided --prod
+python scripts/threads_terminal_web.py          # local UI :8005
+```
+
+---
+
+## What’s shipping
+
+- **Live board** — Klang Valley LRT/MRT/Monorail/KTM + planned lines
+- **Map** — MapLibre pins snapped to rail geometry
+- **Travel** — station planner, headways, passes
+- **Trust copy** — bilingual EN/BM · quiet ≠ all-clear
+- **Signals API** — `GET /api/trafficmy/signals/today` for embeds / B2B
+- **Eval harness** — labelled false-positive set; don’t loosen gates without cases
+
+Engine name: **AduanMY**. Product surface: **TrafficMY**.
+
+---
+
+## Trust boundary (non-negotiable)
+
+1. A rider post is an **early signal**, never automatic truth  
+2. Raw @handles / full posts stay **internal** — public output is synthesized  
+3. Official operator channels remain the final travel check  
+4. GTFS is reference only — never “confirms” an incident  
+5. Gates reject politics, housing, grab-waits, planning debates, future speculation
+
+---
+
+## Quick start
+
+```bash
+git clone https://github.com/arifaqyl/aduanmy.git
+cd aduanmy
+pip install -e ".[dev]"
 python -m pytest tests -q
 uvicorn app.main:app --reload --port 8000
 ```
 
-Open `http://127.0.0.1:8000/`
+Open http://127.0.0.1:8000/
 
-## Docker Deploy
+Docker:
 
 ```bash
 docker compose up --build -d
+# → http://localhost:8002/
 ```
 
-Open `http://localhost:8002/`. Data persists in the `trafficmy_data` volume.
+---
 
-Key environment knobs (see [.env.example](.env.example)):
+## Architecture (one glance)
 
-- `ADUANMY_FULL_REFRESH_INTERVAL_SECONDS` — background collection interval
-- `ADUANMY_REFRESH_API_KEY` — protect `POST /api/refresh`
-- `ADUANMY_THREADS_SESSION_PATH` — optional Playwright session (public search remains fallback)
-- `ADUANMY_GTFS_ANOMALY_ENABLED` — keep `false`
-
-## Repository Structure
-
-```text
-app/           FastAPI routes, collectors, pipeline, services
-configs/       categories, entities, queries, GTFS, discovery
-static/        Stitch Play UI (HTML/CSS/JS, mascots, map assets)
-scripts/       deploy, snapshot, reporting
-tests/         regression coverage (236 tests)
-docs/          architecture, production audit, transport reference
+```
+Threads / Reddit / RSS / Official
+            │
+            ▼
+   extract.py gates  ──►  reject noise (eval-backed)
+            │
+            ▼
+   cluster + corroborate  ──►  professional public summary
+            │
+            ▼
+   TrafficMY PWA  ·  Signals API  ·  Threads Terminal
 ```
 
-## Useful Commands
+| Source | Role |
+|--------|------|
+| **Threads** | Primary rider-signal lane |
+| Reddit | Secondary (cadenced) |
+| RSS | Malaysian transport headlines |
+| Official (MyRapid / KTMB) | Grounding only |
+| GTFS static | Map / journey reference |
 
-```bash
-python -m pytest tests -q
-python scripts/run_snapshot.py
-python scripts/audit_sources.py
-pip-audit -r requirements.production.txt
-```
+---
 
-## Documentation
+## Star if you care about…
 
-- [Architecture](docs/ARCHITECTURE.md)
-- [Production audit (2026-06-30)](docs/PRODUCTION_AUDIT_2026-06-30.md)
-- [Malaysia transport reference](docs/MALAYSIA_TRANSPORT_REFERENCE.md)
-- [Roadmap](ROADMAP.md)
-- [Contributing](CONTRIBUTING.md)
-- [Security policy](SECURITY.md)
+- Open, **honest** transit intelligence for SEA cities  
+- Scrapers that **refuse** to lie (quiet ≠ fine)  
+- Ops tooling that makes false positives fixable in one guided loop  
+
+Issues and PRs welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).  
+Security: [SECURITY.md](SECURITY.md).
+
+---
 
 ## Author
 
-**Arif Aqyl** — Backend developer · live products · Malaysia
+**Arif Aqyl** — building live products from Malaysia  
 
-- Portfolio: [arifaqyl.me](https://arifaqyl.me)
-- LinkedIn: [linkedin.com/in/arifaqyl](https://linkedin.com/in/arifaqyl)
-- X: [@mindofaqyl](https://x.com/mindofaqyl)
-- Email: [hello@arifaqyl.me](mailto:hello@arifaqyl.me)
+[arifaqyl.me](https://arifaqyl.me) · [X @mindofaqyl](https://x.com/mindofaqyl) · [LinkedIn](https://linkedin.com/in/arifaqyl) · hello@arifaqyl.me
 
 ## License
 

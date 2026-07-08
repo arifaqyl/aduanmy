@@ -358,10 +358,40 @@ TRANSPORT_HYPOTHETICAL_TERMS = [
     "might become",
     "could become",
     "worst case",
-    "if lrt3",
-    "when lrt3",
-    "bila lrt3",
 ]
+
+# General non-live patterns — any line/mode, not one-off phrase lists per project.
+TRANSPORT_SARCASTIC_WAIT_RE = re.compile(r"\b(?:ko\s+)?tunggu\s+je(?:\s+la)?\b", re.I)
+TRANSPORT_FUTURE_INCIDENT_RE = re.compile(
+    r"\b(?:akan|nanti|will|going\s+to|expected|might|could|mula|cepat).{0,36}"
+    r"\b(?:problem|rosak|delay|delays|delayed|lambat|gangguan|breakdown|issue|issues)\b"
+    r"|\b(?:problem|rosak|delay|lambat|gangguan).{0,24}\b(?:nanti|lepas|mcm|macam|like)\b",
+    re.I,
+)
+TRANSPORT_FUTURE_WAIT_RE = re.compile(
+    r"\b(?:makin\s+lama|akan|expected|nanti).{0,40}\b(?:tunggu|menunggu)\b",
+    re.I,
+)
+TRANSPORT_PLANNING_DEBATE_RE = re.compile(
+    r"\b(?:downscope|downgrade|cost\s+cutting|kos\s+penjimatan|kecikkan|potong\s+jadi|"
+    r"\d+\s*koc|koc\s+tren|gerabak|billiun|billion|projek\s+ni|pembinaan|keputusan\s+bodoh|"
+    r"penjimatan|first\s+week|kapasiti|kekerapan\s+tren|tak\s+amik\s+pengajaran)\b",
+    re.I,
+)
+TRANSPORT_CONDITIONAL_LINE_RE = re.compile(
+    r"\b(?:if|when|bila|kalau)\s+(?:the\s+)?(?:lrt|mrt|ktm|monorail|komuter|ets|line|tren|bas|bus)\b",
+    re.I,
+)
+TRANSPORT_THREADS_TIME_CHROME_RE = re.compile(
+    r"(?:^|\s)[a-z0-9_\.]{3,24}\s+\d{1,2}[hm]\b",
+    re.I,
+)
+TRANSPORT_RIDER_WAITING_RE = re.compile(
+    r"\b(?:kena\s+tunggu|tunggu\s+(?:lama|dekat|lagi|tren|bas|train|platform|stesen|station)|"
+    r"menunggu\s+(?:tren|bas|train|dekat|platform|stesen|station)|"
+    r"waiting\s+(?:for|at|on)|waited\s+\d+)\b",
+    re.I,
+)
 
 # Forward-looking advisory copy without proof of an ongoing incident.
 TRANSPORT_ADVISORY_TERMS = [
@@ -416,7 +446,6 @@ TRANSPORT_PRESENT_ACTIVE_TERMS = [
     "was delayed",
     "has been delayed",
     "have been delayed",
-    "tunggu",
     "kena tunggu",
     "waiting for",
     "not moving",
@@ -463,7 +492,6 @@ TRANSPORT_SPECIFICITY_TERMS = [
 TRANSPORT_ACTIONABLE_IMPACT_TERMS = [
     "waiting",
     "waited",
-    "tunggu",
     "kena tunggu",
     "queue",
     "beratur",
@@ -857,8 +885,85 @@ def transport_line_info_signal_ok(text: str, entity_hint: str = "") -> bool:
     return mentions_line and (info_hits >= 2 or has_numbers)
 
 
+def _transport_direct_experience_hit(low: str) -> bool:
+    if _transport_rider_waiting_hit(low):
+        return True
+    return any(
+        token in low
+        for token in [
+            "stuck",
+            "tak gerak",
+            "tak bergerak",
+            "waiting for",
+            "is delayed",
+            "was delayed",
+            "still delayed",
+            "fire alarm",
+            "emergency",
+            "pintu tak bukak",
+            "tak bukak pintu",
+            "pintu tak buka",
+            "tak buka pintu",
+            "not moving",
+            "manual operation",
+            "stop lama",
+            "berhenti lama",
+            "cannot board",
+            "tak boleh naik",
+            "tak boleh keluar",
+        ]
+    )
+
+
+def _transport_rider_waiting_hit(low: str) -> bool:
+    if TRANSPORT_SARCASTIC_WAIT_RE.search(low):
+        return False
+    if TRANSPORT_FUTURE_WAIT_RE.search(low):
+        return False
+    return bool(TRANSPORT_RIDER_WAITING_RE.search(low))
+
+
+def _transport_present_active_hit(low: str) -> bool:
+    if any(token in low for token in TRANSPORT_PRESENT_ACTIVE_TERMS):
+        return True
+    return _transport_rider_waiting_hit(low)
+
+
+def _transport_actionable_impact_hit(low: str) -> bool:
+    if any(token in low for token in TRANSPORT_ACTIONABLE_IMPACT_TERMS):
+        return True
+    return _transport_rider_waiting_hit(low)
+
+
+def transport_non_live_opinion(text: str) -> bool:
+    """Reject prediction, planning debate, sarcasm — applies to all lines/modes."""
+    low = (text or "").lower()
+    if TRANSPORT_SARCASTIC_WAIT_RE.search(low):
+        return True
+    if TRANSPORT_FUTURE_INCIDENT_RE.search(low):
+        return True
+    if TRANSPORT_FUTURE_WAIT_RE.search(low):
+        return True
+    if TRANSPORT_PLANNING_DEBATE_RE.search(low):
+        return True
+    if TRANSPORT_CONDITIONAL_LINE_RE.search(low):
+        return True
+    if any(term in low for term in TRANSPORT_PLANNING_OPINION_TERMS):
+        return True
+    if any(term in low for term in TRANSPORT_USELESS_OPINION_TERMS):
+        return True
+    return False
+
+
+def transport_predictive_opinion(text: str) -> bool:
+    """Backward-compatible alias for non-live opinion detection."""
+    return transport_non_live_opinion(text)
+
+
 def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
     low = text.lower()
+    if transport_non_live_opinion(text):
+        return False
     # Word-boundary matching matters here: short tokens like "line" and "ets"
     # are common substrings of unrelated English words ("adrenaline", "tickets",
     # "streets", "assets"...). A naive `token in low` check turned those into
@@ -924,7 +1029,7 @@ def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
 
     hypothetical_hit = any(token in low for token in TRANSPORT_HYPOTHETICAL_TERMS)
     advisory_hit = any(token in low for token in TRANSPORT_ADVISORY_TERMS)
-    present_active_hit = any(token in low for token in TRANSPORT_PRESENT_ACTIVE_TERMS)
+    present_active_hit = _transport_present_active_hit(low)
     speculative_question_hit = any(
         re.search(pattern, low, re.I) for pattern in TRANSPORT_QUIET_OR_SPECULATIVE_PATTERNS
     )
@@ -937,13 +1042,9 @@ def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
     strong_hit = any(token in low for token in TRANSPORT_STRONG_INCIDENT_TERMS)
     weak_hit = any(token in low for token in TRANSPORT_WEAK_INCIDENT_TERMS)
     live_context_hit = any(token in low for token in TRANSPORT_LIVE_CONTEXT_TERMS)
-    direct_experience_hit = any(
-        token in low
-        for token in [
-            "stuck", "tak gerak", "tak bergerak", "kena tunggu", "waiting for",
-            "is delayed", "was delayed", "still delayed", "fire alarm", "emergency",
-            "pintu tak bukak", "not moving", "manual operation",
-        ]
+    direct_experience_hit = _transport_direct_experience_hit(low)
+    measured_hit = bool(
+        re.search(r"\b\d{1,3}\s*(?:min|mins|minute|minutes|minit|jam|hour|hours)\b", low)
     )
 
     entity = entity_hint or extract_entity(text, "transport")
@@ -978,22 +1079,24 @@ def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
 
     if any(token in low for token in TRANSPORT_PLANNING_OPINION_TERMS):
         return False
-    if any(token in low for token in TRANSPORT_USELESS_OPINION_TERMS):
-        return False
 
     # Must describe something going wrong now — not just name-drop a line or station.
     if strong_hit and (present_active_hit or live_context_hit or not advisory_hit):
         return True
-    if weak_hit and (present_active_hit or live_context_hit):
+    if weak_hit and direct_experience_hit:
+        return True
+    if weak_hit and measured_hit and (present_active_hit or live_context_hit):
         return True
     if weak_hit and mentions_transit and any(token in low for token in ["tak gerak", "rosak", "lambat", "delay", "gangguan"]):
-        if present_active_hit or live_context_hit:
+        if direct_experience_hit or measured_hit:
             return True
     return False
 
 
 def transport_rider_signal_worthwhile(text: str, entity_hint: str = "") -> bool:
     """Strict Threads gate: keep observable live conditions, reject discussion-only posts."""
+    if transport_non_live_opinion(text):
+        return False
     if not transport_incident_signal_ok(text, entity_hint):
         return False
 
@@ -1004,30 +1107,14 @@ def transport_rider_signal_worthwhile(text: str, entity_hint: str = "") -> bool:
         return False
 
     chatter_hit = any(re.search(pattern, low, re.I) for pattern in TRANSPORT_CHATTER_PATTERNS)
-    present_hit = any(token in low for token in TRANSPORT_PRESENT_ACTIVE_TERMS)
+    present_hit = _transport_present_active_hit(low)
     live_context_hit = any(token in low for token in TRANSPORT_LIVE_CONTEXT_TERMS)
-    impact_hit = any(token in low for token in TRANSPORT_ACTIONABLE_IMPACT_TERMS)
+    impact_hit = _transport_actionable_impact_hit(low)
     cause_hit = any(token in low for token in TRANSPORT_CONCRETE_CAUSE_TERMS)
     measured_hit = bool(
         re.search(r"\b\d{1,3}\s*(?:min|mins|minute|minutes|minit|jam|hour|hours)\b", low)
     )
-    direct_hit = any(
-        token in low
-        for token in [
-            "stuck",
-            "tak gerak",
-            "tak bergerak",
-            "kena tunggu",
-            "waiting for",
-            "not moving",
-            "pintu tak bukak",
-            "tak bukak pintu",
-            "pintu tak buka",
-            "tak buka pintu",
-            "cannot board",
-            "tak boleh naik",
-        ]
-    )
+    direct_hit = _transport_direct_experience_hit(low)
 
     observable_hit = impact_hit or cause_hit or measured_hit or direct_hit
     riding_delay_hit = any(
@@ -1062,8 +1149,6 @@ def transport_rider_signal_worthwhile(text: str, entity_hint: str = "") -> bool:
         return False
 
     if any(token in low for token in TRANSPORT_PLANNING_OPINION_TERMS):
-        return False
-    if any(token in low for token in TRANSPORT_USELESS_OPINION_TERMS):
         return False
 
     # Habitual gripe without a today signal ("dah lambat", "selalu sesak").
@@ -1101,25 +1186,23 @@ def transport_rider_today_context_ok(text: str) -> bool:
     low = text.lower()
     if any(token in low for token in TRANSPORT_TODAY_RIDER_TERMS):
         return True
-    if re.search(r"\b\d{1,2}[hm]\b", low):
-        return True
     if re.search(r"\b\d{1,3}\s*(?:min|mins|minute|minutes|minit|jam|hour|hours)\b", low):
         return True
-    direct_hit = any(
-        token in low
-        for token in [
-            "stuck",
-            "tak gerak",
-            "tak bergerak",
-            "kena tunggu",
-            "waiting for",
-            "not moving",
-            "pintu tak bukak",
-            "cannot board",
-            "tak boleh naik",
-        ]
-    )
-    return direct_hit
+
+    direct_hit = _transport_direct_experience_hit(low)
+    if direct_hit:
+        return True
+
+    # Threads handle + relative time ("user20h") is scrape chrome, not rider evidence.
+    if TRANSPORT_THREADS_TIME_CHROME_RE.search(low):
+        return False
+
+    # Bare "14h"/"20h" without direct experience is not a live rider cue.
+    if re.search(r"\b\d{1,2}[hm]\b", low):
+        return bool(
+            any(token in low for token in ["tadi", "baru ni", "sekarang", "skrg", "pagi ni", "this morning"])
+        )
+    return False
 
 
 def category_signal_ok(text: str, category: str, entity: str = "") -> bool:

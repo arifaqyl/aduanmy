@@ -15,6 +15,7 @@ from app.api.routes.health import router as health_router
 from app.api.routes.incidents import router as incidents_router
 from app.api.routes.journey import router as journey_router
 from app.api.routes.scoring import router as scoring_router
+from app.api.routes.telegram import router as telegram_router
 from app.api.routes.trends import router as trends_router
 from app.core.config import settings
 
@@ -45,6 +46,7 @@ def create_app() -> FastAPI:
     app.include_router(incidents_router, prefix="/api")
     app.include_router(journey_router, prefix="/api")
     app.include_router(scoring_router, prefix="/api")
+    app.include_router(telegram_router, prefix="/api")
     app.include_router(trends_router, prefix="/api")
 
     if _STATIC.exists():
@@ -61,6 +63,10 @@ def create_app() -> FastAPI:
         @app.get("/developers", include_in_schema=False)
         def developers_page() -> FileResponse:
             return FileResponse(_STATIC / "developers.html")
+
+        @app.get("/status", include_in_schema=False)
+        def status_page() -> FileResponse:
+            return FileResponse(_STATIC / "status.html")
 
         @app.get("/embed", include_in_schema=False)
         def embed_page() -> FileResponse:

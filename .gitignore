@@ -21,6 +21,7 @@ node_modules/
 *.exe
 .probe_*.json
 trafficmy-stitch-min.zip
+_redesign_import/
 
 # Local-only debug / ops probes (keep deploy + build scripts tracked)
 scripts/probe_*.py
