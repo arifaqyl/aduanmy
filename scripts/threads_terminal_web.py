@@ -409,6 +409,59 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         .tab-content.active {
             display: block;
         }
+
+        footer {
+            padding: 0.75rem 2rem;
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+        }
+
+        kbd {
+            display: inline-block;
+            padding: 0.1rem 0.4rem;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 4px;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            color: var(--text-primary);
+        }
+
+        .footer-btn {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            font-size: 0.75rem;
+            font-family: inherit;
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            transition: color 0.2s, background 0.2s;
+        }
+
+        .footer-btn:hover {
+            color: var(--text-primary);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-weight: 600;
+            z-index: 9999;
+            font-size: 0.875rem;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 <body>
@@ -555,10 +608,25 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         </div>
     </main>
 
-    <script>
-        const isProdMode = window.location.search.includes('prod=true');
+    <footer>
+        <span><kbd>r</kbd> focus replay</span>
+        <span>·</span>
+        <span><kbd>Ctrl+Enter</kbd> run replay</span>
+        <span>·</span>
+        <button class="footer-btn" onclick="fetchDashboard()">↻ refresh dashboard</button>
+        <span>·</span>
+        <span id="last-refresh" style="color: var(--text-secondary);">—</span>
+    </footer>
 
-        function initApp() {
+    <script>
+        let isProdMode = window.location.search.includes('prod=true');
+
+        async function initApp() {
+            try {
+                const cfg = await fetch('/api/config').then(r => r.json());
+                if (cfg.is_prod) isProdMode = true;
+            } catch (_) {}
+
             const badge = document.getElementById('mode-badge');
             if (isProdMode) {
                 badge.innerText = "Production Mode";
@@ -569,6 +637,31 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             }
             fetchDashboard();
         }
+
+        function showToast(msg, ok = true) {
+            const color = ok ? '#00e676' : '#ff1744';
+            const bg = ok ? 'rgba(0,230,118,0.12)' : 'rgba(255,23,68,0.12)';
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.style.cssText = `background:${bg};color:${color};border:1px solid ${color}44;`;
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            const tag = document.activeElement ? document.activeElement.tagName : '';
+            if (e.key === 'r' && !e.ctrlKey && !e.metaKey && !e.altKey &&
+                tag !== 'TEXTAREA' && tag !== 'INPUT') {
+                e.preventDefault();
+                const ta = document.getElementById('replay-text');
+                if (ta) ta.focus();
+            }
+        });
 
         async function fetchDashboard() {
             try {
@@ -643,8 +736,12 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                     suspiciousTbody.innerHTML = '<tr><td colspan="2" style="color: var(--text-secondary);">No suspicious rows flagging warnings.</td></tr>';
                 }
 
+                const ts = document.getElementById('last-refresh');
+                if (ts) ts.textContent = 'refreshed ' + new Date().toLocaleTimeString();
+
             } catch (err) {
                 console.error("Failed to load dashboard:", err);
+                showToast('Dashboard fetch failed — is the server running?', false);
             }
         }
 
@@ -701,7 +798,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         async function saveToEval(expected) {
             const text = document.getElementById('replay-text').value.trim();
             const note = document.getElementById('case-note').value.trim();
-            if (!text) return;
+            if (!text) { showToast('No replay text to save.', false); return; }
 
             try {
                 const response = await fetch('/api/case/add', {
@@ -711,13 +808,14 @@ HTML_TEMPLATE = """<!DOCTYPE html>
                 });
                 const result = await response.json();
                 if (result.added) {
-                    alert(`Eval case added successfully! expected=${expected ? 'accept' : 'reject'}`);
+                    showToast(`Eval case added (expected=${expected ? 'accept' : 'reject'}, total=${result.total_cases})`, true);
                     document.getElementById('case-note').value = '';
                 } else {
-                    alert(`Failed to add: ${result.reason}`);
+                    showToast(`Not added: ${result.reason}`, false);
                 }
             } catch (err) {
                 console.error("Failed to add eval case:", err);
+                showToast('Network error saving eval case.', false);
             }
         }
 
@@ -786,6 +884,19 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             evt.currentTarget.classList.add('active');
         }
 
+        // Ctrl+Enter in replay textarea triggers analysis
+        document.addEventListener('DOMContentLoaded', function() {
+            const ta = document.getElementById('replay-text');
+            if (ta) {
+                ta.addEventListener('keydown', function(e) {
+                    if (e.ctrlKey && e.key === 'Enter') {
+                        e.preventDefault();
+                        runReplay();
+                    }
+                });
+            }
+        });
+
         window.onload = initApp;
     </script>
 </body>
@@ -827,6 +938,12 @@ def get_prune_candidates(prod: bool = False):
     if not db_path:
         raise HTTPException(status_code=400, detail="Requires production database path")
     return prune_candidates(db_path=db_path)
+
+
+@app.get("/api/config")
+def get_config():
+    """Return server-side configuration so the UI can pick up --prod mode."""
+    return {"is_prod": IS_PROD_MODE}
 
 def main():
     parser = argparse.ArgumentParser(description="Threads Terminal Web UI Server")

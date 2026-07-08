@@ -595,6 +595,105 @@ def prune_candidates(db_path: Path) -> list[dict[str, Any]]:
     return out
 
 
+_DOCTOR_GATE_CASES: list[tuple[str, bool]] = [
+    ("MRT Kajang delay due to a signal failure", True),
+    ("KTM komuter ko tunggu je la nanti akan rosak macam dulu jugak", False),
+    ("Kelana Jaya Line delay memang teruk", False),
+]
+
+
+def doctor_checks(
+    *,
+    eval_cases_path: Path | None = None,
+    gate_test_cases: list[tuple[str, bool]] | None = None,
+) -> dict[str, Any]:
+    """Run the doctor health checklist.  No network I/O — purely local.
+
+    Returns::
+
+        {
+            "checks": [{"name": str, "ok": bool, "detail": str}, ...],
+            "all_ok": bool,
+        }
+    """
+    checks: list[dict[str, Any]] = []
+
+    # 1. Session check
+    sess = session_panel()
+    sess_ok = bool(sess.get("available", False))
+    checks.append({
+        "name": "session.json",
+        "ok": sess_ok,
+        "detail": (
+            f"exists, {sess.get('size_bytes', 0)}B, updated={sess.get('updated_at') or '—'}"
+            if sess_ok
+            else "MISSING — run collector to refresh"
+        ),
+    })
+
+    # 2. Last run check
+    runs = recent_threads_runs(limit=1)
+    if runs:
+        r = runs[0]
+        run_ok = str(r.get("status", "")).lower() in {"completed", "healthy", "ok", "success"}
+        checks.append({
+            "name": "last run",
+            "ok": run_ok,
+            "detail": (
+                f"status={r.get('status')}"
+                f"  finished={str(r.get('finished_at') or '—')[:19]}"
+                f"  rows={r.get('row_count', 0)}"
+            ),
+        })
+    else:
+        checks.append({
+            "name": "last run",
+            "ok": False,
+            "detail": "no collector_runs rows found",
+        })
+
+    # 3. Eval pass rate
+    try:
+        eval_result = run_eval_cases(cases_path=eval_cases_path)
+        total_e = eval_result["total"]
+        passed_e = eval_result["passed"]
+        eval_ok = total_e > 0 and passed_e == total_e
+        checks.append({
+            "name": "eval pass rate",
+            "ok": eval_ok,
+            "detail": (
+                f"{passed_e}/{total_e} ({eval_result.get('accuracy', 0):.0%})"
+                + (f" — {eval_result['failed']} failure(s)" if eval_result["failed"] else "")
+            ),
+        })
+    except Exception as exc:
+        checks.append({"name": "eval pass rate", "ok": False, "detail": f"error: {exc}"})
+
+    # 4. Gate self-test on 3 known cases
+    self_test = gate_test_cases if gate_test_cases is not None else _DOCTOR_GATE_CASES
+    gate_passed = 0
+    gate_failures: list[str] = []
+    for text, expected in self_test:
+        actual = transport_rider_signal_worthwhile(
+            text, extract_entity(text, "transport") or ""
+        )
+        if actual == expected:
+            gate_passed += 1
+        else:
+            gate_failures.append(text[:55])
+    gate_ok = gate_passed == len(self_test)
+    checks.append({
+        "name": "gate self-test",
+        "ok": gate_ok,
+        "detail": (
+            f"{gate_passed}/{len(self_test)} cases passed"
+            + (f"  FAIL: {'; '.join(gate_failures)}" if gate_failures else "")
+        ),
+    })
+
+    return {"checks": checks, "all_ok": all(c["ok"] for c in checks)}
+
+
 def export_ops_report(
     *,
     prod_health_url: str | None = None,

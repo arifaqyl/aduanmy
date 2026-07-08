@@ -1,4 +1,4 @@
-const CACHE = 'trafficmy-shell-v28';
+const CACHE = 'trafficmy-shell-v29';
 const scopeUrl = new URL(self.registration.scope);
 const base = scopeUrl.pathname.replace(/\/$/, '');
 const shell = [
@@ -7,11 +7,11 @@ const shell = [
   `${base}/static/favicon.svg`,
   `${base}/static/icon-512.png`,
   `${base}/static/og-image.png`,
-  `${base}/static/css/components.css?v=28`,
-  `${base}/static/css/play.css?v=28`,
-  `${base}/static/css/stitch.css?v=28`,
+  `${base}/static/css/components.css?v=29`,
+  `${base}/static/css/play.css?v=29`,
+  `${base}/static/css/stitch.css?v=29`,
   `${base}/static/lines/kv-system.svg`,
-  `${base}/static/js/app.js?v=28`,
+  `${base}/static/js/app.js?v=29`,
   `${base}/static/mascots/stitch-mascot.png`,
   `${base}/static/mascots/stitch-mascot-worried.png`,
 ];

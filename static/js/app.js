@@ -68,7 +68,17 @@
   let secondsLeft = COUNTDOWN_SEC;
   let loadGeneration = 0;
   let mapInstance = null;
-  let mapLayers = { reports: true, lrt: true, mrt: true, monorail: true, ktm: true, interchanges: true, buses: false };
+  // GPS (Official GTFS-RT dots) is OFF by default — KTM line layer must not auto-pull EMU telemetry.
+  let mapLayers = {
+    reports: true,
+    lrt: true,
+    mrt: true,
+    monorail: true,
+    ktm: true,
+    interchanges: true,
+    buses: false,
+    gps: false,
+  };
   const MAP_LAYER_UI = [
     ['reports', 'mapLayerReports'],
     ['lrt', 'mapLayerLrt'],
@@ -77,6 +87,7 @@
     ['ktm', 'mapLayerKtm'],
     ['interchanges', 'mapLayerInterchanges'],
     ['buses', 'mapLayerBuses'],
+    ['gps', 'mapLayerGps'],
   ];
   let mapPollTimer = null;
   let linesReferenceById = {};
@@ -332,7 +343,9 @@
     };
     const preset = presets[activeFilter];
     if (!preset) return;
-    mapLayers = { reports: true, interchanges: true, ...preset };
+    // Never auto-enable GPS from home filters — keep user's GPS opt-in sticky.
+    const gpsOn = !!mapLayers.gps;
+    mapLayers = { reports: true, interchanges: true, gps: gpsOn, ...preset };
     syncMapLayerUi();
   }
 
@@ -761,7 +774,8 @@
       return;
     }
     const params = new URLSearchParams();
-    if (mapLayers.buses || mapLayers.ktm) params.set('vehicles', 'true');
+    // Opt-in only — never fetch GPS just because KTM/Bus line layers are on.
+    if (mapLayers.gps) params.set('vehicles', 'true');
     const res = await fetchWithTimeout(api(`/api/trafficmy/map/live?${params}`));
     if (!res.ok) {
       showLoading('Map data unavailable. Retry in a moment.');
@@ -855,20 +869,24 @@
     }
 
     const vehicleFeatures = [];
-    (data.vehicles || []).forEach(veh => {
-      const isRail = veh.mode === 'rail';
-      if (isRail && !mapLayers.ktm) return;
-      if (!isRail && !mapLayers.buses) return;
-      vehicleFeatures.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [veh.lon, veh.lat] },
-        properties: {
-          mode: isRail ? 'rail' : 'bus',
-          label: veh.label || veh.route_id || (isRail ? 'KTM train' : 'Bus'),
-          age: veh.age_seconds != null ? `${veh.age_seconds}s ago` : 'Unknown age',
-        },
+    if (mapLayers.gps) {
+      const showRail = mapLayers.ktm || (!mapLayers.ktm && !mapLayers.buses);
+      const showBus = mapLayers.buses || (!mapLayers.ktm && !mapLayers.buses);
+      (data.vehicles || []).forEach(veh => {
+        const isRail = veh.mode === 'rail';
+        if (isRail && !showRail) return;
+        if (!isRail && !showBus) return;
+        vehicleFeatures.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [veh.lon, veh.lat] },
+          properties: {
+            mode: isRail ? 'rail' : 'bus',
+            label: veh.label || veh.route_id || (isRail ? 'KTM train' : 'Bus'),
+            age: veh.age_seconds != null ? `${veh.age_seconds}s ago` : 'Unknown age',
+          },
+        });
       });
-    });
+    }
 
     drawRailPolylines(data.rail_lines);
     drawInterchangeMarkers(mapLayers.interchanges ? (data.interchanges || []) : []);
@@ -878,11 +896,11 @@
       'circle-opacity': 0,
     });
     setMapGeoJSON('trafficmy-vehicles', vehicleFeatures, 'circle', {
-      'circle-radius': ['match', ['get', 'mode'], 'rail', 8, 5],
+      'circle-radius': ['match', ['get', 'mode'], 'rail', 7, 5],
       'circle-color': ['match', ['get', 'mode'], 'rail', '#0066b3', '#f97316'],
       'circle-stroke-color': '#1b1c1c',
       'circle-stroke-width': 2,
-      'circle-opacity': 0.95,
+      'circle-opacity': mapLayers.gps ? 0.9 : 0,
     });
     bindMapEvents();
     hideLoading();
@@ -1042,6 +1060,10 @@
       setActiveFilter('bus');
       return;
     }
+    if (key === 'gps') {
+      toggleMapLayer('gps');
+      return;
+    }
     toggleMapLayer(key);
   }
 
@@ -1049,17 +1071,25 @@
     mapLayers[key] = !mapLayers[key];
     syncMapLayerUi();
     if (key === 'reports' && !mapLayers.reports) clearReportMarkers();
+    if (key === 'gps' && !mapLayers.gps) {
+      setMapGeoJSON('trafficmy-vehicles', [], 'circle', {
+        'circle-radius': 0,
+        'circle-opacity': 0,
+      });
+    }
     ensureMap();
     if (boardData) {
       renderMapSidebar(boardData.lines || []);
     }
-    if (mapLayers.buses && !mapPollTimer) {
+    // Poll live GPS only while the opt-in GPS layer is on.
+    const wantGpsPoll = !!mapLayers.gps;
+    if (wantGpsPoll && !mapPollTimer) {
       const interval = mapPollIntervalMs();
       mapPollTimer = setInterval(() => {
-        if (document.getElementById('tabMap')?.classList.contains('active')) ensureMap();
+        if (document.getElementById('tabMap')?.classList.contains('active') && mapLayers.gps) ensureMap();
       }, interval);
     }
-    if (!mapLayers.buses && mapPollTimer) {
+    if (!wantGpsPoll && mapPollTimer) {
       clearInterval(mapPollTimer);
       mapPollTimer = null;
     }
@@ -3322,6 +3352,7 @@
   $('mapLayerKtm')?.addEventListener('click', () => onMapLayerChipClick('ktm'));
   $('mapLayerInterchanges')?.addEventListener('click', () => onMapLayerChipClick('interchanges'));
   $('mapLayerBuses')?.addEventListener('click', () => onMapLayerChipClick('buses'));
+  $('mapLayerGps')?.addEventListener('click', () => onMapLayerChipClick('gps'));
   $('mapTiltToggle')?.addEventListener('click', () => {
     if (!mapInstance) { ensureMap(); return; }
     const enabled = mapInstance.getPitch() < 20;

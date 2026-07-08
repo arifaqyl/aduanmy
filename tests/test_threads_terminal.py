@@ -13,6 +13,7 @@ import pytest
 from app.services.threads_terminal_service import (
     add_eval_case,
     dashboard_snapshot,
+    doctor_checks,
     explain_rider_gate,
     explain_rider_gate_verbose,
     export_ops_report,
@@ -201,6 +202,66 @@ def test_prune_candidates_empty_db(tmp_path):
     conn.commit()
     conn.close()
     assert prune_candidates(db) == []
+
+
+# ── Doctor checks ────────────────────────────────────────────────────────────
+
+
+def test_doctor_checks_structure():
+    """doctor_checks returns the expected keys for all four built-in checks."""
+    result = doctor_checks()
+    assert "checks" in result
+    assert "all_ok" in result
+    assert isinstance(result["checks"], list)
+    names = {c["name"] for c in result["checks"]}
+    assert "session.json" in names
+    assert "last run" in names
+    assert "eval pass rate" in names
+    assert "gate self-test" in names
+
+
+def test_doctor_checks_gate_self_test_custom(tmp_path):
+    """Gate self-test passes when given known-good cases."""
+    cases: list[tuple[str, bool]] = [
+        ("MRT Kajang delay due to a signal failure", True),
+        ("Kelana Jaya Line delay memang teruk", False),
+    ]
+    result = doctor_checks(gate_test_cases=cases)
+    gate_check = next(c for c in result["checks"] if c["name"] == "gate self-test")
+    assert gate_check["ok"] is True, gate_check["detail"]
+
+
+def test_doctor_checks_gate_self_test_wrong_expectation():
+    """Gate self-test fails gracefully when given wrong expectations."""
+    cases: list[tuple[str, bool]] = [
+        ("Kelana Jaya Line delay memang teruk", True),  # should be False → failure
+    ]
+    result = doctor_checks(gate_test_cases=cases)
+    gate_check = next(c for c in result["checks"] if c["name"] == "gate self-test")
+    assert gate_check["ok"] is False
+    assert "FAIL" in gate_check["detail"]
+
+
+def test_doctor_checks_eval_with_good_cases(tmp_path):
+    """Eval pass-rate check returns ok=True on a perfect mini eval set."""
+    cases_path = tmp_path / "mini.json"
+    import json as _json
+
+    cases = [
+        {"text": "MRT Kajang delay due to a signal failure", "expected": True},
+        {"text": "Kelana Jaya Line delay memang teruk", "expected": False},
+    ]
+    cases_path.write_text(_json.dumps(cases), encoding="utf-8")
+    result = doctor_checks(eval_cases_path=cases_path)
+    eval_check = next(c for c in result["checks"] if c["name"] == "eval pass rate")
+    assert eval_check["ok"] is True, eval_check["detail"]
+
+
+def test_doctor_checks_each_check_has_detail():
+    result = doctor_checks()
+    for c in result["checks"]:
+        assert "detail" in c and isinstance(c["detail"], str)
+        assert "ok" in c and isinstance(c["ok"], bool)
 
 
 # ── Regression cases from the prompt ──────────────────────────────────────────

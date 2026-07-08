@@ -47,8 +47,10 @@ if os.name == "nt":
 
 # Rich imports — graceful fallback if missing
 try:
+    from rich.align import Align
     from rich.console import Console
     from rich.panel import Panel
+    from rich.rule import Rule
     from rich.table import Table
     from rich.text import Text
     from rich.theme import Theme
@@ -70,6 +72,7 @@ try:
 except ImportError:
     RICH = False
     console = None  # type: ignore[assignment]
+    Align = Rule = None  # type: ignore[assignment,misc]
 
 from app.services.threads_terminal_service import (
     explain_rider_gate,
@@ -170,44 +173,86 @@ def _out(msg: str, style: str = "") -> None:
         _print_plain(msg)
 
 
+def _run_sparkline(runs: list[dict], width: int = 10) -> str:
+    """Return a Rich markup string: last `width` run outcomes as coloured blocks (newest right)."""
+    blocks = []
+    for r in runs[:width]:
+        st = str(r.get("status", "")).lower()
+        ok = st in {"completed", "healthy", "ok", "success"}
+        blocks.append("[green]█[/green]" if ok else "[red]▄[/red]")
+    pad = width - len(blocks)
+    return "[dim]" + "░" * pad + "[/dim]" + "".join(reversed(blocks))
+
+
 # ── Dashboard ─────────────────────────────────────────────────────────────────
 
 
-def _cmd_dashboard(prod: bool) -> int:
+def _cmd_dashboard(prod: bool, json_out: bool = False) -> int:
     db_path = fetch_prod_db() if prod else None
     snap = _svc()["dashboard_snapshot"](
         prod_health_url=PROD_HEALTH if prod else None,
         db_path=db_path,
     )
 
+    sess = snap["session"]
+    sess_ok = sess.get("available", False)
+    col = snap.get("collector") or {}
+    col_status = str(col.get("status") or "").lower()
+    col_ok = bool(col) and col_status in {"healthy", "completed", "ok", "success"} and not col.get("needs_attention")
+    streak = int(col.get("consecutive_empty_runs", 0) or 0)
+    runs = snap.get("runs") or []
+
+    if json_out:
+        print(json.dumps(snap, ensure_ascii=False, default=str, indent=2))
+        degraded = not sess_ok or col.get("needs_attention")
+        return 1 if degraded else 0
+
     if RICH:
-        # Session line (Rich markup — NOT Text objects, which lose styling in Panel strings)
-        sess = snap["session"]
-        sess_ok = sess.get("available", False)
-        sess_style = "ok" if sess_ok else "bad"
-        sess_line = (
-            f"  [{sess_style}]Session  {_status_icon(sess_ok)}[/{sess_style}]"
-            f"  [dim]updated={sess.get('updated_at') or '—'}  size={sess.get('size_bytes', 0)}B[/dim]"
+        label = "PROD" if prod else "LOCAL"
+
+        # ── Banner ────────────────────────────────────────────────────────────
+        console.rule(
+            f"[bold cyan]THREADS TERMINAL[/bold cyan]  [dim]v2 · TrafficMY · {label}[/dim]",
+            style="dim cyan",
         )
 
-        # Collector line — status may be "healthy" (source health) or "completed" (run row)
-        col = snap.get("collector") or {}
-        col_status = str(col.get("status") or "").lower()
-        col_ok = bool(col) and col_status in {"healthy", "completed", "ok", "success"} and not col.get("needs_attention")
-        col_style = "ok" if col_ok else ("warn" if col else "bad")
-        if col:
-            col_line = (
-                f"  [{col_style}]Collector  {_status_icon(col_ok)}  status={col.get('status')}[/{col_style}]"
-                f"  [dim]rows={col.get('row_count')}  empty_streak={col.get('consecutive_empty_runs', 0)}[/dim]"
-            )
-            if col.get("needs_attention"):
-                col_line += "  [warn]⚠ NEEDS ATTENTION[/warn]"
-        else:
-            col_line = "  [bad]Collector  ✗  no run data[/bad]"
+        # ── Status pills row ──────────────────────────────────────────────────
+        def _pill(name: str, ok: bool, note: str = "") -> Text:
+            t = Text()
+            t.append("● " if ok else "○ ", style="bold green" if ok else "bold red")
+            t.append(name, style="bold")
+            if note:
+                t.append(f"  {note}", style="dim")
+            return t
 
-        # Runs table
-        runs = snap.get("runs") or []
-        run_table = Table(title="Recent Runs", show_lines=False, expand=True, title_style="header")
+        streak_color = "green" if streak == 0 else ("yellow" if streak < 3 else "red")
+        streak_t = Text()
+        streak_t.append("● " if streak == 0 else "○ ", style=f"bold {streak_color}")
+        streak_t.append("STREAK ", style="bold")
+        streak_t.append(str(streak), style=f"bold {streak_color}")
+        if col.get("needs_attention"):
+            streak_t.append("  ⚠ NEEDS ATTENTION", style="bold yellow")
+
+        pills_grid = Table.grid(padding=(0, 4))
+        pills_grid.add_column()
+        pills_grid.add_column()
+        pills_grid.add_column()
+        pills_grid.add_row(
+            _pill("SESSION", sess_ok, f"updated={str(sess.get('updated_at') or '—')[:16]}"),
+            _pill("COLLECTOR", col_ok, col.get("status") or "—"),
+            streak_t,
+        )
+        console.print(Align.center(pills_grid))
+        console.print()
+
+        # ── Runs table with sparkline ─────────────────────────────────────────
+        spark = _run_sparkline(runs)
+        run_table = Table(
+            title=f"Recent Runs  {spark}",
+            show_lines=False,
+            expand=True,
+            title_style="header",
+        )
         run_table.add_column("Time", style="dim", max_width=20)
         run_table.add_column("Status", max_width=10)
         run_table.add_column("Rows", justify="right", max_width=6)
@@ -221,63 +266,65 @@ def _cmd_dashboard(prod: bool) -> int:
                 str(r.get("row_count", 0)),
                 f"{r.get('duration_seconds', 0):.1f}s",
             )
+        console.print(run_table)
 
-        # Accepted / suspicious samples
+        # ── Accepted / suspicious samples ─────────────────────────────────────
         acc = snap.get("accepted_sample") or []
         sus = snap.get("suspicious_sample") or []
 
-        acc_text = ""
-        for item in acc[:3]:
-            acc_text += f"  [ok]✓[/ok] {item.get('entity') or '—':20s}  {item.get('preview', '')[:90]}\n"
-        sus_text = ""
-        for item in sus[:3]:
-            sus_text += f"  [warn]⚠[/warn] {item.get('entity') or '—':20s}  {item.get('preview', '')[:90]}\n"
+        if acc:
+            acc_lines = "\n".join(
+                f"  [ok]✓[/ok] [entity]{item.get('entity') or '—':20}[/entity]"
+                f"  [dim]{item.get('preview', '')[:90]}[/dim]"
+                for item in acc[:3]
+            )
+            console.print(Panel(acc_lines, title="Last Accepted", border_style="green"))
+        if sus:
+            sus_lines = "\n".join(
+                f"  [warn]⚠[/warn] [entity]{item.get('entity') or '—':20}[/entity]"
+                f"  [dim]{item.get('preview', '')[:90]}[/dim]"
+                for item in sus[:3]
+            )
+            console.print(Panel(sus_lines, title="Suspicious Accepted", border_style="yellow"))
 
-        # Remote health
+        # ── Remote health ─────────────────────────────────────────────────────
         rh = snap.get("remote_health")
-        rh_text = ""
         if rh:
-            rh_text = f"  Prod: status={rh.get('status')}  threads_rows={rh.get('threads_rows_last_ingest')}"
+            rh_ok = not rh.get("error") and rh.get("status") not in {None, "error"}
+            rh_lines = [
+                f"  Prod: status={rh.get('status')}  threads_rows={rh.get('threads_rows_last_ingest')}"
+            ]
             for alert in rh.get("alerts") or []:
                 if "threads" in alert.lower():
-                    rh_text += f"\n  [warn]ALERT: {alert}[/warn]"
+                    rh_lines.append(f"  [warn]ALERT: {alert}[/warn]")
+            console.print(Panel(
+                "\n".join(rh_lines),
+                title="Remote Health",
+                border_style="cyan" if rh_ok else "red",
+            ))
 
-        label = "PROD" if prod else "LOCAL"
-        content = f"{sess_line}\n{col_line}"
-        if rh_text:
-            content += f"\n{rh_text}"
-        console.print(Panel(content, title=f"Threads Dashboard ({label})", border_style="cyan"))
-        console.print(run_table)
-        if acc_text:
-            console.print(Panel(acc_text.rstrip(), title="Last Accepted", border_style="green"))
-        if sus_text:
-            console.print(Panel(sus_text.rstrip(), title="Suspicious Accepted", border_style="yellow"))
     else:
         # Plain text fallback
-        _print_plain(f"=== Threads Dashboard ({'PROD' if prod else 'LOCAL'}) ===")
-        sess = snap["session"]
-        _print_plain(f"Session: {'OK' if sess.get('available') else 'MISSING'}  updated={sess.get('updated_at') or '—'}")
-        col = snap.get("collector") or {}
+        label = "PROD" if prod else "LOCAL"
+        _print_plain(f"=== THREADS TERMINAL v2 ({label}) ===")
+        _print_plain(f"SESSION  {'OK' if sess_ok else 'MISSING'}  updated={sess.get('updated_at') or '—'}")
         if col:
             flag = " NEEDS ATTENTION" if col.get("needs_attention") else ""
             _print_plain(
-                f"Collector: status={col.get('status')}  rows={col.get('row_count')}  "
-                f"empty_streak={col.get('consecutive_empty_runs', 0)}{flag}"
+                f"COLLECTOR  status={col.get('status')}  rows={col.get('row_count')}"
+                f"  streak={streak}{flag}"
             )
-        for r in (snap.get("runs") or [])[:5]:
+        for r in runs[:5]:
             _print_plain(
-                f"  {r.get('finished_at', '—')[:19]}  {r.get('status', '?'):7}  "
-                f"rows={r.get('row_count', 0):3}  {r.get('duration_seconds', 0):.1f}s"
+                f"  {str(r.get('finished_at') or '—')[:19]}  {r.get('status', '?'):7}"
+                f"  rows={r.get('row_count', 0):3}  {r.get('duration_seconds', 0):.1f}s"
             )
         for item in (snap.get("accepted_sample") or [])[:3]:
             _print_plain(f"  ✓ {item.get('entity') or '—'}  {item.get('preview', '')[:90]}")
         for item in (snap.get("suspicious_sample") or [])[:3]:
             _print_plain(f"  ⚠ {item.get('entity') or '—'}  {item.get('preview', '')[:90]}")
 
-    degraded = not (snap.get("session", {}).get("available", False))
-    col = snap.get("collector") or {}
-    if col.get("needs_attention"):
-        degraded = True
+    degraded = not sess_ok or col.get("needs_attention")
     return 1 if degraded else 0
 
 
@@ -428,11 +475,15 @@ def _cmd_health(prod: bool) -> int:
 # ── QA ────────────────────────────────────────────────────────────────────────
 
 
-def _cmd_qa(prod: bool) -> int:
+def _cmd_qa(prod: bool, json_out: bool = False) -> int:
     db_path = fetch_prod_db() if prod else None
     rows = recent_threads_complaints(limit=80, db_path=db_path)
     result = qa_threads_rows(rows)
     label = "production DB" if prod else "local DB"
+
+    if json_out:
+        print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
+        return 1 if result["rejected_count"] > 0 else 0
 
     if RICH:
         console.print(
@@ -476,7 +527,7 @@ def _cmd_qa(prod: bool) -> int:
 # ── Replay ────────────────────────────────────────────────────────────────────
 
 
-def _cmd_replay(text: str, verbose: bool = True) -> int:
+def _cmd_replay(text: str, verbose: bool = True, json_out: bool = False) -> int:
     if verbose:
         try:
             result = _svc()["explain_rider_gate_verbose"](text)
@@ -486,6 +537,10 @@ def _cmd_replay(text: str, verbose: bool = True) -> int:
         result = explain_rider_gate(text)
 
     accepted = result.get("accepted", False)
+
+    if json_out:
+        print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
+        return 0 if accepted else 1
 
     if RICH:
         title_style = "ok" if accepted else "bad"
@@ -723,7 +778,7 @@ TrafficMY Threads Terminal v2
   2  session         6  collect       10  case run
   3  runs            7  health        11  impact
   4  qa              8  rejects       12  prune --dry-run
- 13  export         14  guided
+ 13  export         14  guided        15  doctor
   q  quit
 """
 
@@ -777,6 +832,8 @@ def _interactive(prod: bool) -> None:
             _cmd_export(prod)
         elif choice in {"14", "guided"}:
             _cmd_guided(prod)
+        elif choice in {"15", "doctor"}:
+            _cmd_doctor()
         else:
             _out("Unknown command. Enter 1-14 or q.", style="dim")
 
@@ -822,6 +879,86 @@ def _cmd_guided(prod: bool) -> int:
     return 0
 
 
+# ── Watch ─────────────────────────────────────────────────────────────────────
+
+
+def _cmd_watch(interval: int, prod: bool) -> int:
+    """Auto-refresh dashboard every `interval` seconds until Ctrl+C."""
+    import time
+
+    if RICH:
+        console.print(
+            f"[dim]Watching every {interval}s — Ctrl+C to stop[/dim]"
+        )
+    else:
+        _print_plain(f"Watching every {interval}s — Ctrl+C to stop")
+
+    try:
+        while True:
+            if RICH:
+                console.clear()
+            _cmd_dashboard(prod)
+            if RICH:
+                console.rule(
+                    f"[dim]next refresh in {interval}s · Ctrl+C to stop[/dim]",
+                    style="dim",
+                )
+            else:
+                _print_plain(f"--- next in {interval}s ---")
+            time.sleep(interval)
+    except KeyboardInterrupt:
+        if RICH:
+            console.print("\n[dim]Watch stopped.[/dim]")
+        else:
+            _print_plain("Watch stopped.")
+    return 0
+
+
+# ── Doctor ────────────────────────────────────────────────────────────────────
+
+
+def _cmd_doctor(json_out: bool = False) -> int:
+    """One-shot health checklist: session, last run, eval pass rate, gate self-test."""
+    from app.services.threads_terminal_service import doctor_checks
+
+    result = doctor_checks()
+
+    if json_out:
+        print(json.dumps(result, ensure_ascii=False, default=str, indent=2))
+        return 0 if result["all_ok"] else 1
+
+    if RICH:
+        console.rule(
+            "[bold cyan]THREADS TERMINAL[/bold cyan]  [dim]— doctor[/dim]",
+            style="dim cyan",
+        )
+        lines = []
+        for c in result["checks"]:
+            ok = c["ok"]
+            icon = "[ok]✓[/ok]" if ok else "[bad]✗[/bad]"
+            lines.append(
+                f"  {icon}  [bold]{c['name']:<18}[/bold]  [dim]{c['detail']}[/dim]"
+            )
+        lines.append("")
+        if result["all_ok"]:
+            lines.append("  [ok]All checks passed.[/ok]")
+        else:
+            lines.append("  [bad]Some checks FAILED — investigate above.[/bad]")
+        border = "cyan" if result["all_ok"] else "red"
+        console.print(Panel("\n".join(lines), title="Health Checklist", border_style=border))
+    else:
+        _print_plain("=== Doctor health checklist ===")
+        for c in result["checks"]:
+            icon = "✓" if c["ok"] else "✗"
+            _print_plain(f"  {icon}  {c['name']:<18}  {c['detail']}")
+        _print_plain("")
+        _print_plain(
+            "All checks passed." if result["all_ok"] else "Some checks FAILED."
+        )
+
+    return 0 if result["all_ok"] else 1
+
+
 # ── Export report ─────────────────────────────────────────────────────────────
 
 
@@ -849,8 +986,10 @@ def main() -> None:
 
     dash_p = sub.add_parser("dashboard", help="One-screen ops dashboard")
     dash_p.add_argument("--prod", action="store_true")
+    dash_p.add_argument("--json", action="store_true", dest="json_out", help="Output JSON for piping")
     status_p = sub.add_parser("status", help="Alias for dashboard")
     status_p.add_argument("--prod", action="store_true")
+    status_p.add_argument("--json", action="store_true", dest="json_out", help="Output JSON for piping")
     sub.add_parser("session", help="Threads cookie session status")
     sub.add_parser("runs", help="Recent threads collector_runs")
     health_p = sub.add_parser("health", help="Collector + optional prod /api/health")
@@ -863,12 +1002,14 @@ def main() -> None:
 
     qa_p = sub.add_parser("qa", help="Re-run scraper gates on recent threads rows")
     qa_p.add_argument("--prod", action="store_true")
+    qa_p.add_argument("--json", action="store_true", dest="json_out", help="Output JSON for piping")
 
     rej_p = sub.add_parser("rejects", help="Histogram of reject reasons")
     rej_p.add_argument("--prod", action="store_true")
 
     replay_p = sub.add_parser("replay", help="Run gate pipeline on sample text")
     replay_p.add_argument("text", nargs="+", help="Post text to evaluate")
+    replay_p.add_argument("--json", action="store_true", dest="json_out", help="Output JSON for piping")
 
     collect_p = sub.add_parser("collect", help="Run live collect_threads_sample()")
     collect_p.add_argument("--write", action="store_true", help="Save JSON to output/")
@@ -895,14 +1036,29 @@ def main() -> None:
     export_p = sub.add_parser("export", help="Write JSON ops report to output/")
     export_p.add_argument("--prod", action="store_true")
 
+    watch_p = sub.add_parser(
+        "watch",
+        help="Auto-refresh dashboard every N seconds until Ctrl+C (default 30s)",
+    )
+    watch_p.add_argument("--interval", type=int, default=30, metavar="SECONDS")
+    watch_p.add_argument("--prod", action="store_true")
+
+    doctor_p = sub.add_parser(
+        "doctor",
+        help="One-shot health checklist: session, last run, eval pass rate, gate self-test",
+    )
+    doctor_p.add_argument("--json", action="store_true", dest="json_out", help="Output JSON")
+
     args = parser.parse_args()
     cmd = args.command or "dashboard"
     # Accept --prod on either the root parser or the subcommand.
     prod = bool(getattr(args, "prod", False))
     exit_code = 0
 
+    json_out = bool(getattr(args, "json_out", False))
+
     if cmd in {"dashboard", "status"}:
-        exit_code = _cmd_dashboard(prod)
+        exit_code = _cmd_dashboard(prod, json_out=json_out)
     elif cmd == "session":
         exit_code = _cmd_session()
     elif cmd == "runs":
@@ -910,11 +1066,11 @@ def main() -> None:
     elif cmd == "health":
         exit_code = _cmd_health(prod)
     elif cmd == "qa":
-        exit_code = _cmd_qa(prod)
+        exit_code = _cmd_qa(prod, json_out=json_out)
     elif cmd == "rejects":
         exit_code = _cmd_rejects(prod)
     elif cmd == "replay":
-        exit_code = _cmd_replay(" ".join(args.text))
+        exit_code = _cmd_replay(" ".join(args.text), json_out=json_out)
     elif cmd == "collect":
         exit_code = _cmd_collect(getattr(args, "write", False))
     elif cmd == "case":
@@ -939,6 +1095,10 @@ def main() -> None:
         exit_code = _cmd_prune(prod, getattr(args, "dry_run", False))
     elif cmd == "export":
         exit_code = _cmd_export(prod)
+    elif cmd == "watch":
+        exit_code = _cmd_watch(getattr(args, "interval", 30), prod)
+    elif cmd == "doctor":
+        exit_code = _cmd_doctor(json_out=json_out)
     elif cmd == "guided":
         exit_code = _cmd_guided(prod)
     elif cmd == "interactive":

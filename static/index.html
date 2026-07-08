@@ -18,9 +18,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Type system (Work Sans / IBM Plex Mono / Barlow Condensed) is imported inside static/css/stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css?v=28" />
-  <link rel="stylesheet" href="static/css/play.css?v=28" />
-  <link rel="stylesheet" href="static/css/stitch.css?v=28" />
+  <link rel="stylesheet" href="static/css/components.css?v=29" />
+  <link rel="stylesheet" href="static/css/play.css?v=29" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=29" />
 </head>
 <body class="tm-app play-app stitch-app">
 
@@ -238,6 +238,7 @@
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerKtm" data-layer="ktm" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">directions_railway</span><span>KTM</span></button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerInterchanges" data-layer="interchanges" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">hub</span><span>Hubs</span></button>
           <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerBuses" data-layer="buses" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">directions_bus</span><span>Bus</span></button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerGps" data-layer="gps" aria-pressed="false" title="Official GTFS-RT GPS — reference only, not incident truth"><span class="material-symbols-outlined" aria-hidden="true">sensors</span><span>GPS</span></button>
           <button class="tm-chip chip stitch-map-chip" type="button" id="mapTiltToggle" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">3d_rotation</span><span>3D</span></button>
         </div>
         <div class="stitch-map-stage">
@@ -414,6 +415,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js?v=28" defer></script>
+  <script src="static/js/app.js?v=29" defer></script>
 </body>
 </html>
