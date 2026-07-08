@@ -15,9 +15,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          # Needed so github-actions[bot] can push the refreshed report commit.
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -30,17 +27,28 @@ jobs:
       - name: Run snapshot
         run: python scripts/run_snapshot.py
         env:
-          # Keep CI snapshot offline-friendly: no live Threads scrape required.
           ADUANMY_AUTO_REFRESH_ENABLED: "false"
 
-      - name: Commit refreshed artifacts
+      - name: Upload snapshot artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: trafficmy-snapshot
+          path: data/reports/
+          if-no-files-found: warn
+          retention-days: 14
+
+      # main is branch-protected (required "test" check). Push reports to an
+      # unprotected ops branch instead so the scheduled job stops failing.
+      - name: Publish reports branch
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin chore/snapshot || true
+          git checkout -B chore/snapshot
           git add data/reports
           if git diff --cached --quiet; then
             echo "No snapshot changes to commit."
             exit 0
           fi
           git commit -m "chore: refresh trafficmy snapshot"
-          git push
+          git push -u origin chore/snapshot --force-with-lease
