@@ -30,7 +30,7 @@ jobs:
           ADUANMY_AUTO_REFRESH_ENABLED: "false"
 
       - name: Upload snapshot artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: trafficmy-snapshot
           path: data/reports/
