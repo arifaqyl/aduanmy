@@ -386,6 +386,23 @@ TRANSPORT_THREADS_TIME_CHROME_RE = re.compile(
     r"(?:^|\s)[a-z0-9_\.]{3,24}\s+\d{1,2}[hm]\b",
     re.I,
 )
+# Journalistic / operator-advisory third person — not a rider on the train now.
+TRANSPORT_NEWS_VOICE_RE = re.compile(
+    r"\b(?:commuters?\s+(?:can|may|are|were|have)\s+(?:expect|experience|advised|facing|been)|"
+    r"passengers?\s+(?:are|were|have\s+been)\s+(?:advised|facing|experiencing)|"
+    r"motorists?\s+(?:are|were)\s+advised|"
+    r"according\s+to\s+(?:rapid\s*kl|prasarana|ktmb?|myrapid|officials?)|"
+    r"authorities?\s+(?:said|say|have\s+said)|"
+    r"(?:service|train\s+service)\s+(?:has\s+been|was)\s+(?:disrupted|suspended|delayed)|"
+    r"commuters\s+can\s+expect|"
+    r"allow\s+(?:for\s+)?extra\s+time)\b",
+    re.I,
+)
+TRANSPORT_SCHEDULE_TRIVIA_RE = re.compile(
+    r"\b(?:operating\s+hours|waktu\s+operasi|first\s+train|last\s+train|"
+    r"jadual\s+(?:waktu|tren)|timetable\s+only|headway\s+is)\b",
+    re.I,
+)
 TRANSPORT_RIDER_WAITING_RE = re.compile(
     r"\b(?:kena\s+tunggu|tunggu\s+(?:lama|dekat|lagi|tren|bas|train|platform|stesen|station)|"
     r"menunggu\s+(?:tren|bas|train|dekat|platform|stesen|station)|"
@@ -951,6 +968,13 @@ def transport_non_live_opinion(text: str) -> bool:
     if any(term in low for term in TRANSPORT_PLANNING_OPINION_TERMS):
         return True
     if any(term in low for term in TRANSPORT_USELESS_OPINION_TERMS):
+        return True
+    # News/advisory voice without first-person rider evidence is not Live today.
+    if TRANSPORT_NEWS_VOICE_RE.search(low) and not _transport_direct_experience_hit(low):
+        return True
+    if TRANSPORT_SCHEDULE_TRIVIA_RE.search(low) and not (
+        _transport_actionable_impact_hit(low) or _transport_direct_experience_hit(low)
+    ):
         return True
     return False
 

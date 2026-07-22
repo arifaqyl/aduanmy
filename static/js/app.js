@@ -2,23 +2,24 @@
   const api = p => `${APP_BASE}${p.startsWith('/') ? p : '/' + p}`;
   const $ = id => document.getElementById(id);
   const staticUrl = p => `${APP_BASE}/static/${p.replace(/^\//, '')}`;
-  const STITCH_MASCOT = 'mascots/stitch-mascot.png';
-  const STITCH_MASCOT_WORRIED = 'mascots/stitch-mascot-worried.png';
-  const stitchMascot = (worried = false) => staticUrl(worried ? STITCH_MASCOT_WORRIED : STITCH_MASCOT);
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register(`${APP_BASE}/sw.js`, { scope: `${APP_BASE || ''}/` }).catch(() => {});
     });
   }
   ['logoImg', 'footerLogo'].forEach(id => { const el = $(id); if (el) el.src = staticUrl('logo.svg'); });
+  const brandLogo = document.querySelector('.stitch-brand-logo');
+  if (brandLogo) brandLogo.src = staticUrl('logo.svg');
   const favicon = document.querySelector('link[rel="icon"]');
-  if (favicon) favicon.href = staticUrl(STITCH_MASCOT);
+  if (favicon) favicon.href = staticUrl('favicon.svg');
   const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-  if (appleIcon) appleIcon.href = staticUrl(STITCH_MASCOT);
+  if (appleIcon) appleIcon.href = staticUrl('favicon.svg');
   const ogImage = document.querySelector('meta[property="og:image"]');
   if (ogImage) ogImage.content = staticUrl('og-image.png');
   const methodUrl = APP_BASE ? `${APP_BASE}/methodology` : '/methodology';
   ['methodLink', 'footerMethodLink'].forEach(id => { const el = $(id); if (el) el.href = methodUrl; });
+  const trustMethod = document.querySelector('#trustLine a');
+  if (trustMethod) trustMethod.href = methodUrl;
 
   const LINE_COLORS = {
     'kelana-jaya': '#e31837',
@@ -205,15 +206,6 @@
     } catch { /* ignore storage failures */ }
   }
 
-  function mascotForStatus(status, line) {
-    if (line?.in_service === false) {
-      return stitchMascot(false);
-    }
-    if (['minor', 'delay', 'disruption'].includes(status)) return stitchMascot(true);
-    if (status === 'normal') return stitchMascot(false);
-    return stitchMascot(false);
-  }
-
   function glanceModeChips(lines) {
     const nets = new Set();
     (lines || []).filter(l => ['minor', 'delay', 'disruption'].includes(l.status)).forEach(l => {
@@ -234,37 +226,55 @@
       if (line.service_status === 'before_service') return pickLang('Starts later', 'Mula nanti');
     }
     const mapEn = {
-      normal: 'All good',
-      unknown: 'Quiet',
+      normal: 'No signal',
+      unknown: 'No signal',
       minor: 'Minor',
       delay: 'Delayed',
       disruption: 'Disruption',
     };
     const mapMs = {
-      normal: 'OK',
-      unknown: 'Tenang',
+      normal: 'Tiada isyarat',
+      unknown: 'Tiada isyarat',
       minor: 'Kecil',
       delay: 'Lewat',
       disruption: 'Gangguan',
     };
     const map = uiLang === 'ms' ? mapMs : mapEn;
-    return map[line.status] || line.status_label || (uiLang === 'ms' ? 'Tenang' : 'Quiet');
+    return map[line.status] || line.status_label || (uiLang === 'ms' ? 'Tiada isyarat' : 'No signal');
   }
 
   function cardDetail(line) {
     if (line.in_service === false && line.service_label) return line.service_label;
-    if (line.commuter_note) return pickLang(line.commuter_note, line.commuter_note_ms);
-    if (line.route) return line.route;
-    if (line.region && line.operator) return `${line.region} · ${line.operator}`;
-    if (line.region) return line.region;
-    if (line.operator) return line.operator;
-    return line.mode === 'bus' ? 'Bus network' : 'Rail service';
+    const signal = line.signal || null;
+    if (signal && ['minor', 'delay', 'disruption'].includes(line.status)) {
+      const glance = pickLang(signal.glance, signal.glance_ms);
+      if (glance) return glance;
+      const parts = [
+        signal.location || '',
+        pickLang(signal.issue, signal.issue_ms) || '',
+        line.source_count ? `${line.source_count} src` : '',
+        pickLang(signal.when, signal.when_ms) || '',
+      ].filter(Boolean);
+      if (parts.length) return parts.join(' · ');
+    }
+    if (line.report_count > 0) {
+      const when = line.last_seen_at ? reportAgeLabel(line.last_seen_at) : '';
+      const n = line.report_count;
+      const base = n === 1
+        ? pickLang('1 report', '1 laporan')
+        : pickLang(`${n} reports`, `${n} laporan`);
+      return when ? `${base} · ${when}` : base;
+    }
+    if (['normal', 'unknown'].includes(line.status)) {
+      return pickLang('No current signal — not an all-clear', 'Tiada isyarat — bukan semua lancar');
+    }
+    return '';
   }
 
   function facilityChip(line) {
     if (!line.facility_alert) return '';
-    const label = pickLang('Lift / escalator issue', 'Lift / eskalator rosak');
-    return `<span class="play-facility-chip" title="${esc(label)}">♿</span>`;
+    const label = pickLang('Lift/escalator', 'Lift/eskalator');
+    return `<span class="play-facility-chip" title="${esc(label)}">${esc(label)}</span>`;
   }
 
   function statusFace(status) {
@@ -315,6 +325,21 @@
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
     return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  function isTodayMYT(iso) {
+    if (!iso) return false;
+    try {
+      const mytDate = (d) => new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kuala_Lumpur',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(d);
+      return mytDate(new Date(iso)) === mytDate(new Date());
+    } catch {
+      return false;
+    }
   }
 
   function mapLayerActiveForNetwork(network) {
@@ -396,7 +421,7 @@
     if (line.status === 'delay' || line.status === 'minor') {
       return { label: shortStatusLabel(line), cls: 'stitch-status--delay' };
     }
-    return { label: pickLang('Quiet', 'Senyap'), cls: 'stitch-status--quiet' };
+    return { label: shortStatusLabel(line), cls: 'stitch-status--nosignal' };
   }
 
   function renderMapFloatCard(lines) {
@@ -699,10 +724,7 @@
 
         el.setAttribute('aria-label', feature.properties?.headline || 'Rider report');
         el.innerHTML = `
-          <span class="stitch-map-pin-bubble">
-            <img src="${stitchMascot(severity !== 'minor')}" width="30" height="30" alt="" />
-            ${isCorroborated ? '<span class="pin-corroborated-badge" title="Official Corroboration">✔</span>' : ''}
-          </span>
+          <span class="stitch-map-pin-bubble" aria-hidden="true">${severity === 'disruption' ? '!' : severity === 'delay' ? 'D' : '·'}</span>
           <span class="stitch-map-pin-tail" aria-hidden="true"></span>
         `;
         el.addEventListener('click', (e) => {
@@ -1426,6 +1448,16 @@
 
   function saveFavorites() {
     localStorage.setItem(FAV_KEY, JSON.stringify([...favoriteLineIds]));
+    syncNotifyToggle();
+  }
+
+  function syncNotifyToggle() {
+    const btn = $('notifyToggle');
+    if (!btn) return;
+    const hasSaved = favoriteLineIds.size > 0;
+    btn.hidden = !hasSaved;
+    btn.classList.toggle('active', notifyEnabled && hasSaved);
+    btn.setAttribute('aria-pressed', notifyEnabled && hasSaved ? 'true' : 'false');
   }
 
   function toggleFavorite(lineId) {
@@ -1585,13 +1617,22 @@
   function lineMatchesPlace(line, needle) {
     const blob = [line.name, line.route, line.reason, line.region, line.operator, line.id.replace(/-/g, ' ')].join(' ').toLowerCase();
     if (blob.includes(needle)) return true;
-    const station = stationCatalog.find(s => s.label.toLowerCase() === needle || s.token === needle);
-    if (station && blob.includes(station.token)) return true;
+    const station = stationCatalog.find(s =>
+      (s.label || s.name || '').toLowerCase() === needle
+      || (s.token || '').toLowerCase() === needle
+    );
+    if (station) {
+      const ids = station.line_ids || [];
+      if (ids.includes(line.id)) return true;
+      const lineHints = (station.lines || []).map(x => String(x).toLowerCase());
+      if (lineHints.some(h => h && (blob.includes(h) || line.id.includes(h.replace(/\s+/g, '-'))))) return true;
+      if (station.label && blob.includes(String(station.label).toLowerCase())) return true;
+    }
     const reports = boardSnapshot?.recent_reports || boardData?.recent_reports || [];
     return reports.some(r => reportMatchesPlace(r, needle) && reportMatchesLine(r, line));
   }
 
-  function sortLines(lines) {
+  function sortLines  function sortLines(lines) {
     const copy = [...lines];
     if (activeSort === 'severity') {
       copy.sort((a, b) => {
@@ -1623,13 +1664,10 @@
   }
 
   function renderRouteLegend(lines) {
-    const active = lines.filter(l => ['minor', 'delay', 'disruption'].includes(l.status)).slice(0, 8);
     const el = $('routeLegend');
     if (!el) return;
-    if (!active.length) { el.innerHTML = ''; return; }
-    el.innerHTML = active.map(l =>
-      `<span class="legend-chip"><span class="legend-dot" style="background:${LINE_COLORS[l.id] || '#64748b'}"></span>${esc(l.name.split(' ')[0])}</span>`
-    ).join('');
+    el.hidden = true;
+    el.innerHTML = '';
   }
 
   function renderLineLegendGrid(lines) {
@@ -2195,10 +2233,11 @@
       const items = (await res.json()).items || [];
       if (!list) return;
       list.innerHTML = !items.length
-        ? '<div class="search-item" style="cursor:default;color:var(--text-dim)">No stations found</div>'
-        : items.map(item =>
-          `<button type="button" class="search-item" data-label="${esc(item.label)}">${esc(item.label)}${item.state ? `<small>${esc(item.state)}</small>` : ''}</button>`
-        ).join('');
+        ? `<div class="search-item" style="cursor:default;color:var(--text-dim)">${pickLang('No stations found', 'Tiada stesen')}</div>`
+        : items.map(item => {
+          const lines = (item.lines || []).slice(0, 3).join(' · ');
+          return `<button type="button" class="search-item" data-label="${esc(item.label || item.name)}"><span>${esc(item.label || item.name)}</span>${lines ? `<small>${esc(lines)}</small>` : ''}</button>`;
+        }).join('');
       list.classList.add('open');
     } catch { /* ignore */ }
   }
@@ -2242,7 +2281,8 @@
     if (tabId === 'travel') {
       updateStationOptions();
       if (!$('updatesGrid')?.children?.length) loadUpdates();
-      compareSavings();
+      if (!$('savingResult') || $('savingResult').hidden) compareSavings();
+      renderTrainSchedule();
     }
     history.replaceState(null, '', `#${tabId}`);
     saveUiState();
@@ -2258,35 +2298,33 @@
     if (!summary && !data.lines_tracked_count) {
       el.className = 'play-glance stitch-glance play-glance--ok';
       el.innerHTML = `
-        <div class="stitch-glance-mascot-wrap">
-          <img class="stitch-glance-mascot" src="${stitchMascot()}" width="64" height="64" alt="" />
-        </div>
         <div class="stitch-glance-copy">
           <strong>${pickLang('Loading', 'Memuatkan')}</strong>
-          <span>${pickLang('Checking your lines', 'Menyemak laluan')}</span>
+          <span>${pickLang('Checking lines · today MYT', 'Menyemak laluan · hari ini MYT')}</span>
         </div>`;
       return;
     }
     el.className = `play-glance stitch-glance play-glance--${ok ? 'ok' : 'alert'}`;
-    const mascot = stitchMascot(!ok);
     const title = ok
-      ? pickLang('Looking quiet', 'Nampak tenang')
-      : pickLang(`${active} line${active === 1 ? '' : 's'} need attention`, `${active} laluan perlu perhatian`);
+      ? pickLang('No active signals', 'Tiada isyarat aktif')
+      : pickLang(`${active} line${active === 1 ? '' : 's'} with reports`, `${active} laluan dengan laporan`);
     const sub = ok
-      ? pickLang('No recent delay signals', 'Tiada isyarat kelewatan terkini')
+      ? pickLang('Quiet ≠ all-clear · today MYT', 'Tenang ≠ lancar · hari ini MYT')
       : esc(summary);
     const chips = ok ? '' : glanceModeChips(lines);
-    const bubble = ok ? '' : `<div class="stitch-glance-bubble">${pickLang('Alamak!', 'Alamak!')}</div>`;
     el.innerHTML = `
-      <div class="stitch-glance-mascot-wrap">
-        <img class="stitch-glance-mascot" src="${mascot}" width="64" height="64" alt="" />
-        ${bubble}
-      </div>
       <div class="stitch-glance-copy">
         <strong>${title}</strong>
         <span>${sub}</span>
         ${chips ? `<div class="stitch-glance-chips">${chips}</div>` : ''}
       </div>`;
+    const trust = $('trustLine');
+    if (trust) {
+      trust.innerHTML = pickLang(
+        'Rider signals today · quiet ≠ all-clear · <a href="' + methodUrl + '">Method</a>',
+        'Isyarat penumpang hari ini · tenang ≠ lancar · <a href="' + methodUrl + '">Kaedah</a>'
+      );
+    }
   }
 
   function renderStatsBar(data, status) {
@@ -2429,20 +2467,11 @@
   }
 
   function updateSchematic() {
+    // Schematic stays off the primary Home path — line board is the scan surface.
     const wrap = $('schematicWrap');
     if (!wrap) return;
-    const show = (activeFilter === 'all' || activeFilter === 'rail' || activeFilter === 'lrt' || activeFilter === 'mrt' || activeFilter === 'ktm' || activeFilter === 'monorail') && !placeFilter;
-    wrap.hidden = !show;
-    if (show) {
-      wrap.removeAttribute('aria-hidden');
-      if (!schematicLoaded) {
-        initSchematic();
-      } else {
-        updateSchematicHighlights();
-      }
-    } else {
-      wrap.setAttribute('aria-hidden', 'true');
-    }
+    wrap.hidden = true;
+    wrap.setAttribute('aria-hidden', 'true');
   }
 
   function scrollToLineRow(lineId) {
@@ -2476,6 +2505,9 @@
     const pinLabel = pinned ? pickLang('Saved', 'Disimpan') : pickLang('Save', 'Simpan');
     const pill = stitchStatusPill(line);
     const shortName = line.name.replace(/ Line$/, '').replace(/^KTM /, 'KTM ');
+    const official = line.corroborated
+      ? `<span class="stitch-tag stitch-tag--official">${esc(pickLang('Official', 'Rasmi'))}</span>`
+      : '';
     return `
       <div class="line-row stitch-line-row${clickable ? '' : ' planned-row'}${pulseClass}${disruptionClass}" role="${clickable ? 'button' : 'group'}" tabindex="${clickable ? '0' : '-1'}"
         data-line-id="${esc(line.id)}" data-cluster="${esc(line.top_cluster_id || '')}" data-name="${esc(line.name)}"
@@ -2484,10 +2516,10 @@
         <div class="stitch-line-body">
           <div style="min-width:0;flex:1">
             <h4 class="stitch-line-name">
-              <button type="button" class="stitch-fav-btn fav-btn${pinned ? ' fav-on' : ''}" data-line-id="${esc(line.id)}" aria-label="${esc(pinLabel)}" title="${esc(pinLabel)}">${pinned ? '★' : '☆'}</button>
-              ${esc(shortName)}${facilityChip(line)}
+              <button type="button" class="stitch-fav-btn fav-btn${pinned ? ' fav-on' : ''}" data-line-id="${esc(line.id)}" aria-label="${esc(pinLabel)}" title="${esc(pinLabel)}">${pinned ? '★' : '+'}</button>
+              ${esc(shortName)}${facilityChip(line)}${official}
             </h4>
-            <p class="stitch-line-detail">${detail}</p>
+            <p class="stitch-line-detail">${detail || '&nbsp;'}</p>
           </div>
           <span class="stitch-status-pill ${pill.cls}">${esc(pill.label)}</span>
         </div>
@@ -2514,7 +2546,7 @@
       if (activeFilter === 'favorites') {
         hint = counts.favorites
           ? 'None of your pinned lines match the current search.'
-          : 'Pin lines with the Pin button on any row — they appear here for quick access.';
+          : 'Tap + on any line to save it here for a fast scan.';
         actions = counts.favorites
           ? '<button class="btn-retry" type="button" id="emptyResetFilters">Clear filters</button>'
           : '<button class="btn-retry" type="button" id="emptyResetFilters">Show all lines</button>';
@@ -2531,11 +2563,10 @@
       }
       $('lineBoard').innerHTML = `
         <div class="stitch-section-head" id="lineBoardHead">
-          <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
+          <h2 class="tm-live-today-title">Line status</h2>
           <span class="stitch-count-badge board-count">0</span>
         </div>
         <div class="empty">
-          <div class="empty-icon" aria-hidden="true">${ICON_SVG.tram}</div>
           No matching lines.<br>
           <span style="font-size:12px;color:var(--text-dim)">${hint}</span>
           <div class="empty-filter-actions">
@@ -2553,14 +2584,15 @@
       ? lines.filter(line => ['minor', 'delay', 'disruption'].includes(line.status) || favoriteLineIds.has(line.id))
       : lines;
     const quietLines = usePulseGrouping ? lines.filter(line => !priorityLines.includes(line)) : [];
-    const quietOpen = window.matchMedia('(min-width: 768px)').matches ? ' open' : '';
     $('lineBoard').innerHTML = `
       <div class="stitch-section-head" id="lineBoardHead">
-        <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
+        <h2 class="tm-live-today-title">Line status</h2>
         <span class="stitch-count-badge board-count">${lines.length}</span>
       </div>
-      ${priorityLines.length ? rowsHtml(priorityLines) : '<div class="quiet-empty"><strong>All quiet right now</strong><br><span style="font-size:13px">No active delays in your view</span></div>'}
-      ${quietLines.length ? `<details class="quiet-lines"${quietOpen}><summary><span>More lines</span><span>${quietLines.length}</span></summary>${rowsHtml(quietLines)}</details>` : ''}`;
+      ${priorityLines.length
+        ? rowsHtml(priorityLines)
+        : `<div class="quiet-empty"><strong>${pickLang('No active signals', 'Tiada isyarat aktif')}</strong><br><span style="font-size:13px">${pickLang('Quiet ≠ confirmed normal service', 'Tenang ≠ perkhidmatan disahkan normal')}</span></div>`}
+      ${quietLines.length ? `<details class="quiet-lines"><summary><span>${pickLang('Quiet lines', 'Laluan tenang')}</span><span>${quietLines.length}</span></summary>${rowsHtml(quietLines)}</details>` : ''}`;
   }
 
   function renderPlanned(services) {
@@ -2585,18 +2617,24 @@
 
   function renderOfficialStrip(reports) {
     const official = (reports || []).filter(r =>
-      r.corroborated_by_official || (r.source_roles || []).includes('official_grounding') || (r.sources || '').includes('official')
+      r.corroborated_by_official || r.official_match || (r.source_roles || []).includes('official_grounding') || (r.sources || '').includes('official')
     );
     const strip = $('officialStrip');
     if (!official.length) { strip.hidden = true; return; }
     strip.hidden = false;
-    $('officialFeed').innerHTML = official.slice(0, 4).map(r =>
-      `<div class="report" data-cluster="${esc(r.cluster_id)}" data-name="${esc(r.entity || 'Official')}">
-        <div class="report-top"><span class="report-entity">${esc(r.entity || '—')}</span><span>${esc(relTime(r.last_seen_at))}</span></div>
-        <div class="report-title">${esc(r.headline || r.entity || 'Structured incident signal')}</div>
-        <div class="report-body">${esc(r.summary || '')}</div>
-      </div>`
-    ).join('');
+    $('officialFeed').innerHTML = official.slice(0, 4).map(r => {
+      const match = r.official_match || {};
+      const title = match.title || r.headline || r.entity || 'Official corroboration';
+      const when = match.created_at || r.last_seen_at;
+      const link = match.url
+        ? `<a href="${esc(match.url)}" target="_blank" rel="noopener noreferrer">${esc(pickLang('Open notice', 'Buka notis'))}</a>`
+        : '';
+      return `<div class="report" data-cluster="${esc(r.cluster_id)}" data-name="${esc(r.entity || 'Official')}">
+        <div class="report-top"><span class="report-entity">${esc(r.entity || '—')}</span><span>${when ? esc(relTime(when)) : ''}</span></div>
+        <div class="report-title">${esc(title)}</div>
+        <div class="report-body">${link || esc(r.summary || '')}</div>
+      </div>`;
+    }).join('');
   }
 
   function liveRelevantReports(reports, lines) {
@@ -2604,12 +2642,20 @@
     const now = Date.now();
     const activeStatuses = ['minor', 'delay', 'disruption'];
     return (reports || []).filter(r => {
+      // Live today = MYT calendar day first; fall back to a short clock window.
+      if (r.last_seen_at && isTodayMYT(r.last_seen_at)) {
+        const lineId = r.line_id || guessLineIdFromReport(r);
+        const line = lineId ? byId[lineId] : null;
+        if (line?.in_service === false) return false;
+        return true;
+      }
       const ageMs = r.last_seen_at ? now - new Date(r.last_seen_at).getTime() : Infinity;
+      if (ageMs > 6 * 3600000) return false;
       const lineId = r.line_id || guessLineIdFromReport(r);
       const line = lineId ? byId[lineId] : null;
-      if (!line) return ageMs < 6 * 3600000;
-      if (activeStatuses.includes(line.status)) return true;
+      if (!line) return ageMs < 3 * 3600000;
       if (line.in_service === false) return false;
+      if (activeStatuses.includes(line.status)) return ageMs < 6 * 3600000;
       return ageMs < 2 * 3600000;
     });
   }
@@ -2666,9 +2712,8 @@
     }).join('');
     el.innerHTML = `
       <div class="tm-travel-card-head">
-        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
         <div>
-          <h2 id="scheduleTitle">Service hours <span class="stitch-sub-en">(Waktu perkhidmatan)</span></h2>
+          <h2 id="scheduleTitle">Service hours</h2>
           <p class="tm-travel-lead">${pickLang('First & last trains · Rapid KL rail', 'Kereta pertama & terakhir · Rapid KL')}</p>
         </div>
       </div>
@@ -2693,8 +2738,7 @@
           : pickLang('Quiet lines mean no recent crowd reports are captured. It is not an operator all-clear.', 'Laluan senyap bermakna tiada laporan penumpang diterima baru-baru ini. Ia bukan pengesahan rasmi perkhidmatan lancar.');
       $('reportFeed').innerHTML = `
         <div class="empty tm-live-empty${collectorState === 'broken' ? ' tm-live-empty--degraded' : ''}">
-          <div class="empty-icon" aria-hidden="true">${ICON_SVG.train}</div>
-          ${pickLang('No rider delays reported in the last 24 hours.', 'Tiada kelewatan dilaporkan dalam 24 jam terakhir.')}<br>
+          ${pickLang('No rider delays reported today.', 'Tiada kelewatan dilaporkan hari ini.')}<br>
           <span style="font-size:12px;color:var(--text-dim)">${subtext}</span><br>
           <button class="btn-retry" id="emptyReportRefresh" type="button" style="margin-top:14px">${pickLang('Check latest', 'Semak semula')}</button>
         </div>`;
@@ -2708,7 +2752,7 @@
       const age = r.report_when || reportAgeLabel(r.last_seen_at);
       const src = reportSourceTag(r);
       const riding = ridingNowFromReport(r);
-      const facility = r.facility_alert ? `<span class="stitch-tag stitch-tag--src" title="${esc(pickLang('Facility', 'Kemudahan'))}">♿</span>` : '';
+      const facility = r.facility_alert ? `<span class="stitch-tag stitch-tag--src">${esc(pickLang('Facility', 'Kemudahan'))}</span>` : '';
       const tags = [
         riding ? `<span class="stitch-tag stitch-tag--riding">${esc(pickLang('Riding now', 'Sedang menaiki'))}</span>` : '',
         `<span class="stitch-tag ${src.cls}">${esc(src.label)}</span>`,
@@ -2733,7 +2777,7 @@
             ${placeToken}
             ${issueToken}
           </div>
-          ${quote ? `<span class="report-card-detail">“${esc(quote)}”</span>` : ''}
+          ${quote ? `<span class="report-card-detail">${esc(quote)}</span>` : ''}
         </div>
         <div class="report-card-foot" title="${esc(fmtMYT(r.last_seen_at))} MYT">${esc(foot)}</div>
       </div>`;
@@ -2788,19 +2832,28 @@
   }
 
   function updateLiveStatus(status) {
-    const latest = status.freshness?.latest_checked_at || status.freshness?.latest_inserted_at;
-    const stale = status.freshness?.is_stale;
+    const f = status.freshness || {};
+    const checked = f.latest_checked_at || f.latest_inserted_at;
+    const rider = f.latest_public_signal_at || f.latest_created_at;
+    const official = f.latest_official_signal_at;
+    const stale = !!f.is_stale;
     const dot = $('liveDot');
-    dot.classList.toggle('stale', !!stale);
-    const label = stale ? 'Data may be old' : 'Updated';
-    const timeStr = latest ? relTime(latest) : '';
-    $('liveMeta').textContent = timeStr ? `${label} ${timeStr} ago` : label;
+    if (dot) dot.classList.toggle('stale', stale);
+    const parts = [];
+    if (checked) parts.push(`${pickLang('Checked', 'Disemak')} ${relTime(checked)}`);
+    if (rider) parts.push(`${pickLang('rider', 'penumpang')} ${relTime(rider)}`);
+    else parts.push(pickLang('no rider signal yet', 'tiada isyarat penumpang'));
+    if (official) parts.push(`${pickLang('official', 'rasmi')} ${relTime(official)}`);
+    if (stale) parts.unshift(pickLang('Stale', 'Lama'));
+    $('liveMeta').textContent = parts.join(' · ') || pickLang('Checking sources', 'Menyemak sumber');
     const banner = $('staleBanner');
     if (banner) {
-      banner.classList.toggle('show', !!stale);
+      banner.classList.toggle('show', stale);
       const detail = $('staleBannerDetail');
-      if (detail && timeStr) {
-        detail.textContent = ` — last successful collection check ${timeStr} MYT.`;
+      if (detail) {
+        detail.textContent = checked
+          ? ` — last check ${relTime(checked)}; latest rider ${rider ? relTime(rider) : 'none'}.`
+          : ' — no recent collection check.';
       }
     }
   }
@@ -2868,7 +2921,7 @@
         const refData = await refRes.json();
         linesReferenceById = Object.fromEntries((refData.lines || []).map(line => [line.id, line]));
         renderLineLegendGrid(refData.lines || []);
-        renderTrainSchedule();
+        if (document.getElementById('tabTravel')?.classList.contains('active')) renderTrainSchedule();
       }
       boardSnapshot = board;
       boardData = board;
@@ -2945,13 +2998,21 @@
       const items = d.items || [];
       const incident = d.incident || {};
       $('panelTitle').textContent = incident.headline || label;
+      const match = incident.official_match;
+      const officialHtml = match
+        ? `<div class="guide-section"><h3>${esc(pickLang('Official corroboration', 'Pengesahan rasmi'))}</h3>
+            <p><strong>${esc(match.title || 'Official notice')}</strong></p>
+            <p class="step-copy">${match.created_at ? esc(relTime(match.created_at)) : ''} · ${esc(match.source_platform || 'official')}${match.url ? ` · <a href="${esc(match.url)}" target="_blank" rel="noopener noreferrer">${esc(pickLang('Open notice', 'Buka notis'))}</a>` : ''}</p>
+          </div>`
+        : '';
       $('panelBody').innerHTML = `
-        <div class="guide-section"><h3>Operational summary</h3><p>${esc(incident.summary || 'TrafficMY is monitoring this signal.')}</p></div>
-        <div class="guide-section"><h3>Confidence</h3><p>${esc((incident.confidence_band || 'early').replace(/^./, c => c.toUpperCase()))} · ${Number(incident.volume || items.length)} source signal${Number(incident.volume || items.length) === 1 ? '' : 's'} · Last seen ${esc(relTime(incident.last_seen_at))}</p></div>
-        <div class="guide-section"><h3>Source evidence</h3>
+        <div class="guide-section"><h3>${esc(pickLang('Summary', 'Ringkasan'))}</h3><p>${esc(incident.summary || 'TrafficMY is monitoring this signal.')}</p></div>
+        ${officialHtml}
+        <div class="guide-section"><h3>${esc(pickLang('Confidence', 'Keyakinan'))}</h3><p>${esc((incident.confidence_band || 'early').replace(/^./, c => c.toUpperCase()))} · ${Number(incident.volume || items.length)} source signal${Number(incident.volume || items.length) === 1 ? '' : 's'} · Last seen ${esc(relTime(incident.last_seen_at))}</p></div>
+        <div class="guide-section"><h3>${esc(pickLang('Source evidence', 'Bukti sumber'))}</h3>
           ${items.length ? items.map(ev => `<div class="evidence-source"><span><strong>${esc((ev.source_platform || 'public').replace('_', ' '))}</strong><br><small>${esc(fmtMYT(ev.created_at))} MYT</small></span>${ev.url ? `<a href="${esc(ev.url)}" target="_blank" rel="noopener noreferrer">Open source</a>` : ''}</div>`).join('') : '<p>No public source link is available.</p>'}
         </div>
-        <p class="map-layer-note">TrafficMY does not republish rider wording or usernames. Source links are provided for audit.</p>`;
+        <p class="map-layer-note">TrafficMY does not republish rider wording or usernames. Source links are for audit.</p>`;
     } catch {
       $('panelBody').innerHTML = '<div class="error-state"><strong>Failed to load</strong><p>Try again.</p></div>';
     }
@@ -2962,24 +3023,27 @@
     isRefreshing = true;
     const btn = $('refreshBtn');
     const fab = $('fabRefresh');
-    btn.disabled = true;
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('loading');
+      btn.textContent = pickLang('Checking…', 'Menyemak…');
+    }
     if (fab) { fab.disabled = true; fab.classList.add('loading'); }
-    btn.classList.add('loading');
-    btn.querySelector('.btn-label').textContent = 'Checking…';
     try {
       await loadAll();
-      showToast('Latest server data loaded');
+      showToast(pickLang('Latest data loaded', 'Data terkini dimuatkan'));
     } catch {
-      $('liveMeta').textContent = 'Check failed';
-      $('liveDot').classList.add('stale');
-      showToast('Could not load latest data');
+      if ($('liveMeta')) $('liveMeta').textContent = pickLang('Check failed', 'Semakan gagal');
+      $('liveDot')?.classList.add('stale');
+      showToast(pickLang('Could not load latest data', 'Tidak dapat muat data'));
     } finally {
       isRefreshing = false;
-      btn.disabled = false;
-      btn.classList.remove('loading');
-      btn.querySelector('.btn-label').textContent = 'Check latest';
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btn.textContent = pickLang('Refresh', 'Muat semula');
+      }
       if (fab) { fab.disabled = false; fab.classList.remove('loading'); }
-      btn.querySelector('.btn-label').textContent = 'Refresh';
     }
   }
 
@@ -3021,7 +3085,12 @@
     const farePill = fare
       ? `<div class="stat-pill">~RM<strong>${esc(fare.estimate_typical)}</strong> (${esc(fare.estimate_low)}–${esc(fare.estimate_high)})</div>`
       : '';
+    const routeAlerts = lineStatusOnRoute(data.line_ids_on_route);
+    const alertBanner = routeAlerts.length
+      ? `<div class="journey-alert journey-alert--top">${esc(pickLang('Crowd signals on this route', 'Isyarat penumpang pada laluan ini'))}: ${routeAlerts.map(l => `<strong>${esc(l.name)}</strong> (${esc(shortStatusLabel(l))})`).join(' · ')}</div>`
+      : '';
     $('journeyResult').innerHTML = `
+      ${alertBanner}
       <div class="journey-summary">
         <div class="stat-pill"><strong>${esc(data.total_minutes)}</strong> min estimated</div>
         <div class="stat-pill"><strong>${esc(data.transfers)}</strong> changes</div>
@@ -3172,6 +3241,7 @@
     if (!chip) return;
     scrollToLineRow(chip.dataset.lineId);
   });
+  $('refreshBtn')?.addEventListener('click', triggerRefresh);
   $('fabRefresh')?.addEventListener('click', triggerRefresh);
   $('journeyForm').addEventListener('submit', planJourney);
   $('useLocation').addEventListener('click', useCurrentLocation);
@@ -3249,19 +3319,21 @@
     $('contrastToggle').setAttribute('aria-pressed', 'true');
   }
 
-  $('notifyToggle').addEventListener('click', async () => {
+  $('notifyToggle')?.addEventListener('click', async () => {
+    if (!favoriteLineIds.size) {
+      showToast(pickLang('Save a line with + first', 'Simpan laluan dengan + dulu'));
+      return;
+    }
     if (!('Notification' in window)) { showToast('Notifications not supported'); return; }
     if (Notification.permission === 'default') await Notification.requestPermission();
     notifyEnabled = Notification.permission === 'granted';
     localStorage.setItem('trafficmy:notify', notifyEnabled ? '1' : '0');
-    $('notifyToggle').classList.toggle('active', notifyEnabled);
-    $('notifyToggle').setAttribute('aria-pressed', notifyEnabled);
-    showToast(notifyEnabled ? 'Watching saved lines while this tab is open' : 'Tab watch off');
+    syncNotifyToggle();
+    showToast(notifyEnabled
+      ? pickLang('Watching saved lines while this tab is open', 'Memantau laluan disimpan selagi tab ini dibuka')
+      : pickLang('Tab watch off', 'Pantauan tab ditutup'));
   });
-  if (notifyEnabled) {
-    $('notifyToggle').classList.add('active');
-    $('notifyToggle').setAttribute('aria-pressed', 'true');
-  }
+  syncNotifyToggle();
 
   $('schematicWrap')?.addEventListener('click', e => {
     const hit = e.target.closest('[data-line-id]');
@@ -3269,15 +3341,49 @@
     scrollToLineRow(hit.dataset.lineId);
   });
 
-  $('mapSearchForm')?.addEventListener('submit', e => {
+  $('mapSearchForm')?.addEventListener('submit', async e => {
     e.preventDefault();
     const dest = $('mapSearchInput')?.value?.trim();
-    switchTab('travel');
-    if (dest) {
+    if (!dest) return;
+    try {
+      const res = await fetchWithTimeout(api(`/api/trafficmy/map/station?name=${encodeURIComponent(dest)}`), 12000);
+      if (!res.ok) throw new Error('station lookup failed');
+      const detail = await res.json();
+      if (!detail?.name) throw new Error('not found');
+      await ensureMap();
+      if (mapInstance && detail.lat && detail.lon) {
+        mapInstance.flyTo({ center: [detail.lon, detail.lat], zoom: Math.max(mapInstance.getZoom(), 13), essential: true });
+      }
+      const lines = (detail.lines || []).map(l =>
+        `<button type="button" class="legend-chip" data-line-id="${esc(l.id)}" style="border-color:${esc(l.color || '#64748b')}"><span class="legend-dot" style="background:${esc(l.color || '#64748b')}"></span>${esc(l.name)} · ${esc(l.status_label || l.status)}</button>`
+      ).join('') || `<p class="step-copy">${esc(pickLang('No mapped lines for this station', 'Tiada laluan dipetakan'))}</p>`;
+      const nearest = detail.nearest_report;
+      const reportHtml = nearest
+        ? `<div class="guide-section"><h3>${esc(pickLang('Nearest report', 'Laporan terdekat'))}</h3><p><strong>${esc(nearest.headline || nearest.entity || '')}</strong><br>${esc(nearest.summary || '')}</p>${nearest.cluster_id ? `<button type="button" class="tool-button tm-primary-btn" id="stationOpenReport" data-cluster="${esc(nearest.cluster_id)}">${esc(pickLang('Open evidence', 'Buka bukti'))}</button>` : ''}</div>`
+        : `<p class="step-copy">${esc(pickLang('No rider report near this station today', 'Tiada laporan penumpang dekat stesen hari ini'))}</p>`;
+      $('panelTitle').textContent = detail.name;
+      $('panelSub').innerHTML = '';
+      $('panelBody').innerHTML = `<div class="guide-section"><h3>${esc(pickLang('Serving lines', 'Laluan'))}</h3><div class="ix-chips">${lines}</div></div>${reportHtml}<button type="button" class="tool-button" id="stationPlanFrom" style="margin-top:12px">${esc(pickLang('Plan from here', 'Rancang dari sini'))}</button>`;
+      showPanel();
+      $('stationOpenReport')?.addEventListener('click', ev => openPanel(ev.currentTarget.dataset.cluster, detail.name));
+      $('stationPlanFrom')?.addEventListener('click', () => {
+        closePanel();
+        switchTab('travel');
+        $('journeyFrom').value = detail.name;
+        $('journeyTo')?.focus();
+      });
+      $('panelBody')?.querySelectorAll('[data-line-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          closePanel();
+          switchTab('status');
+          scrollToLineRow(btn.dataset.lineId);
+        });
+      });
+    } catch {
+      switchTab('travel');
       $('journeyTo').value = dest;
       $('journeyTo').focus();
-    } else {
-      $('journeyFrom')?.focus();
+      showToast(pickLang('Station not on map — opened planner', 'Stesen tiada pada peta — buka perancang'));
     }
   });
 
@@ -3459,7 +3565,6 @@
   restoreUiState();
   syncMapLayersFromHomeFilter();
   syncMapLayerUi();
-  initSchematic();
   setUiLang(uiLang);
   $('sortSelect').value = activeSort;
   syncSearchInputs(placeFilter);
@@ -3472,7 +3577,4 @@
     })
     .finally(() => { updateIntervalMeta(); bindRefreshInfoButtons(); });
   loadAll().then(() => initFromHash()).catch(() => initFromHash());
-  updateStationOptions();
-  loadUpdates();
-  compareSavings();
 

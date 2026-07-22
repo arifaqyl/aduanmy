@@ -153,5 +153,20 @@
     "text": "LRT buat hal harini. Train duk jerking after KLCC station. Sampai Masjid Jamek stop lama, pintu tak buka. Manusia dah macam semut dekat platform.",
     "expected": true,
     "note": "today, concrete symptoms"
+  },
+  {
+    "text": "Commuters can expect delays on the Kelana Jaya Line this evening after a technical issue, authorities said.",
+    "expected": false,
+    "note": "news advisory voice, not rider on train"
+  },
+  {
+    "text": "Passengers are advised to allow extra time on MRT Kajang Line today.",
+    "expected": false,
+    "note": "operator-style advisory, not live rider report"
+  },
+  {
+    "text": "LRT Ampang Line operating hours 6:00am to midnight, first train from Sentul Timur.",
+    "expected": false,
+    "note": "schedule trivia, not an incident"
   }
 ]

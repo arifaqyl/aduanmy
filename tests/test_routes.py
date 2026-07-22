@@ -3,6 +3,11 @@ from starlette.testclient import TestClient
 from app.main import create_app
 from app.db.session import reset_complaints, upsert_complaints
 from app.schemas.complaint import ComplaintSchema
+from datetime import UTC, datetime, timedelta
+
+def _ago_iso(days: int, hours: int = 0) -> str:
+    return (datetime.now(UTC) - timedelta(days=days, hours=hours)).isoformat().replace("+00:00", "Z")
+
 
 
 def test_root_serves_frontend_html():
@@ -79,7 +84,7 @@ def test_trafficmy_overview_route_accepts_include_stale_flag():
                 post_id="recent",
                 url="https://example.com/recent",
                 author_handle="u1",
-                created_at="2026-06-21T04:18:43Z",
+                created_at=_ago_iso(1),
                 raw_text="MRT fire alarm at Maluri",
                 normalized_text="mrt fire alarm at maluri",
                 detected_language_mix="en",
@@ -95,7 +100,7 @@ def test_trafficmy_overview_route_accepts_include_stale_flag():
                 post_id="stale",
                 url="https://example.com/stale",
                 author_handle="askrapidkl",
-                created_at="2026-05-12T11:50:51Z",
+                created_at=_ago_iso(40),
                 raw_text="Kelana Jaya Line delay",
                 normalized_text="kelana jaya line delay",
                 detected_language_mix="en",
@@ -241,8 +246,9 @@ def test_trafficmy_stations_route():
     response = client.get("/api/trafficmy/stations?q=maluri&limit=5")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["source"] == "locations.yaml"
-    assert any(item["label"] == "Maluri" for item in payload["items"])
+    assert payload["source"] in {"gtfs", "locations.yaml"}
+    assert payload["items"]
+    assert any("maluri" in (item.get("label") or "").lower() for item in payload["items"])
 
 
 def test_trafficmy_map_stations_route(monkeypatch):
@@ -319,7 +325,7 @@ def test_trafficmy_status_prefers_signal_age_over_insert_time_for_staleness():
                 post_id="old-x",
                 url="https://example.com/old-x",
                 author_handle="askrapidkl",
-                created_at="2026-05-12T11:50:51Z",
+                created_at=_ago_iso(40),
                 raw_text="older but valid signal",
                 normalized_text="older but valid signal",
                 detected_language_mix="en",
@@ -349,9 +355,9 @@ def test_trafficmy_incident_detail_route_returns_product_shaped_detail():
                 post_id="x1",
                 url="https://example.com/x1",
                 author_handle="askrapidkl",
-                created_at="2026-06-22T00:00:00Z",
-                raw_text="LRT incident",
-                normalized_text="lrt incident kelana jaya line",
+                created_at=_ago_iso(1),
+                raw_text="LRT Kelana Jaya Line incident — train stuck at station now",
+                normalized_text="lrt kelana jaya line incident train stuck at station now",
                 detected_language_mix="en",
                 category="transport",
                 entity="LRT",
@@ -384,7 +390,7 @@ def test_trafficmy_incident_detail_route_accepts_slash_in_cluster_id():
                 post_id="t1",
                 url="https://example.com/t1",
                 author_handle="thestaronline",
-                created_at="2026-06-22T00:00:00Z",
+                created_at=_ago_iso(1),
                 raw_text="Ampang and Sri Petaling line disruption at Chan Sow Lin",
                 normalized_text="ampang sri petaling line disruption at chan sow lin",
                 detected_language_mix="en",
@@ -413,9 +419,9 @@ def test_trafficmy_overview_route_includes_counted_entities_and_locations():
                 post_id="x1",
                 url="https://example.com/x1",
                 author_handle="askrapidkl",
-                created_at="2026-06-22T00:00:00Z",
-                raw_text="LRT incident",
-                normalized_text="lrt incident kelana jaya line",
+                created_at=_ago_iso(1),
+                raw_text="LRT Kelana Jaya Line incident — train stuck at station now",
+                normalized_text="lrt kelana jaya line incident train stuck at station now",
                 detected_language_mix="en",
                 category="transport",
                 entity="LRT",

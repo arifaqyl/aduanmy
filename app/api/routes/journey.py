@@ -15,7 +15,9 @@ def trafficmy_stations(
     q: str = Query(default="", max_length=80),
     limit: int = Query(default=20, ge=1, le=50),
 ) -> dict:
-    return {"items": list_stations(q=q, limit=limit), "source": "locations.yaml"}
+    items = list_stations(q=q, limit=limit)
+    source = "gtfs" if items and items[0].get("source") == "gtfs" else "locations.yaml"
+    return {"items": items, "source": source}
 
 
 @router.get("/trafficmy/journey/stations")

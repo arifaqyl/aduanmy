@@ -15,6 +15,7 @@ Live: [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)
 - [x] MYT calendar-day freshness model and end-of-service line states
 - [x] MapLibre map, journey planner, pass calculator, installable PWA
 - [x] Stitch Play UI (mascots, glance card, bottom nav, travel banner)
+- [x] Anti-slop board UI: dark utilitarian status board, rail-mark logo, no mascots/Material Symbols/Inter
 - [x] Docker production deploy with scheduler, healthchecks, watchdog
 - [x] LRT3 (Shah Alam Line) live on the map from official GTFS shapes
 - [x] Threads collector health: time-budgeted runs, empty-run diagnostics, consecutive-failure alerting

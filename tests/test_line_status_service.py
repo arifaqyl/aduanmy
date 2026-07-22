@@ -89,6 +89,11 @@ def test_line_status_board_corroborated_when_official_matches_line():
     kelana = next(line for line in board["lines"] if line["id"] == "kelana-jaya")
     assert kelana["corroborated"] is True
     assert kelana["report_count"] >= 1
+    assert kelana["signal"]
+    assert kelana["signal"].get("location") == "Bangsar"
+    assert kelana["signal"].get("issue")
+    assert kelana["official_match"]
+    assert "myrapid.com.my" in (kelana["official_match"].get("url") or "")
 
 
 def test_line_status_board_expires_yesterday_myt_reports():

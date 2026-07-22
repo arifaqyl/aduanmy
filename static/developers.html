@@ -5,20 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Developers · TrafficMY Signals API</title>
   <meta name="description" content="Live Malaysia transit rider signals API — today MYT, not ridership stats." />
-  <meta name="theme-color" content="#0f766e" />
-  <link rel="icon" href="static/mascots/stitch-mascot.png" type="image/png" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <meta name="theme-color" content="#111318" />
+  <link rel="icon" href="static/favicon.svg" type="image/svg+xml" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Barlow+Condensed:wght@700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="static/css/components.css" />
   <style>
     :root {
-      --bg: #0b1220;
-      --card: #141f33;
-      --text: #e8eef7;
-      --muted: #94a3b8;
-      --accent: #2dd4bf;
-      --border: #243047;
+      --bg: #111318;
+      --card: #181c22;
+      --text: #ece8e1;
+      --muted: #9a9590;
+      --accent: #c2410c;
+      --border: #2a2f36;
       --mono: "IBM Plex Mono", ui-monospace, monospace;
-      --sans: "Nunito Sans", system-ui, sans-serif;
+      --sans: "IBM Plex Sans", sans-serif;
     }
     * { box-sizing: border-box; }
     body { margin: 0; font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.55; }
@@ -30,14 +30,14 @@
     h1 { font-size: clamp(28px, 6vw, 38px); line-height: 1.15; margin: 8px 0 12px; }
     .lead { color: var(--muted); font-size: 16px; max-width: 56ch; }
     .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-    .pill { font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); }
+    .pill { font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 4px; background: var(--card); border: 1px solid var(--border); }
     h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); margin: 32px 0 10px; }
     p, li { color: var(--muted); font-size: 15px; }
     ul { padding-left: 18px; }
     pre {
       background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 4px;
       padding: 14px 16px;
       overflow-x: auto;
       font-family: var(--mono);
@@ -62,7 +62,7 @@
       color: #042f2e;
       font-weight: 900;
       padding: 12px 18px;
-      border-radius: 12px;
+      border-radius: 4px;
       margin-right: 10px;
     }
     #livePreview { margin-top: 12px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-word; max-height: 280px; overflow: auto; }

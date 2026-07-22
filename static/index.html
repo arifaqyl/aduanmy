@@ -5,40 +5,37 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TrafficMY · Live Malaysia Transit Signals</title>
   <meta name="description" content="Live rider delay signals across Malaysian LRT, MRT, KTM and monorail — today MYT. Not ridership stats." />
-  <meta name="theme-color" content="#171c1a" />
+  <meta name="theme-color" content="#111318" />
   <meta property="og:title" content="TrafficMY · Live Malaysia Transit Signals" />
   <meta property="og:description" content="What riders report on Malaysia transit today — delays, crowding, disruptions. Not passenger count charts." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="static/og-image.png" />
   <meta property="og:image:alt" content="TrafficMY" />
-  <link rel="icon" href="static/mascots/stitch-mascot.png" type="image/png" />
-  <link rel="apple-touch-icon" href="static/mascots/stitch-mascot.png" />
+  <link rel="icon" href="static/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="static/favicon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Type system (Work Sans / IBM Plex Mono / Barlow Condensed) is imported inside static/css/stitch.css -->
+  <!-- Type: IBM Plex Sans + Mono, Barlow Condensed brand — imported in stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css?v=29" />
-  <link rel="stylesheet" href="static/css/play.css?v=29" />
-  <link rel="stylesheet" href="static/css/stitch.css?v=29" />
+  <link rel="stylesheet" href="static/css/components.css?v=32" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=32" />
 </head>
 <body class="tm-app play-app stitch-app">
 
   <header class="tm-header stitch-header">
     <div class="stitch-header-inner">
       <a class="stitch-brand" href="#" id="brandLink" aria-label="TrafficMY home">
-        <img class="stitch-brand-mascot" src="static/mascots/stitch-mascot.png" width="32" height="32" alt="" />
-        <span class="stitch-brand-text">TrafficMY</span>
+        <img class="stitch-brand-logo" src="static/logo.svg" width="140" height="32" alt="TrafficMY" />
       </a>
       <div class="stitch-header-meta">
         <span class="tm-live-dot stitch-live-dot" id="liveDot" aria-hidden="true"></span>
         <span class="tm-live-meta" id="liveMeta" aria-live="polite">Checking sources</span>
       </div>
-      <button class="stitch-icon-btn status-info-btn" type="button" aria-label="What is Pulse?" title="Rider-reported signals — not an operator all-clear">?</button>
+      <button class="stitch-icon-btn status-info-btn" type="button" aria-label="What is Status?" title="Rider-reported signals — not an operator all-clear">?</button>
       <button class="stitch-icon-btn" type="button" id="langToggle" aria-pressed="false" title="Bahasa Malaysia / English">EN</button>
-      <button class="stitch-refresh-btn" id="refreshBtn" type="button" disabled aria-label="Refresh">
-        <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
-      </button>
+      <button class="stitch-icon-btn" type="button" id="notifyToggle" aria-pressed="false" title="Watch saved lines while this tab is open" hidden>◎</button>
+      <button class="stitch-refresh-btn" id="refreshBtn" type="button" disabled aria-label="Refresh">Refresh</button>
     </div>
     <div class="tm-header-sub" hidden aria-hidden="true">
       <div class="tm-refresh-meta refresh-meta" id="intervalMeta"></div>
@@ -51,7 +48,6 @@
       <a class="tm-text-btn" href="#" id="methodLink" hidden>Method</a>
       <button class="tm-icon-btn" type="button" id="contrastToggle" aria-pressed="false" title="High contrast" hidden>Aa</button>
       <button class="tm-icon-btn" type="button" id="compareToggle" aria-pressed="false" title="Compare two lines" hidden>⇄</button>
-      <button class="tm-icon-btn" type="button" id="notifyToggle" aria-pressed="false" title="Watch saved lines" hidden>◎</button>
       <img class="tm-logo" id="logoImg" src="static/logo.svg" width="1" height="1" alt="" hidden />
     </div>
   </header>
@@ -65,74 +61,13 @@
       <div class="tm-status-layout">
         <div class="tm-status-primary">
           <div id="glanceCard" class="play-glance stitch-glance play-glance--ok" aria-live="polite">
-            <div class="stitch-glance-mascot-wrap">
-              <img class="stitch-glance-mascot" src="static/mascots/stitch-mascot.png" width="64" height="64" alt="" />
-            </div>
             <div class="stitch-glance-copy">
               <strong>Loading</strong>
-              <span>Checking your lines</span>
+              <span>Checking lines · today MYT</span>
             </div>
           </div>
 
-          <aside class="stitch-positioning" aria-label="What TrafficMY is">
-            <div class="stitch-positioning-copy">
-              <strong>Live rider signals · today MYT</strong>
-              <span>Not ridership stats · not operator all-clear</span>
-            </div>
-            <a class="stitch-positioning-link" href="developers" target="_blank" rel="noopener noreferrer">API &amp; embed →</a>
-          </aside>
-
-          <section class="stitch-how-it-works" id="howItWorksCard">
-            <details class="how-it-works-details">
-              <summary class="how-it-works-summary">
-                <span class="material-symbols-outlined how-it-works-icon" aria-hidden="true">info</span>
-                <div class="how-it-works-summary-text">
-                  <strong>How TrafficMY Works / Cara Berfungsi</strong>
-                  <span>absence of signal ≠ all-clear</span>
-                </div>
-                <span class="how-it-works-chevron">▼</span>
-              </summary>
-              <div class="how-it-works-content">
-                <div class="how-it-works-grid">
-                  <div class="how-it-works-col">
-                    <h4>English</h4>
-                    <p><strong>1. Live Rider Signals:</strong> We monitor transit mentions on Threads, Reddit, and RSS. Like a crowd-sourced road traffic app, this shows what passengers are experiencing in real time.</p>
-                    <p><strong>2. Cautious Quiet:</strong> A quiet line means <em>no recent rider reports have been captured</em>. It does not guarantee that service is normal. Always verify before travel.</p>
-                    <p><strong>3. Official Corroboration:</strong> We match rider signals against official announcements. Corroborated signals indicate verified service disruptions.</p>
-                  </div>
-                  <div class="how-it-works-col">
-                    <h4>Bahasa Malaysia</h4>
-                    <p><strong>1. Isyarat Penumpang:</strong> Kami memantau sebutan transit awam di Threads, Reddit, dan RSS. Seperti aplikasi trafik jalan raya, ini menunjukkan apa yang dialami penumpang secara langsung.</p>
-                    <p><strong>2. Senyap Bukan Sempurna:</strong> Laluan yang senyap bermakna <em>tiada laporan penumpang direkodkan baru-baru ini</em>. Ia tidak menjamin perkhidmatan adalah normal.</p>
-                    <p><strong>3. Pengesahan Rasmi:</strong> Laporan penumpang dipadankan dengan notis rasmi operator untuk mengesahkan gangguan perkhidmatan.</p>
-                  </div>
-                </div>
-              </div>
-            </details>
-          </section>
-
           <div id="riskStrip" class="play-risk-strip" hidden aria-label="My lines during rush hour"></div>
-
-          <section class="tm-live-today stitch-live-today" id="liveTodaySection">
-            <div class="stitch-section-head">
-              <div>
-                <h2 class="tm-live-today-title">Live today <span class="stitch-sub-en">(Utama hari ini)</span></h2>
-                <p class="tm-section-sub section-sub" id="reportCount">Today · MYT</p>
-              </div>
-              <span class="stitch-sub-en" style="font-size:11px;font-weight:700;max-width:110px;text-align:right">Resets midnight MYT</span>
-            </div>
-            <p class="tm-live-today-note">Rider reports only — not official all-clear. Service ends when last train passes.</p>
-            <div class="tm-official-strip official-strip" id="officialStrip" hidden>
-              <h3>Official corroboration</h3>
-              <div id="officialFeed"></div>
-            </div>
-            <div class="tm-last-viewed last-viewed" id="lastViewed" hidden></div>
-            <div id="reportFeed" class="tm-report-feed"></div>
-          </section>
-
-          <section class="tm-sources" id="pulseHero" aria-label="Data sources" hidden>
-            <div class="tm-source-coverage source-coverage-strip" id="sourceCoverageStrip"></div>
-          </section>
 
           <div class="tm-toolbar tm-toolbar--search">
             <div class="tm-search-wrap search-wrap" id="searchWrap">
@@ -169,25 +104,20 @@
             <span id="staleBannerDetail">. Try Refresh.</span>
           </div>
 
+          <p class="stitch-trust-line" id="trustLine">
+            Rider signals · quiet ≠ all-clear ·
+            <a href="methodology">Method</a>
+          </p>
+
           <div class="tm-context-bar context-bar" id="contextBar"></div>
           <div class="tm-board-summary board-summary" id="boardSummary" aria-live="polite"></div>
           <div class="tm-stats-bar stats-bar" id="statsBar"></div>
           <div class="summary-strip" id="summaryStrip" hidden aria-hidden="true"></div>
           <div class="tm-pulse-strip pulse-strip" id="pulseStrip" aria-label="Active disruptions" hidden></div>
 
-          <div class="tm-schematic-wrap schematic-wrap stitch-schematic-wrap" id="schematicWrap" hidden aria-hidden="true">
-            <div class="tm-schematic-head schematic-head stitch-schematic-head">
-              <span>Klang Valley <span class="stitch-sub-en">(Lembah Klang)</span></span>
-              <span class="stitch-schematic-hint">Tap a line</span>
-            </div>
-            <div class="stitch-schematic-stage" id="schematicStage">
-              <div class="stitch-schematic-loading" id="schematicLoading">Loading schematic…</div>
-            </div>
-          </div>
-
           <section class="tm-board dep-board board" id="lineBoard" aria-label="Line status board">
             <div class="stitch-section-head" id="lineBoardHead">
-              <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
+              <h2 class="tm-live-today-title">Line status</h2>
               <span class="stitch-count-badge board-count">…</span>
             </div>
             <div class="tm-loading-banner loading-banner" id="boardLoadingBanner">
@@ -196,19 +126,42 @@
             </div>
           </section>
 
+          <section class="tm-live-today stitch-live-today" id="liveTodaySection">
+            <div class="stitch-section-head">
+              <div>
+                <h2 class="tm-live-today-title">Reports today</h2>
+                <p class="tm-section-sub section-sub" id="reportCount">Today · MYT</p>
+              </div>
+            </div>
+            <div class="tm-official-strip official-strip" id="officialStrip" hidden>
+              <h3>Official corroboration</h3>
+              <div id="officialFeed"></div>
+            </div>
+            <div class="tm-last-viewed last-viewed" id="lastViewed" hidden></div>
+            <div id="reportFeed" class="tm-report-feed"></div>
+          </section>
+
+          <section class="tm-sources" id="pulseHero" aria-label="Data sources" hidden>
+            <div class="tm-source-coverage source-coverage-strip" id="sourceCoverageStrip"></div>
+          </section>
+
+          <div class="tm-schematic-wrap schematic-wrap stitch-schematic-wrap" id="schematicWrap" hidden aria-hidden="true">
+            <div class="stitch-schematic-stage" id="schematicStage" hidden></div>
+          </div>
+
           <div class="tm-compare-bar compare-bar" id="compareBar" aria-live="polite">
             <span>Compare: tap two lines</span>
             <button type="button" class="tm-search-clear search-clear" id="compareClear">Clear</button>
           </div>
 
-          <div class="tm-legend line-legend collapsed-mobile" id="lineLegend">
+          <div class="tm-legend line-legend collapsed-mobile" id="lineLegend" hidden>
             <div class="tm-legend-head line-legend-head">
               <button type="button" class="tm-legend-toggle line-legend-toggle" id="lineLegendToggle" aria-expanded="false" aria-controls="lineLegendGrid">Line colours</button>
               <button type="button" id="glossaryBtn">Glossary</button>
             </div>
             <div class="tm-legend-grid line-legend-grid" id="lineLegendGrid"></div>
           </div>
-          <div class="tm-route-legend route-legend" id="routeLegend" aria-label="Disruption colours"></div>
+          <div class="tm-route-legend route-legend" id="routeLegend" aria-label="Disruption colours" hidden></div>
         </div>
 
         <aside class="tm-status-side">
@@ -230,16 +183,16 @@
     <div class="tm-view tab-panel" id="tabMap" role="tabpanel" aria-labelledby="tabBtnMap" hidden>
       <div class="stitch-map-shell">
         <div class="tm-map-toolbar map-toolbar stitch-map-toolbar" role="group" aria-label="Map layers">
-          <button class="tm-chip chip map-on stitch-map-chip" type="button" id="mapLayerAll" data-layer="all" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">layers</span><span>All</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerReports" data-layer="reports" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">warning</span><span>Reports</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerLrt" data-layer="lrt" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">train</span><span>LRT</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerMrt" data-layer="mrt" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">subway</span><span>MRT</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerMonorail" data-layer="monorail" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">tram</span><span>Mono</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerKtm" data-layer="ktm" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">directions_railway</span><span>KTM</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerInterchanges" data-layer="interchanges" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">hub</span><span>Hubs</span></button>
-          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerBuses" data-layer="buses" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">directions_bus</span><span>Bus</span></button>
-          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerGps" data-layer="gps" aria-pressed="false" title="Official GTFS-RT GPS — reference only, not incident truth"><span class="material-symbols-outlined" aria-hidden="true">sensors</span><span>GPS</span></button>
-          <button class="tm-chip chip stitch-map-chip" type="button" id="mapTiltToggle" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">3d_rotation</span><span>3D</span></button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerReports" data-layer="reports" aria-pressed="true">Reports</button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerLrt" data-layer="lrt" aria-pressed="true">LRT</button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerMrt" data-layer="mrt" aria-pressed="true">MRT</button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerMonorail" data-layer="monorail" aria-pressed="true">Mono</button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerKtm" data-layer="ktm" aria-pressed="true">KTM</button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerInterchanges" data-layer="interchanges" aria-pressed="true">Hubs</button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerBuses" data-layer="buses" aria-pressed="false">Bus</button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerGps" data-layer="gps" aria-pressed="false" title="Official GTFS-RT GPS — reference only">GPS</button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerAll" data-layer="all" aria-pressed="false" hidden>All</button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapTiltToggle" aria-pressed="false" hidden>3D</button>
         </div>
         <div class="stitch-map-stage">
           <aside class="tm-map-sidebar map-sidebar" id="mapSidebar" hidden>
@@ -250,9 +203,8 @@
             <div class="tm-map-loading map-loading" id="mapLoading" role="status">Loading map</div>
             <div id="malaysiaMap" role="application" aria-label="Malaysia transport map"></div>
             <form class="stitch-map-search" id="mapSearchForm">
-              <span class="material-symbols-outlined stitch-map-search-icon" aria-hidden="true">search</span>
-              <input class="stitch-map-search-input" id="mapSearchInput" type="search" placeholder="Where to? / Ke mana?" autocomplete="off" aria-label="Search destination" />
-              <button class="stitch-map-search-go" type="submit">GO</button>
+              <input class="stitch-map-search-input" id="mapSearchInput" type="search" placeholder="Station or place" autocomplete="off" aria-label="Search destination" />
+              <button class="stitch-map-search-go" type="submit">Go</button>
             </form>
             <div id="mapFloatCard" class="stitch-map-float" hidden></div>
           </div>
@@ -262,23 +214,12 @@
 
     <div class="tm-view tab-panel" id="tabTravel" role="tabpanel" aria-labelledby="tabBtnTravel" hidden>
       <div class="tm-travel-layout">
-        <div class="stitch-travel-banner stitch-travel-banner--native" role="img" aria-label="Malaysia Adventures — explore the rail network">
-          <div class="stitch-travel-banner-art">
-            <img src="static/mascots/stitch-mascot.png" alt="" loading="lazy" width="72" height="72" />
-          </div>
-          <div class="stitch-travel-banner-copy">
-            <span class="stitch-travel-banner-kicker">Malaysia Adventures</span>
-            <strong>Plan your rail journey</strong>
-            <span>Stations · interchanges · service hours</span>
-          </div>
-        </div>
         <section class="tm-travel-card tm-schedule-card" id="trainScheduleCard" hidden aria-labelledby="scheduleTitle"></section>
         <section class="tm-travel-card" aria-labelledby="journeyTitle">
           <div class="tm-travel-card-head">
-            <span class="material-symbols-outlined" aria-hidden="true">route</span>
             <div>
-              <h2 id="journeyTitle">Plan route <span class="stitch-sub-en">(Rancang)</span></h2>
-              <p class="tm-travel-lead">Rapid KL rail · station or address</p>
+              <h2 id="journeyTitle">Plan route</h2>
+              <p class="tm-travel-lead">Rapid KL rail</p>
             </div>
           </div>
           <form class="tm-journey-form journey-form journey-form--compact" id="journeyForm">
@@ -286,30 +227,29 @@
               <label for="journeyFrom">From</label>
               <input class="tm-input" id="journeyFrom" list="stationOptions" placeholder="Wangsa Maju" autocomplete="off" required />
             </div>
-            <button class="tm-swap-btn swap-btn" id="swapJourney" type="button" aria-label="Swap"><span class="material-symbols-outlined" aria-hidden="true">swap_vert</span></button>
+            <button class="tm-swap-btn swap-btn" id="swapJourney" type="button" aria-label="Swap">Swap</button>
             <div class="tm-field field">
               <label for="journeyTo">To</label>
               <input class="tm-input" id="journeyTo" list="stationOptions" placeholder="Bukit Bintang" autocomplete="off" required />
             </div>
             <div class="tm-travel-actions">
-              <button class="tm-use-location use-location" id="useLocation" type="button">📍 Near me</button>
+              <button class="tm-use-location use-location" id="useLocation" type="button">Near me</button>
               <button class="tool-button tm-primary-btn" type="submit">Find route</button>
             </div>
           </form>
           <datalist id="stationOptions"></datalist>
           <div class="tm-journey-result journey-result" id="journeyResult" hidden aria-live="polite"></div>
-          <p class="tm-travel-foot">Not KTM or buses · <a href="https://myrapid.com.my/journey-planner/" target="_blank" rel="noopener noreferrer">MyRapid planner ↗</a></p>
+          <p class="tm-travel-foot">Not KTM or buses · <a href="https://myrapid.com.my/journey-planner/" target="_blank" rel="noopener noreferrer">MyRapid planner</a></p>
         </section>
 
         <section class="tm-travel-card tm-travel-card--passes" aria-labelledby="savingsTitle">
           <div class="tm-travel-card-head">
-            <span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>
             <div>
-              <h2 id="savingsTitle">Passes &amp; fares <span class="stitch-sub-en">(Pas)</span></h2>
+              <h2 id="savingsTitle">Passes &amp; fares</h2>
               <p class="tm-travel-lead">My50 · Rapid Pelajar · pay-as-you-go</p>
             </div>
           </div>
-          <p class="stitch-tapout-banner"><span class="material-symbols-outlined" aria-hidden="true">info</span> Same card to tap in &amp; out at interchanges</p>
+          <p class="stitch-tapout-banner">Same card to tap in and out at interchanges</p>
           <form id="savingsForm" class="savings-card savings-card--compact">
             <div class="savings-form savings-form--inline">
               <div class="tm-field field"><label for="monthlyRides">Trips/mo</label><input class="tm-input" id="monthlyRides" type="number" min="1" max="200" value="44" /></div>
@@ -326,7 +266,6 @@
 
         <section class="tm-travel-card" id="updatesSection">
           <div class="tm-travel-card-head">
-            <span class="tm-travel-icon" aria-hidden="true">🎟</span>
             <div>
               <h2 class="tm-side-title">Deals &amp; launches</h2>
               <span class="tm-section-sub section-sub" id="updatesAsOf">Verified links</span>
@@ -367,16 +306,13 @@
 
   <nav class="tm-bottom-nav stitch-bottom-nav bottom-nav" id="bottomNav" aria-label="Mobile navigation">
     <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item stitch-nav-item--active" type="button" data-tab="status" aria-label="Home" aria-current="page">
-      <span class="material-symbols-outlined" aria-hidden="true">home</span>
-      <span>Home/Utama</span>
+      <span class="nav-label">Home</span>
     </button>
     <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item" type="button" data-tab="map" aria-label="Map">
-      <span class="material-symbols-outlined" aria-hidden="true">map</span>
-      <span>Map/Peta</span>
+      <span class="nav-label">Map</span>
     </button>
     <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item" type="button" data-tab="travel" aria-label="Travel">
-      <span class="material-symbols-outlined" aria-hidden="true">directions_transit</span>
-      <span>Travel/Gerak</span>
+      <span class="nav-label">Travel</span>
     </button>
   </nav>
 
@@ -415,6 +351,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js?v=29" defer></script>
+  <script src="static/js/app.js?v=32" defer></script>
 </body>
 </html>

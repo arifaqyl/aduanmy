@@ -32,6 +32,7 @@ from app.collectors.threads.client import (
 from app.pipeline.extract import (
     category_signal_ok,
     transport_incident_signal_ok,
+    transport_non_live_opinion,
     transport_rider_signal_worthwhile,
 )
 
@@ -208,6 +209,21 @@ def test_transport_rider_signal_accepts_live_waiting_all_lines():
     )
     assert transport_rider_signal_worthwhile(
         "MRT Kajang rosak tadi, tunggu lama dekat platform Kwasa Damansara"
+    )
+
+
+def test_transport_rider_signal_rejects_news_voice_and_schedule_trivia():
+    assert not transport_rider_signal_worthwhile(
+        "Commuters can expect delays on the Kelana Jaya Line this evening after a technical issue, authorities said."
+    )
+    assert not transport_rider_signal_worthwhile(
+        "Passengers are advised to allow extra time on MRT Kajang Line today."
+    )
+    assert not transport_rider_signal_worthwhile(
+        "LRT Ampang Line operating hours 6:00am to midnight, first train from Sentul Timur."
+    )
+    assert transport_non_live_opinion(
+        "According to RapidKL, service has been disrupted on Kelana Jaya Line."
     )
 
 

@@ -10,6 +10,11 @@ def _today_iso(hours: int = 0, minutes: int = 0) -> str:
     return (myt_day_start() + timedelta(hours=hours, minutes=minutes)).isoformat().replace("+00:00", "Z")
 
 
+def _ago_iso(days: int, hours: int = 0) -> str:
+    """Relative UTC timestamp so freshness fixtures do not rot with calendar drift."""
+    return (datetime.now(UTC) - timedelta(days=days, hours=hours)).isoformat().replace("+00:00", "Z")
+
+
 def test_overview_derives_live_entity_and_location_counts_from_clusters():
     reset_complaints()
     upsert_complaints(
@@ -86,7 +91,7 @@ def test_overview_hides_stale_transport_clusters_by_default():
                 post_id="recent",
                 url="https://example.com/recent",
                 author_handle="u1",
-                created_at="2026-06-21T04:18:43Z",
+                created_at=_ago_iso(1),
                 raw_text="MRT fire alarm at Maluri",
                 normalized_text="mrt fire alarm at maluri",
                 detected_language_mix="en",
@@ -102,7 +107,7 @@ def test_overview_hides_stale_transport_clusters_by_default():
                 post_id="stale",
                 url="https://example.com/stale",
                 author_handle="askrapidkl",
-                created_at="2026-05-12T11:50:51Z",
+                created_at=_ago_iso(40),
                 raw_text="Kelana Jaya Line delay",
                 normalized_text="kelana jaya line delay",
                 detected_language_mix="en",
@@ -131,7 +136,7 @@ def test_incidents_can_include_stale_when_requested():
                 post_id="recent",
                 url="https://example.com/recent",
                 author_handle="u1",
-                created_at="2026-06-21T04:18:43Z",
+                created_at=_ago_iso(1),
                 raw_text="MRT fire alarm at Maluri",
                 normalized_text="mrt fire alarm at maluri",
                 detected_language_mix="en",
@@ -147,7 +152,7 @@ def test_incidents_can_include_stale_when_requested():
                 post_id="stale",
                 url="https://example.com/stale",
                 author_handle="askrapidkl",
-                created_at="2026-05-12T11:50:51Z",
+                created_at=_ago_iso(40),
                 raw_text="Kelana Jaya Line delay",
                 normalized_text="kelana jaya line delay",
                 detected_language_mix="en",
@@ -179,7 +184,7 @@ def test_overview_can_include_stale_when_requested():
                 post_id="recent",
                 url="https://example.com/recent",
                 author_handle="u1",
-                created_at="2026-06-21T04:18:43Z",
+                created_at=_ago_iso(1),
                 raw_text="MRT fire alarm at Maluri",
                 normalized_text="mrt fire alarm at maluri",
                 detected_language_mix="en",
@@ -195,7 +200,7 @@ def test_overview_can_include_stale_when_requested():
                 post_id="stale",
                 url="https://example.com/stale",
                 author_handle="askrapidkl",
-                created_at="2026-05-12T11:50:51Z",
+                created_at=_ago_iso(40),
                 raw_text="Kelana Jaya Line delay",
                 normalized_text="kelana jaya line delay",
                 detected_language_mix="en",
@@ -274,7 +279,7 @@ def test_strongest_transport_sort_prefers_recent_over_older_when_confidence_band
                 post_id="recent-1",
                 url="https://example.com/recent-1",
                 author_handle="u1",
-                created_at="2026-06-24T00:00:00Z",
+                created_at=_ago_iso(1),
                 raw_text="Kelana Jaya Line incident at Pasar Seni this morning",
                 normalized_text="kelana jaya line incident at pasar seni this morning",
                 detected_language_mix="en",
@@ -290,7 +295,7 @@ def test_strongest_transport_sort_prefers_recent_over_older_when_confidence_band
                 post_id="aging-1",
                 url="https://example.com/aging-1",
                 author_handle="thesundaily",
-                created_at="2026-06-05T00:00:00Z",
+                created_at=_ago_iso(10),
                 raw_text="Kelana Jaya Line incident at Dang Wangi today",
                 normalized_text="kelana jaya line incident at dang wangi today",
                 detected_language_mix="en",
@@ -317,7 +322,7 @@ def test_overview_top_incidents_prefers_reasonable_or_strong_over_weak_when_avai
                 post_id="reasonable-1",
                 url="https://example.com/reasonable-1",
                 author_handle="u1",
-                created_at="2026-06-21T04:18:43Z",
+                created_at=_ago_iso(1),
                 raw_text="MRT fire alarm at Maluri",
                 normalized_text="mrt fire alarm at maluri",
                 detected_language_mix="en",
@@ -333,7 +338,7 @@ def test_overview_top_incidents_prefers_reasonable_or_strong_over_weak_when_avai
                 post_id="weak-1",
                 url="https://example.com/weak-1",
                 author_handle="askrapidkl",
-                created_at="2026-05-12T11:50:51Z",
+                created_at=_ago_iso(40),
                 raw_text="Kelana Jaya Line delay",
                 normalized_text="kelana jaya line delay",
                 detected_language_mix="en",
@@ -363,7 +368,7 @@ def test_default_source_group_hides_gtfs_only_clusters():
                 post_id="g1",
                 url="https://example.com/g1",
                 author_handle="gtfs:rapid-bus-kl",
-                created_at="2026-06-28T06:48:31Z",
+                created_at=_ago_iso(1),
                 raw_text="GTFS anomaly route 772",
                 normalized_text="gtfs anomaly route 772",
                 detected_language_mix="en",
@@ -379,7 +384,7 @@ def test_default_source_group_hides_gtfs_only_clusters():
                 post_id="t1",
                 url="https://example.com/t1",
                 author_handle="k.sam95",
-                created_at="2026-06-25T00:48:11Z",
+                created_at=_ago_iso(1),
                 raw_text="Kelana Jaya LRT line delay again this morning stuck at Bangsar",
                 normalized_text="kelana jaya lrt line delay again this morning stuck at bangsar",
                 detected_language_mix="en",
@@ -411,7 +416,7 @@ def test_quality_only_hides_reply_thread_noise():
                 post_id="noise",
                 url="https://example.com/noise",
                 author_handle="lelzilla45",
-                created_at="2026-06-16T00:51:16Z",
+                created_at=_ago_iso(2),
                 raw_text="lelzilla45 Replying to @x LRT Chan Sow Lin nice station",
                 normalized_text="lelzilla45 replying to @x lrt chan sow lin nice station",
                 detected_language_mix="en",
@@ -427,7 +432,7 @@ def test_quality_only_hides_reply_thread_noise():
                 post_id="real",
                 url="https://example.com/real",
                 author_handle="k.sam95",
-                created_at="2026-06-25T00:48:11Z",
+                created_at=_ago_iso(1),
                 raw_text="Kelana Jaya LRT line delay again this morning stuck at Bangsar",
                 normalized_text="kelana jaya lrt line delay again this morning stuck at bangsar",
                 detected_language_mix="en",
@@ -456,7 +461,7 @@ def test_quality_only_hides_hypothetical_pasar_seni_post():
                 post_id="hypo",
                 url="https://example.com/hypo",
                 author_handle="yyadnn",
-                created_at="2026-06-23T23:53:13Z",
+                created_at=_ago_iso(1),
                 raw_text=(
                     "Bayangkan LRT3 dah start operate lepastu KJ line ada problem/delay, "
                     "station Glenmarie akan jd macam Pasar Seni?"
@@ -478,7 +483,7 @@ def test_quality_only_hides_hypothetical_pasar_seni_post():
                 post_id="advisory",
                 url="https://example.com/advisory",
                 author_handle="news",
-                created_at="2026-06-24T03:35:05Z",
+                created_at=_ago_iso(1),
                 raw_text="Commuters on the Kelana Jaya Line can expect delays.",
                 normalized_text="commuters on the kelana jaya line can expect delays.",
                 detected_language_mix="en",
