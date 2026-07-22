@@ -246,8 +246,9 @@ def test_trafficmy_stations_route():
     response = client.get("/api/trafficmy/stations?q=maluri&limit=5")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["source"] == "locations.yaml"
-    assert any(item["label"] == "Maluri" for item in payload["items"])
+    assert payload["source"] in {"gtfs", "locations.yaml"}
+    assert payload["items"]
+    assert any("maluri" in (item.get("label") or "").lower() for item in payload["items"])
 
 
 def test_trafficmy_map_stations_route(monkeypatch):

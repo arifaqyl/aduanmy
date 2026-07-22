@@ -228,14 +228,31 @@ def get_line_status_board(
             report_count = 0
             last_seen = None
             top_cluster = None
+            signal = None
+            official_match = None
+            source_count = 0
         else:
             levels = [_severity_level(c) for c in items]
             level = max(levels, key=lambda x: _SEVERITY_RANK[x])
             top = items[0]
             top_cluster = top.get("cluster_id")
-            reason = public_incident_copy(top)["summary"]
+            copy = public_incident_copy(top)
+            reason = copy["summary"]
             report_count = sum(c.get("volume", 1) for c in items)
             last_seen = top.get("last_seen_at")
+            sources = [part.strip() for part in (top.get("sources") or "").split(",") if part.strip()]
+            source_count = len(set(sources))
+            official_match = top.get("official_match") if isinstance(top.get("official_match"), dict) else None
+            signal = {
+                "location": (top.get("location") or "").strip(),
+                "issue": copy.get("report_issue") or "",
+                "issue_ms": copy.get("report_issue_ms") or "",
+                "when": copy.get("report_when") or "",
+                "when_ms": copy.get("report_when_ms") or "",
+                "glance": copy.get("glance_line") or "",
+                "glance_ms": copy.get("glance_line_ms") or "",
+                "source_count": source_count,
+            }
         facility_alert = None
         if items:
             for cluster in items:
@@ -258,6 +275,9 @@ def get_line_status_board(
             top_cluster = None
             report_count = 0
             facility_alert = None
+            signal = None
+            official_match = None
+            source_count = 0
 
         lines_out.append(
             {
@@ -276,10 +296,13 @@ def get_line_status_board(
                 "health_score": _health_score(status=level, report_count=report_count, corroborated=any(c.get("corroborated_by_official") for c in items) if items and in_service is not False else False),
                 "reason": reason,
                 "report_count": report_count,
+                "source_count": source_count if in_service is not False else 0,
                 "last_seen_at": last_seen if in_service is not False else None,
                 "top_cluster_id": top_cluster,
                 "sources": items[0].get("sources", "") if items and in_service is not False else "",
                 "corroborated": any(c.get("corroborated_by_official") for c in items) if items and in_service is not False else False,
+                "official_match": official_match if in_service is not False else None,
+                "signal": signal if in_service is not False else None,
                 "commuter_note": commuter_note,
                 "commuter_note_ms": operator_commuter_note(spec["id"], lang="ms"),
                 "facility_alert": facility_alert,

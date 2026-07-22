@@ -18,9 +18,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Type: IBM Plex Sans + Mono, Barlow Condensed brand — imported in stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css?v=31" />
-  <link rel="stylesheet" href="static/css/play.css?v=31" />
-  <link rel="stylesheet" href="static/css/stitch.css?v=31" />
+  <link rel="stylesheet" href="static/css/components.css?v=32" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=32" />
 </head>
 <body class="tm-app play-app stitch-app">
 
@@ -35,6 +34,7 @@
       </div>
       <button class="stitch-icon-btn status-info-btn" type="button" aria-label="What is Status?" title="Rider-reported signals — not an operator all-clear">?</button>
       <button class="stitch-icon-btn" type="button" id="langToggle" aria-pressed="false" title="Bahasa Malaysia / English">EN</button>
+      <button class="stitch-icon-btn" type="button" id="notifyToggle" aria-pressed="false" title="Watch saved lines while this tab is open" hidden>◎</button>
       <button class="stitch-refresh-btn" id="refreshBtn" type="button" disabled aria-label="Refresh">Refresh</button>
     </div>
     <div class="tm-header-sub" hidden aria-hidden="true">
@@ -48,7 +48,6 @@
       <a class="tm-text-btn" href="#" id="methodLink" hidden>Method</a>
       <button class="tm-icon-btn" type="button" id="contrastToggle" aria-pressed="false" title="High contrast" hidden>Aa</button>
       <button class="tm-icon-btn" type="button" id="compareToggle" aria-pressed="false" title="Compare two lines" hidden>⇄</button>
-      <button class="tm-icon-btn" type="button" id="notifyToggle" aria-pressed="false" title="Watch saved lines" hidden>◎</button>
       <img class="tm-logo" id="logoImg" src="static/logo.svg" width="1" height="1" alt="" hidden />
     </div>
   </header>
@@ -352,6 +351,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js?v=31" defer></script>
+  <script src="static/js/app.js?v=32" defer></script>
 </body>
 </html>

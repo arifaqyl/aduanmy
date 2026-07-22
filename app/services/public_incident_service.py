@@ -253,6 +253,9 @@ def public_cluster(cluster: dict[str, Any]) -> dict[str, Any]:
     item.update(public_incident_copy(cluster))
     item.pop("example_text", None)
     item.pop("author_handles", None)
+    # Keep official match evidence public (title/url/time only — already sanitized notice text).
+    if item.get("official_match") and not isinstance(item["official_match"], dict):
+        item["official_match"] = None
     return item
 
 

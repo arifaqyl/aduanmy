@@ -1,4 +1,4 @@
-const CACHE = 'trafficmy-shell-v31';
+const CACHE = 'trafficmy-shell-v32';
 const scopeUrl = new URL(self.registration.scope);
 const base = scopeUrl.pathname.replace(/\/$/, '');
 const shell = [
@@ -7,11 +7,10 @@ const shell = [
   `${base}/static/favicon.svg`,
   `${base}/static/icon-512.png`,
   `${base}/static/og-image.png`,
-  `${base}/static/css/components.css?v=31`,
-  `${base}/static/css/play.css?v=31`,
-  `${base}/static/css/stitch.css?v=31`,
+  `${base}/static/css/components.css?v=32`,
+  `${base}/static/css/stitch.css?v=32`,
   `${base}/static/lines/kv-system.svg`,
-  `${base}/static/js/app.js?v=31`,
+  `${base}/static/js/app.js?v=32`,
 ];
 
 function isStyleOrScript(pathname) {

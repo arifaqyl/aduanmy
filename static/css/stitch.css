@@ -2418,3 +2418,32 @@
 .play-app.stitch-app .tm-schematic-wrap {
   display: none !important;
 }
+
+
+.play-app.stitch-app .stitch-status--nosignal {
+  background: #14181e !important;
+  color: var(--stitch-ink-2) !important;
+  border: 1px dashed #3a4048 !important;
+}
+
+.play-app.stitch-app .journey-alert--top {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--stitch-orange);
+  border-radius: 4px;
+  background: rgba(194, 120, 32, 0.12);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.play-app.stitch-app .search-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.play-app.stitch-app .search-item small {
+  color: var(--stitch-ink-2);
+  font-size: 11px;
+}

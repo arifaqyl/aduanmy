@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from datetime import UTC, datetime, timedelta
 
 from app.core.freshness import LIVE_WINDOW_DAYS, classify_freshness, is_inside_live_window, parse_dt
@@ -63,7 +64,8 @@ def _official_grounding_rows() -> list[dict]:
     return [dict(row) for row in rows if is_official_grounding_row(dict(row))]
 
 
-def _cluster_has_official_match(cluster: dict, official_rows: list[dict]) -> bool:
+def _official_match_for_cluster(cluster: dict, official_rows: list[dict]) -> dict | None:
+    """Return the matching official/RSS notice, or None."""
     category = cluster.get("category", "")
     entity = cluster.get("entity", "")
     location = cluster.get("location", "")
@@ -79,26 +81,50 @@ def _cluster_has_official_match(cluster: dict, official_rows: list[dict]) -> boo
             continue
         row_entity = row.get("entity") or ""
         row_location = row.get("location") or ""
+        hit = False
         if cluster_line and category == "transport":
             row_line = match_transport_line(row)
             if row_line and row_line == cluster_line:
-                return True
-        if entity:
-            if not row_entity or row_entity != entity:
+                hit = True
+        if not hit:
+            if entity:
+                if not row_entity or row_entity != entity:
+                    continue
+            elif row_entity:
                 continue
-        elif row_entity:
-            continue
-        if location and row_location:
-            if row_location != location:
+            if location and row_location:
+                if row_location != location:
+                    continue
+            elif location:
+                if not (
+                    category == "transport"
+                    and entity
+                    and row_entity
+                    and row_entity.lower() not in GENERIC_TRANSPORT_ENTITIES
+                ):
+                    continue
+            elif row_location:
                 continue
-        elif location:
-            if category == "transport" and entity and row_entity and row_entity.lower() not in GENERIC_TRANSPORT_ENTITIES:
-                return True
+            hit = True
+        if not hit:
             continue
-        elif row_location:
-            continue
-        return True
-    return False
+        title = str(row.get("normalized_text") or row.get("raw_text") or "Official notice").strip()
+        title = re.sub(r"\s+", " ", title)
+        if len(title) > 140:
+            title = title[:139].rstrip() + "…"
+        return {
+            "source_platform": row.get("source_platform") or "official",
+            "title": title,
+            "url": row.get("url") or "",
+            "created_at": row.get("created_at") or row.get("inserted_at") or "",
+            "entity": row_entity,
+            "location": row_location,
+        }
+    return None
+
+
+def _cluster_has_official_match(cluster: dict, official_rows: list[dict]) -> bool:
+    return _official_match_for_cluster(cluster, official_rows) is not None
 
 
 def _normalize_api_timestamp(value: str | None) -> str:
@@ -183,7 +209,9 @@ def _cluster_source_roles(cluster: dict) -> list[str]:
 def _enrich_clusters(clusters: list[dict]) -> list[dict]:
     official_rows = _official_grounding_rows()
     for cluster in clusters:
-        cluster["corroborated_by_official"] = _cluster_has_official_match(cluster, official_rows)
+        official_match = _official_match_for_cluster(cluster, official_rows)
+        cluster["corroborated_by_official"] = official_match is not None
+        cluster["official_match"] = official_match
         score, band = _score_cluster_confidence(cluster)
         cluster["confidence_score"] = score
         cluster["confidence_band"] = band
