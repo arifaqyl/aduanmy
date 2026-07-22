@@ -2,23 +2,24 @@
   const api = p => `${APP_BASE}${p.startsWith('/') ? p : '/' + p}`;
   const $ = id => document.getElementById(id);
   const staticUrl = p => `${APP_BASE}/static/${p.replace(/^\//, '')}`;
-  const STITCH_MASCOT = 'mascots/stitch-mascot.png';
-  const STITCH_MASCOT_WORRIED = 'mascots/stitch-mascot-worried.png';
-  const stitchMascot = (worried = false) => staticUrl(worried ? STITCH_MASCOT_WORRIED : STITCH_MASCOT);
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
       navigator.serviceWorker.register(`${APP_BASE}/sw.js`, { scope: `${APP_BASE || ''}/` }).catch(() => {});
     });
   }
   ['logoImg', 'footerLogo'].forEach(id => { const el = $(id); if (el) el.src = staticUrl('logo.svg'); });
+  const brandLogo = document.querySelector('.stitch-brand-logo');
+  if (brandLogo) brandLogo.src = staticUrl('logo.svg');
   const favicon = document.querySelector('link[rel="icon"]');
-  if (favicon) favicon.href = staticUrl(STITCH_MASCOT);
+  if (favicon) favicon.href = staticUrl('favicon.svg');
   const appleIcon = document.querySelector('link[rel="apple-touch-icon"]');
-  if (appleIcon) appleIcon.href = staticUrl(STITCH_MASCOT);
+  if (appleIcon) appleIcon.href = staticUrl('favicon.svg');
   const ogImage = document.querySelector('meta[property="og:image"]');
   if (ogImage) ogImage.content = staticUrl('og-image.png');
   const methodUrl = APP_BASE ? `${APP_BASE}/methodology` : '/methodology';
   ['methodLink', 'footerMethodLink'].forEach(id => { const el = $(id); if (el) el.href = methodUrl; });
+  const trustMethod = document.querySelector('#trustLine a');
+  if (trustMethod) trustMethod.href = methodUrl;
 
   const LINE_COLORS = {
     'kelana-jaya': '#e31837',
@@ -205,15 +206,6 @@
     } catch { /* ignore storage failures */ }
   }
 
-  function mascotForStatus(status, line) {
-    if (line?.in_service === false) {
-      return stitchMascot(false);
-    }
-    if (['minor', 'delay', 'disruption'].includes(status)) return stitchMascot(true);
-    if (status === 'normal') return stitchMascot(false);
-    return stitchMascot(false);
-  }
-
   function glanceModeChips(lines) {
     const nets = new Set();
     (lines || []).filter(l => ['minor', 'delay', 'disruption'].includes(l.status)).forEach(l => {
@@ -234,14 +226,14 @@
       if (line.service_status === 'before_service') return pickLang('Starts later', 'Mula nanti');
     }
     const mapEn = {
-      normal: 'All good',
+      normal: 'Quiet',
       unknown: 'Quiet',
       minor: 'Minor',
       delay: 'Delayed',
       disruption: 'Disruption',
     };
     const mapMs = {
-      normal: 'OK',
+      normal: 'Tenang',
       unknown: 'Tenang',
       minor: 'Kecil',
       delay: 'Lewat',
@@ -315,6 +307,21 @@
     const hrs = Math.floor(mins / 60);
     if (hrs < 24) return `${hrs}h ago`;
     return `${Math.floor(hrs / 24)}d ago`;
+  }
+
+  function isTodayMYT(iso) {
+    if (!iso) return false;
+    try {
+      const mytDate = (d) => new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'Asia/Kuala_Lumpur',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+      }).format(d);
+      return mytDate(new Date(iso)) === mytDate(new Date());
+    } catch {
+      return false;
+    }
   }
 
   function mapLayerActiveForNetwork(network) {
@@ -699,10 +706,7 @@
 
         el.setAttribute('aria-label', feature.properties?.headline || 'Rider report');
         el.innerHTML = `
-          <span class="stitch-map-pin-bubble">
-            <img src="${stitchMascot(severity !== 'minor')}" width="30" height="30" alt="" />
-            ${isCorroborated ? '<span class="pin-corroborated-badge" title="Official Corroboration">✔</span>' : ''}
-          </span>
+          <span class="stitch-map-pin-bubble" aria-hidden="true">${severity === 'disruption' ? '!' : severity === 'delay' ? 'D' : '·'}</span>
           <span class="stitch-map-pin-tail" aria-hidden="true"></span>
         `;
         el.addEventListener('click', (e) => {
@@ -2258,35 +2262,33 @@
     if (!summary && !data.lines_tracked_count) {
       el.className = 'play-glance stitch-glance play-glance--ok';
       el.innerHTML = `
-        <div class="stitch-glance-mascot-wrap">
-          <img class="stitch-glance-mascot" src="${stitchMascot()}" width="64" height="64" alt="" />
-        </div>
         <div class="stitch-glance-copy">
           <strong>${pickLang('Loading', 'Memuatkan')}</strong>
-          <span>${pickLang('Checking your lines', 'Menyemak laluan')}</span>
+          <span>${pickLang('Checking lines · today MYT', 'Menyemak laluan · hari ini MYT')}</span>
         </div>`;
       return;
     }
     el.className = `play-glance stitch-glance play-glance--${ok ? 'ok' : 'alert'}`;
-    const mascot = stitchMascot(!ok);
     const title = ok
-      ? pickLang('Looking quiet', 'Nampak tenang')
-      : pickLang(`${active} line${active === 1 ? '' : 's'} need attention`, `${active} laluan perlu perhatian`);
+      ? pickLang('No active signals', 'Tiada isyarat aktif')
+      : pickLang(`${active} line${active === 1 ? '' : 's'} with reports`, `${active} laluan dengan laporan`);
     const sub = ok
-      ? pickLang('No recent delay signals', 'Tiada isyarat kelewatan terkini')
+      ? pickLang('Quiet ≠ all-clear · today MYT', 'Tenang ≠ lancar · hari ini MYT')
       : esc(summary);
     const chips = ok ? '' : glanceModeChips(lines);
-    const bubble = ok ? '' : `<div class="stitch-glance-bubble">${pickLang('Alamak!', 'Alamak!')}</div>`;
     el.innerHTML = `
-      <div class="stitch-glance-mascot-wrap">
-        <img class="stitch-glance-mascot" src="${mascot}" width="64" height="64" alt="" />
-        ${bubble}
-      </div>
       <div class="stitch-glance-copy">
         <strong>${title}</strong>
         <span>${sub}</span>
         ${chips ? `<div class="stitch-glance-chips">${chips}</div>` : ''}
       </div>`;
+    const trust = $('trustLine');
+    if (trust) {
+      trust.innerHTML = pickLang(
+        'Rider signals today · quiet ≠ all-clear · <a href="' + methodUrl + '">Method</a>',
+        'Isyarat penumpang hari ini · tenang ≠ lancar · <a href="' + methodUrl + '">Kaedah</a>'
+      );
+    }
   }
 
   function renderStatsBar(data, status) {
@@ -2604,12 +2606,20 @@
     const now = Date.now();
     const activeStatuses = ['minor', 'delay', 'disruption'];
     return (reports || []).filter(r => {
+      // Live today = MYT calendar day first; fall back to a short clock window.
+      if (r.last_seen_at && isTodayMYT(r.last_seen_at)) {
+        const lineId = r.line_id || guessLineIdFromReport(r);
+        const line = lineId ? byId[lineId] : null;
+        if (line?.in_service === false) return false;
+        return true;
+      }
       const ageMs = r.last_seen_at ? now - new Date(r.last_seen_at).getTime() : Infinity;
+      if (ageMs > 6 * 3600000) return false;
       const lineId = r.line_id || guessLineIdFromReport(r);
       const line = lineId ? byId[lineId] : null;
-      if (!line) return ageMs < 6 * 3600000;
-      if (activeStatuses.includes(line.status)) return true;
+      if (!line) return ageMs < 3 * 3600000;
       if (line.in_service === false) return false;
+      if (activeStatuses.includes(line.status)) return ageMs < 6 * 3600000;
       return ageMs < 2 * 3600000;
     });
   }
@@ -2666,7 +2676,6 @@
     }).join('');
     el.innerHTML = `
       <div class="tm-travel-card-head">
-        <span class="material-symbols-outlined" aria-hidden="true">schedule</span>
         <div>
           <h2 id="scheduleTitle">Service hours <span class="stitch-sub-en">(Waktu perkhidmatan)</span></h2>
           <p class="tm-travel-lead">${pickLang('First & last trains · Rapid KL rail', 'Kereta pertama & terakhir · Rapid KL')}</p>

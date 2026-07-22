@@ -1,20 +1,14 @@
 {
   "name": "TrafficMY",
   "short_name": "TrafficMY",
-  "description": "See Malaysia transport status at a glance.",
+  "description": "Malaysia transport rider signals — today MYT. Quiet ≠ all-clear.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#efebe0",
-  "theme_color": "#171c1a",
+  "background_color": "#111318",
+  "theme_color": "#111318",
   "orientation": "any",
   "icons": [
-    {
-      "src": "static/mascots/stitch-mascot.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
     {
       "src": "static/favicon.svg",
       "sizes": "any",

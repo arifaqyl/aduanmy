@@ -22,8 +22,8 @@ This approach avoids the
 *   **Rationale:** IBM Plex Mono is a highly legible monospace typeface designed for code and data. Its clear, unambiguous characters are ideal for displaying critical information like times, line statuses, and station names, directly echoing the 
 departure board aesthetic. Its open forms and distinct characters enhance readability at a glance, crucial for users in motion or under time pressure. It also supports a wide range of characters, which is beneficial for potential bilingual (BM/EN) labels [MANUS_PROMPT.md].
 
-**Secondary Typeface (Body Text & UI Labels):** **Inter**
-*   **Rationale:** While the brief bans "Inter" as a default AI choice, its exceptional legibility, extensive weights, and optimization for UI make it a pragmatic choice for supporting text where a monospace font might be too dense. It provides a clean, modern contrast to Plex Mono without introducing visual noise. It also offers excellent accessibility features, aligning with the WCAG AA contrast and 44px min touch target requirements [MANUS_PROMPT.md].
+**Secondary Typeface (Body Text & UI Labels):** **IBM Plex Sans**
+*   **Rationale:** Pairs with Plex Mono for a coherent Carbon-style utilitarian system. Do **not** use Inter — it is an explicit anti-slop reject ([docs/TASTE.md](docs/TASTE.md)).
 
 ## 3. Color Palette
 

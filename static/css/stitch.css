@@ -1,62 +1,95 @@
 /* TrafficMY "Departure Board" theme — platform-indicator-board redesign, Jul 2026 */
 
-@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,600,0,0');
-@import url('https://fonts.googleapis.com/css2?family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&family=Barlow+Condensed:wght@600;700;800&display=swap');
 
 :root {
-  /* Board bezel + ink */
-  --stitch-ink: #171b1a;
-  --stitch-ink-2: #5b6460;
-  --stitch-border: #d8d3c6;
-  --stitch-border-soft: #e6e2d5;
-  --stitch-surface: #f7f5ee;
-  --stitch-surface-soft: #efebe0;
+  /* Dark utilitarian board — TASTE.md / PRODUCT.md anti-slop */
+  --stitch-ink: #ece8e1;
+  --stitch-ink-2: #9a9590;
+  --stitch-border: #2a2f36;
+  --stitch-border-soft: #22262c;
+  --stitch-surface: #181c22;
+  --stitch-surface-soft: #111318;
 
-  /* Board panel (dark indicator-board surfaces: header glance, hero) */
-  --stitch-board: #171c1a;
-  --stitch-board-ink: #eef1ea;
-  --stitch-board-dim: #8fa398;
+  --stitch-board: #0c0e12;
+  --stitch-board-ink: #ece8e1;
+  --stitch-board-dim: #8a8680;
 
-  /* Functional amber = "live/LED" accent, used sparingly */
-  --stitch-amber: #f2a900;
-  --stitch-amber-dark: #8a5c00;
-  --stitch-amber-soft: #fbe6b8;
+  /* Single brand accent — burnt orange, not Duolingo green / LED amber */
+  --stitch-amber: #c2410c;
+  --stitch-amber-dark: #9a3412;
+  --stitch-amber-soft: rgba(194, 65, 12, 0.18);
 
-  /* Status semantics — muted, signage-like, not neon */
-  --stitch-green: #1f7a4d;
-  --stitch-green-dark: #123f28;
-  --stitch-green-soft: #dcebe0;
-  --stitch-blue: #2b6a8a;
-  --stitch-blue-dark: #163d4f;
-  --stitch-orange: #b9762c;
-  --stitch-orange-dark: #6a3f0f;
-  --stitch-red: #a3342c;
-  --stitch-red-dark: #6e1f1a;
+  --stitch-green: #3f7d57;
+  --stitch-green-dark: #2a543a;
+  --stitch-green-soft: rgba(63, 125, 87, 0.18);
+  --stitch-blue: #3d6f8c;
+  --stitch-blue-dark: #2a4d63;
+  --stitch-orange: #c27820;
+  --stitch-orange-dark: #8a5412;
+  --stitch-red: #b33a32;
+  --stitch-red-dark: #7a2420;
 
-  --stitch-shadow: 0 1px 0 var(--stitch-border), 0 2px 6px rgba(23, 27, 26, 0.06);
-  --stitch-shadow-sm: 0 1px 3px rgba(23, 27, 26, 0.10);
-  --stitch-radius: 10px;
-  --stitch-max: 420px;
+  --stitch-shadow: none;
+  --stitch-shadow-sm: none;
+  --stitch-radius: 4px;
+  --stitch-max: 440px;
 
-  --font-display: 'Barlow Condensed', 'Work Sans', system-ui, sans-serif;
-  --font-body: 'Work Sans', system-ui, sans-serif;
+  --font-display: 'Barlow Condensed', 'IBM Plex Sans', sans-serif;
+  --font-body: 'IBM Plex Sans', sans-serif;
   --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Bridge play.css / components.css tokens so white Duolingo theme cannot leak */
+  --play-bg: var(--stitch-surface-soft);
+  --play-surface: var(--stitch-surface-soft);
+  --play-surface-2: var(--stitch-surface);
+  --play-ink: var(--stitch-ink);
+  --play-ink-2: var(--stitch-ink-2);
+  --play-ink-3: #6b6660;
+  --play-line: var(--stitch-border);
+  --play-line-strong: #3a4048;
+  --play-green: var(--stitch-green);
+  --play-green-dark: var(--stitch-green-dark);
+  --play-green-soft: var(--stitch-green-soft);
+  --play-blue: var(--stitch-blue);
+  --play-orange: var(--stitch-orange);
+  --play-red: var(--stitch-red);
+  --play-red-dark: var(--stitch-red-dark);
+  --play-yellow: #c9a227;
+  --play-shadow: none;
+  --play-radius: 4px;
+  --play-radius-sm: 4px;
+  --play-font: var(--font-body);
+  --font-sans: var(--font-body);
+  --bg-primary: var(--stitch-surface-soft);
+  --text-primary: var(--stitch-ink);
+  --text-secondary: var(--stitch-ink-2);
+  --text-dim: #6b6660;
+  --background: var(--stitch-surface-soft);
+  --foreground: var(--stitch-ink);
+  --muted-foreground: var(--stitch-ink-2);
+  --card: var(--stitch-surface);
+  --border: var(--stitch-border);
+  --border-strong: #3a4048;
+  --accent-red: var(--stitch-amber);
+  --accent-red-dark: var(--stitch-amber-dark);
+  --chrome-bg: var(--stitch-board);
+  --chrome-ink: var(--stitch-board-ink);
+  --chrome-muted: var(--stitch-board-dim);
+  --chrome-border: var(--stitch-border);
+  --status-normal: var(--stitch-green);
+  --status-minor: var(--stitch-orange);
+  --status-delay: var(--stitch-orange);
+  --status-disruption: var(--stitch-red);
+  --status-unknown: #6b6660;
+  --tm-surface-2: #14181e;
+  --tm-line: var(--stitch-border);
+  --tm-ink: var(--stitch-ink);
+  --tm-accent: var(--stitch-amber);
 }
 
 .material-symbols-outlined {
-  font-family: 'Material Symbols Outlined';
-  font-weight: normal;
-  font-style: normal;
-  font-size: 22px;
-  line-height: 1;
-  letter-spacing: normal;
-  text-transform: none;
-  display: inline-block;
-  white-space: nowrap;
-  word-wrap: normal;
-  direction: ltr;
-  font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 24;
-  vertical-align: middle;
+  display: none !important;
 }
 
 .play-app.stitch-app {
@@ -1927,4 +1960,290 @@
 
 .play-app.stitch-app .how-it-works-col p:last-child {
   margin-bottom: 0;
+}
+
+
+/* ── Anti-slop hard overrides (dark board wins over play.css leftovers) ── */
+.play-app.stitch-app {
+  background: var(--stitch-surface-soft) !important;
+  color: var(--stitch-ink) !important;
+}
+
+.play-app.stitch-app .stitch-brand-mascot,
+.play-app.stitch-app .stitch-glance-mascot-wrap,
+.play-app.stitch-app .stitch-glance-bubble,
+.play-app.stitch-app .stitch-travel-banner-art,
+.play-app.stitch-app .stitch-how-it-works,
+.play-app.stitch-app .stitch-positioning {
+  display: none !important;
+}
+
+.play-app.stitch-app .stitch-glance,
+.play-app.stitch-app .play-glance {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 10px;
+  padding: 12px 14px;
+  border: 1px solid var(--stitch-border);
+  border-radius: 4px;
+  background: var(--stitch-board);
+  box-shadow: none;
+  min-height: 64px;
+}
+
+.play-app.stitch-app .stitch-glance::before,
+.play-app.stitch-app .play-glance::before {
+  content: "";
+  width: 4px;
+  align-self: stretch;
+  background: var(--stitch-ink-2);
+  border-radius: 0;
+  flex-shrink: 0;
+}
+
+.play-app.stitch-app .stitch-glance.play-glance--ok::before,
+.play-app.stitch-app .play-glance--ok::before {
+  background: var(--stitch-green);
+}
+
+.play-app.stitch-app .stitch-glance.play-glance--alert::before,
+.play-app.stitch-app .play-glance--alert::before {
+  background: var(--stitch-amber);
+}
+
+.play-app.stitch-app .stitch-glance-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.play-app.stitch-app .stitch-glance-copy strong {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--stitch-board-ink);
+}
+
+.play-app.stitch-app .stitch-glance-copy span {
+  font-size: 12px;
+  color: var(--stitch-board-dim);
+  font-weight: 500;
+}
+
+.play-app.stitch-app .stitch-line-row,
+.play-app.stitch-app .tm-travel-card,
+.play-app.stitch-app .report-card,
+.play-app.stitch-app .tm-schematic-wrap,
+.play-app.stitch-app .stitch-live-today,
+.play-app.stitch-app .stat-pill-btn {
+  background: var(--stitch-surface) !important;
+  border: 1px solid var(--stitch-border) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  color: var(--stitch-ink);
+}
+
+.play-app.stitch-app .tm-travel-card--passes {
+  background: var(--stitch-surface) !important;
+  border-color: var(--stitch-amber) !important;
+  box-shadow: none !important;
+}
+
+.play-app.stitch-app .stitch-status-pill {
+  border-radius: 3px !important;
+  box-shadow: none !important;
+  text-transform: none;
+  letter-spacing: 0;
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.play-app.stitch-app .stitch-status--quiet,
+.play-app.stitch-app .stitch-status--ended {
+  background: #14181e !important;
+  color: var(--stitch-ink-2) !important;
+  border: 1px solid var(--stitch-border) !important;
+}
+
+.play-app.stitch-app .stitch-status--delay {
+  background: rgba(194, 120, 32, 0.18) !important;
+  color: #e8b56a !important;
+  border: 1px solid var(--stitch-orange) !important;
+}
+
+.play-app.stitch-app .stitch-status--bad {
+  background: rgba(179, 58, 50, 0.18) !important;
+  color: #f0a09a !important;
+  border: 1px solid var(--stitch-red) !important;
+}
+
+.play-app.stitch-app .stitch-line-row.severity-pulse,
+.play-app.stitch-app .kv-schematic .schem-line.schem-disruption,
+.play-app.stitch-app .kv-schematic .schem-line.schem-delay {
+  animation: none !important;
+  filter: none !important;
+}
+
+.play-app.stitch-app .kv-schematic .schem-line.schem-active,
+.play-app.stitch-app .kv-schematic .schem-line:hover {
+  filter: none !important;
+  stroke-width: 7;
+  opacity: 1;
+}
+
+.play-app.stitch-app .stitch-travel-banner,
+.play-app.stitch-app .stitch-travel-banner.stitch-travel-banner--native {
+  display: none !important;
+}
+
+.play-app.stitch-app .tm-toolbar--search {
+  background: var(--stitch-surface-soft) !important;
+}
+
+.play-app.stitch-app .search-wrap::before {
+  content: "";
+  display: none;
+}
+
+.play-app.stitch-app .tm-input,
+.play-app.stitch-app select.tm-select {
+  background: var(--stitch-surface) !important;
+  color: var(--stitch-ink) !important;
+  border: 1px solid var(--stitch-border) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  padding-left: 12px !important;
+}
+
+.play-app.stitch-app .tm-chip.active,
+.play-app.stitch-app .chip.active,
+.play-app.stitch-app .tm-chip.map-on.active,
+.play-app.stitch-app .chip.map-on.active {
+  background: var(--stitch-amber) !important;
+  border-color: var(--stitch-amber) !important;
+  color: #fff !important;
+}
+
+.play-app.stitch-app .stitch-nav-item--active {
+  color: var(--stitch-amber) !important;
+}
+
+.play-app.stitch-app .stitch-map-search-go,
+.play-app.stitch-app .stitch-map-float-actions .stitch-btn-primary,
+.play-app.stitch-app .tool-button.tm-primary-btn {
+  background: var(--stitch-amber) !important;
+  border-color: var(--stitch-amber-dark) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+  border-radius: 4px !important;
+}
+
+.play-app.stitch-app .maplibregl-popup.stitch-map-popup .maplibregl-popup-content {
+  font-family: var(--font-body) !important;
+  background: var(--stitch-surface) !important;
+  color: var(--stitch-ink) !important;
+  border: 1px solid var(--stitch-border) !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+.play-app.stitch-app .stitch-map-pin-bubble {
+  border-radius: 4px !important;
+  box-shadow: none !important;
+}
+
+.play-app.stitch-app .stitch-map-pin-bubble img {
+  display: none !important;
+}
+
+.play-app.stitch-app .schematic-head {
+  border-bottom: 1px solid var(--stitch-border) !important;
+  color: var(--stitch-ink);
+}
+
+.play-app.stitch-app .tm-official-strip {
+  background: var(--stitch-green-soft) !important;
+  border: 1px solid var(--stitch-green) !important;
+  border-radius: 4px !important;
+}
+
+.play-app.stitch-app .stitch-tapout-banner {
+  background: var(--stitch-amber-soft) !important;
+  border: 1px solid var(--stitch-amber) !important;
+  border-radius: 4px !important;
+  color: #e8a27a !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 600 !important;
+}
+
+.play-app.stitch-app .hours-now-chip,
+.play-app.stitch-app .history-cmp,
+.play-app.stitch-app .guide-stat-chip,
+.play-app.stitch-app .ix-line-chip {
+  border-radius: 3px !important;
+}
+
+.play-app.stitch-app .stitch-brand-logo {
+  display: block;
+  height: 28px;
+  width: auto;
+}
+
+.play-app.stitch-app .stitch-trust-line {
+  margin: 0 0 14px;
+  font-size: 12px;
+  color: var(--stitch-ink-2);
+  line-height: 1.4;
+}
+
+.play-app.stitch-app .stitch-trust-line a {
+  color: var(--stitch-amber);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.play-app.stitch-app .stitch-trust-line a:hover {
+  text-decoration: underline;
+}
+
+.play-app.stitch-app .stitch-brand::before {
+  display: none;
+}
+
+.play-app.stitch-app .stitch-map-pin-bubble {
+  width: 28px;
+  height: 28px;
+  border-radius: 3px !important;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: var(--stitch-orange);
+  border: 1px solid var(--stitch-orange-dark) !important;
+  box-shadow: none !important;
+}
+
+.play-app.stitch-app .stitch-map-pin--disruption .stitch-map-pin-bubble {
+  background: var(--stitch-red);
+  border-color: var(--stitch-red-dark) !important;
+}
+
+.play-app.stitch-app .stitch-map-pin--minor .stitch-map-pin-bubble {
+  background: #8a7a2a;
+  border-color: #5c5018 !important;
+  color: #fff;
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .play-app.stitch-app *,
+  .play-app.stitch-app *::before,
+  .play-app.stitch-app *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }
