@@ -245,18 +245,29 @@
 
   function cardDetail(line) {
     if (line.in_service === false && line.service_label) return line.service_label;
+    const reason = (line.reason || '').trim();
+    if (['minor', 'delay', 'disruption'].includes(line.status) && reason) {
+      return reason.length > 72 ? `${reason.slice(0, 69)}…` : reason;
+    }
+    if (line.report_count > 0) {
+      const when = line.last_seen_at ? reportAgeLabel(line.last_seen_at) : '';
+      const n = line.report_count;
+      const base = n === 1
+        ? pickLang('1 report', '1 laporan')
+        : pickLang(`${n} reports`, `${n} laporan`);
+      return when ? `${base} · ${when}` : base;
+    }
+    if (['normal', 'unknown'].includes(line.status)) {
+      return pickLang('No recent rider signal', 'Tiada isyarat penumpang terkini');
+    }
     if (line.commuter_note) return pickLang(line.commuter_note, line.commuter_note_ms);
-    if (line.route) return line.route;
-    if (line.region && line.operator) return `${line.region} · ${line.operator}`;
-    if (line.region) return line.region;
-    if (line.operator) return line.operator;
-    return line.mode === 'bus' ? 'Bus network' : 'Rail service';
+    return '';
   }
 
   function facilityChip(line) {
     if (!line.facility_alert) return '';
-    const label = pickLang('Lift / escalator issue', 'Lift / eskalator rosak');
-    return `<span class="play-facility-chip" title="${esc(label)}">♿</span>`;
+    const label = pickLang('Lift/escalator', 'Lift/eskalator');
+    return `<span class="play-facility-chip" title="${esc(label)}">${esc(label)}</span>`;
   }
 
   function statusFace(status) {
@@ -1627,13 +1638,10 @@
   }
 
   function renderRouteLegend(lines) {
-    const active = lines.filter(l => ['minor', 'delay', 'disruption'].includes(l.status)).slice(0, 8);
     const el = $('routeLegend');
     if (!el) return;
-    if (!active.length) { el.innerHTML = ''; return; }
-    el.innerHTML = active.map(l =>
-      `<span class="legend-chip"><span class="legend-dot" style="background:${LINE_COLORS[l.id] || '#64748b'}"></span>${esc(l.name.split(' ')[0])}</span>`
-    ).join('');
+    el.hidden = true;
+    el.innerHTML = '';
   }
 
   function renderLineLegendGrid(lines) {
@@ -2431,20 +2439,11 @@
   }
 
   function updateSchematic() {
+    // Schematic stays off the primary Home path — line board is the scan surface.
     const wrap = $('schematicWrap');
     if (!wrap) return;
-    const show = (activeFilter === 'all' || activeFilter === 'rail' || activeFilter === 'lrt' || activeFilter === 'mrt' || activeFilter === 'ktm' || activeFilter === 'monorail') && !placeFilter;
-    wrap.hidden = !show;
-    if (show) {
-      wrap.removeAttribute('aria-hidden');
-      if (!schematicLoaded) {
-        initSchematic();
-      } else {
-        updateSchematicHighlights();
-      }
-    } else {
-      wrap.setAttribute('aria-hidden', 'true');
-    }
+    wrap.hidden = true;
+    wrap.setAttribute('aria-hidden', 'true');
   }
 
   function scrollToLineRow(lineId) {
@@ -2478,6 +2477,9 @@
     const pinLabel = pinned ? pickLang('Saved', 'Disimpan') : pickLang('Save', 'Simpan');
     const pill = stitchStatusPill(line);
     const shortName = line.name.replace(/ Line$/, '').replace(/^KTM /, 'KTM ');
+    const official = line.corroborated
+      ? `<span class="stitch-tag stitch-tag--official">${esc(pickLang('Official', 'Rasmi'))}</span>`
+      : '';
     return `
       <div class="line-row stitch-line-row${clickable ? '' : ' planned-row'}${pulseClass}${disruptionClass}" role="${clickable ? 'button' : 'group'}" tabindex="${clickable ? '0' : '-1'}"
         data-line-id="${esc(line.id)}" data-cluster="${esc(line.top_cluster_id || '')}" data-name="${esc(line.name)}"
@@ -2486,10 +2488,10 @@
         <div class="stitch-line-body">
           <div style="min-width:0;flex:1">
             <h4 class="stitch-line-name">
-              <button type="button" class="stitch-fav-btn fav-btn${pinned ? ' fav-on' : ''}" data-line-id="${esc(line.id)}" aria-label="${esc(pinLabel)}" title="${esc(pinLabel)}">${pinned ? '★' : '☆'}</button>
-              ${esc(shortName)}${facilityChip(line)}
+              <button type="button" class="stitch-fav-btn fav-btn${pinned ? ' fav-on' : ''}" data-line-id="${esc(line.id)}" aria-label="${esc(pinLabel)}" title="${esc(pinLabel)}">${pinned ? 'Save' : '+'}</button>
+              ${esc(shortName)}${facilityChip(line)}${official}
             </h4>
-            <p class="stitch-line-detail">${detail}</p>
+            <p class="stitch-line-detail">${detail || '&nbsp;'}</p>
           </div>
           <span class="stitch-status-pill ${pill.cls}">${esc(pill.label)}</span>
         </div>
@@ -2533,11 +2535,10 @@
       }
       $('lineBoard').innerHTML = `
         <div class="stitch-section-head" id="lineBoardHead">
-          <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
+          <h2 class="tm-live-today-title">Line status</h2>
           <span class="stitch-count-badge board-count">0</span>
         </div>
         <div class="empty">
-          <div class="empty-icon" aria-hidden="true">${ICON_SVG.tram}</div>
           No matching lines.<br>
           <span style="font-size:12px;color:var(--text-dim)">${hint}</span>
           <div class="empty-filter-actions">
@@ -2555,14 +2556,15 @@
       ? lines.filter(line => ['minor', 'delay', 'disruption'].includes(line.status) || favoriteLineIds.has(line.id))
       : lines;
     const quietLines = usePulseGrouping ? lines.filter(line => !priorityLines.includes(line)) : [];
-    const quietOpen = window.matchMedia('(min-width: 768px)').matches ? ' open' : '';
     $('lineBoard').innerHTML = `
       <div class="stitch-section-head" id="lineBoardHead">
-        <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
+        <h2 class="tm-live-today-title">Line status</h2>
         <span class="stitch-count-badge board-count">${lines.length}</span>
       </div>
-      ${priorityLines.length ? rowsHtml(priorityLines) : '<div class="quiet-empty"><strong>All quiet right now</strong><br><span style="font-size:13px">No active delays in your view</span></div>'}
-      ${quietLines.length ? `<details class="quiet-lines"${quietOpen}><summary><span>More lines</span><span>${quietLines.length}</span></summary>${rowsHtml(quietLines)}</details>` : ''}`;
+      ${priorityLines.length
+        ? rowsHtml(priorityLines)
+        : `<div class="quiet-empty"><strong>${pickLang('No active signals', 'Tiada isyarat aktif')}</strong><br><span style="font-size:13px">${pickLang('Quiet ≠ confirmed normal service', 'Tenang ≠ perkhidmatan disahkan normal')}</span></div>`}
+      ${quietLines.length ? `<details class="quiet-lines"><summary><span>${pickLang('Quiet lines', 'Laluan tenang')}</span><span>${quietLines.length}</span></summary>${rowsHtml(quietLines)}</details>` : ''}`;
   }
 
   function renderPlanned(services) {
@@ -2677,7 +2679,7 @@
     el.innerHTML = `
       <div class="tm-travel-card-head">
         <div>
-          <h2 id="scheduleTitle">Service hours <span class="stitch-sub-en">(Waktu perkhidmatan)</span></h2>
+          <h2 id="scheduleTitle">Service hours</h2>
           <p class="tm-travel-lead">${pickLang('First & last trains · Rapid KL rail', 'Kereta pertama & terakhir · Rapid KL')}</p>
         </div>
       </div>

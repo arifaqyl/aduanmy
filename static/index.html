@@ -18,9 +18,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Type: IBM Plex Sans + Mono, Barlow Condensed brand — imported in stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css?v=30" />
-  <link rel="stylesheet" href="static/css/play.css?v=30" />
-  <link rel="stylesheet" href="static/css/stitch.css?v=30" />
+  <link rel="stylesheet" href="static/css/components.css?v=31" />
+  <link rel="stylesheet" href="static/css/play.css?v=31" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=31" />
 </head>
 <body class="tm-app play-app stitch-app">
 
@@ -68,33 +68,7 @@
             </div>
           </div>
 
-          <p class="stitch-trust-line" id="trustLine">
-            Rider signals today · quiet ≠ all-clear ·
-            <a href="methodology">Method</a>
-          </p>
-
           <div id="riskStrip" class="play-risk-strip" hidden aria-label="My lines during rush hour"></div>
-
-          <section class="tm-live-today stitch-live-today" id="liveTodaySection">
-            <div class="stitch-section-head">
-              <div>
-                <h2 class="tm-live-today-title">Live today <span class="stitch-sub-en">(Utama hari ini)</span></h2>
-                <p class="tm-section-sub section-sub" id="reportCount">Today · MYT</p>
-              </div>
-              <span class="stitch-sub-en" style="font-size:11px;font-weight:700;max-width:110px;text-align:right">Resets midnight MYT</span>
-            </div>
-            <p class="tm-live-today-note">Rider reports only — not official all-clear. Service ends when last train passes.</p>
-            <div class="tm-official-strip official-strip" id="officialStrip" hidden>
-              <h3>Official corroboration</h3>
-              <div id="officialFeed"></div>
-            </div>
-            <div class="tm-last-viewed last-viewed" id="lastViewed" hidden></div>
-            <div id="reportFeed" class="tm-report-feed"></div>
-          </section>
-
-          <section class="tm-sources" id="pulseHero" aria-label="Data sources" hidden>
-            <div class="tm-source-coverage source-coverage-strip" id="sourceCoverageStrip"></div>
-          </section>
 
           <div class="tm-toolbar tm-toolbar--search">
             <div class="tm-search-wrap search-wrap" id="searchWrap">
@@ -131,25 +105,20 @@
             <span id="staleBannerDetail">. Try Refresh.</span>
           </div>
 
+          <p class="stitch-trust-line" id="trustLine">
+            Rider signals · quiet ≠ all-clear ·
+            <a href="methodology">Method</a>
+          </p>
+
           <div class="tm-context-bar context-bar" id="contextBar"></div>
           <div class="tm-board-summary board-summary" id="boardSummary" aria-live="polite"></div>
           <div class="tm-stats-bar stats-bar" id="statsBar"></div>
           <div class="summary-strip" id="summaryStrip" hidden aria-hidden="true"></div>
           <div class="tm-pulse-strip pulse-strip" id="pulseStrip" aria-label="Active disruptions" hidden></div>
 
-          <div class="tm-schematic-wrap schematic-wrap stitch-schematic-wrap" id="schematicWrap" hidden aria-hidden="true">
-            <div class="tm-schematic-head schematic-head stitch-schematic-head">
-              <span>Klang Valley <span class="stitch-sub-en">(Lembah Klang)</span></span>
-              <span class="stitch-schematic-hint">Tap a line</span>
-            </div>
-            <div class="stitch-schematic-stage" id="schematicStage">
-              <div class="stitch-schematic-loading" id="schematicLoading">Loading schematic…</div>
-            </div>
-          </div>
-
           <section class="tm-board dep-board board" id="lineBoard" aria-label="Line status board">
             <div class="stitch-section-head" id="lineBoardHead">
-              <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
+              <h2 class="tm-live-today-title">Line status</h2>
               <span class="stitch-count-badge board-count">…</span>
             </div>
             <div class="tm-loading-banner loading-banner" id="boardLoadingBanner">
@@ -158,19 +127,42 @@
             </div>
           </section>
 
+          <section class="tm-live-today stitch-live-today" id="liveTodaySection">
+            <div class="stitch-section-head">
+              <div>
+                <h2 class="tm-live-today-title">Reports today</h2>
+                <p class="tm-section-sub section-sub" id="reportCount">Today · MYT</p>
+              </div>
+            </div>
+            <div class="tm-official-strip official-strip" id="officialStrip" hidden>
+              <h3>Official corroboration</h3>
+              <div id="officialFeed"></div>
+            </div>
+            <div class="tm-last-viewed last-viewed" id="lastViewed" hidden></div>
+            <div id="reportFeed" class="tm-report-feed"></div>
+          </section>
+
+          <section class="tm-sources" id="pulseHero" aria-label="Data sources" hidden>
+            <div class="tm-source-coverage source-coverage-strip" id="sourceCoverageStrip"></div>
+          </section>
+
+          <div class="tm-schematic-wrap schematic-wrap stitch-schematic-wrap" id="schematicWrap" hidden aria-hidden="true">
+            <div class="stitch-schematic-stage" id="schematicStage" hidden></div>
+          </div>
+
           <div class="tm-compare-bar compare-bar" id="compareBar" aria-live="polite">
             <span>Compare: tap two lines</span>
             <button type="button" class="tm-search-clear search-clear" id="compareClear">Clear</button>
           </div>
 
-          <div class="tm-legend line-legend collapsed-mobile" id="lineLegend">
+          <div class="tm-legend line-legend collapsed-mobile" id="lineLegend" hidden>
             <div class="tm-legend-head line-legend-head">
               <button type="button" class="tm-legend-toggle line-legend-toggle" id="lineLegendToggle" aria-expanded="false" aria-controls="lineLegendGrid">Line colours</button>
               <button type="button" id="glossaryBtn">Glossary</button>
             </div>
             <div class="tm-legend-grid line-legend-grid" id="lineLegendGrid"></div>
           </div>
-          <div class="tm-route-legend route-legend" id="routeLegend" aria-label="Disruption colours"></div>
+          <div class="tm-route-legend route-legend" id="routeLegend" aria-label="Disruption colours" hidden></div>
         </div>
 
         <aside class="tm-status-side">
@@ -192,7 +184,6 @@
     <div class="tm-view tab-panel" id="tabMap" role="tabpanel" aria-labelledby="tabBtnMap" hidden>
       <div class="stitch-map-shell">
         <div class="tm-map-toolbar map-toolbar stitch-map-toolbar" role="group" aria-label="Map layers">
-          <button class="tm-chip chip map-on stitch-map-chip" type="button" id="mapLayerAll" data-layer="all" aria-pressed="false">All</button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerReports" data-layer="reports" aria-pressed="true">Reports</button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerLrt" data-layer="lrt" aria-pressed="true">LRT</button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerMrt" data-layer="mrt" aria-pressed="true">MRT</button>
@@ -200,8 +191,9 @@
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerKtm" data-layer="ktm" aria-pressed="true">KTM</button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerInterchanges" data-layer="interchanges" aria-pressed="true">Hubs</button>
           <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerBuses" data-layer="buses" aria-pressed="false">Bus</button>
-          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerGps" data-layer="gps" aria-pressed="false" title="Official GTFS-RT GPS — reference only, not incident truth">GPS</button>
-          <button class="tm-chip chip stitch-map-chip" type="button" id="mapTiltToggle" aria-pressed="false">3D</button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerGps" data-layer="gps" aria-pressed="false" title="Official GTFS-RT GPS — reference only">GPS</button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerAll" data-layer="all" aria-pressed="false" hidden>All</button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapTiltToggle" aria-pressed="false" hidden>3D</button>
         </div>
         <div class="stitch-map-stage">
           <aside class="tm-map-sidebar map-sidebar" id="mapSidebar" hidden>
@@ -227,8 +219,8 @@
         <section class="tm-travel-card" aria-labelledby="journeyTitle">
           <div class="tm-travel-card-head">
             <div>
-              <h2 id="journeyTitle">Plan route <span class="stitch-sub-en">(Rancang)</span></h2>
-              <p class="tm-travel-lead">Rapid KL rail · station or address</p>
+              <h2 id="journeyTitle">Plan route</h2>
+              <p class="tm-travel-lead">Rapid KL rail</p>
             </div>
           </div>
           <form class="tm-journey-form journey-form journey-form--compact" id="journeyForm">
@@ -254,7 +246,7 @@
         <section class="tm-travel-card tm-travel-card--passes" aria-labelledby="savingsTitle">
           <div class="tm-travel-card-head">
             <div>
-              <h2 id="savingsTitle">Passes &amp; fares <span class="stitch-sub-en">(Pas)</span></h2>
+              <h2 id="savingsTitle">Passes &amp; fares</h2>
               <p class="tm-travel-lead">My50 · Rapid Pelajar · pay-as-you-go</p>
             </div>
           </div>
@@ -360,6 +352,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js?v=30" defer></script>
+  <script src="static/js/app.js?v=31" defer></script>
 </body>
 </html>
