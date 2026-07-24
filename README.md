@@ -6,7 +6,7 @@
 > **What are riders reporting on LRT / MRT / KTM right now?**
 
 [![Live](https://img.shields.io/badge/live-arifaqyl.me%2Ftraffic-1f7a4d?style=flat-square)](https://arifaqyl.me/traffic/)
-[![Tests](https://img.shields.io/badge/tests-280%20passing-1f7a4d?style=flat-square)](https://github.com/arifaqyl/aduanmy/actions)
+[![Tests](https://img.shields.io/badge/tests-282%20passing-1f7a4d?style=flat-square)](https://github.com/arifaqyl/aduanmy/actions)
 [![License](https://img.shields.io/badge/license-MIT-171c1a?style=flat-square)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%2B-2b6a8a?style=flat-square)](pyproject.toml)
 
