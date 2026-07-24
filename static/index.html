@@ -18,9 +18,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Nunito Sans + Material Symbols imported inside static/css/stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css?v=44" />
-  <link rel="stylesheet" href="static/css/play.css?v=44" />
-  <link rel="stylesheet" href="static/css/stitch.css?v=44" />
+  <link rel="stylesheet" href="static/css/components.css?v=45" />
+  <link rel="stylesheet" href="static/css/play.css?v=45" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=45" />
 </head>
 <body class="tm-app play-app stitch-app">
 
@@ -155,6 +155,8 @@
             <strong data-i18n="Stale data" data-i18n-ms="Data lapuk">Stale data</strong>
             <span id="staleBannerDetail">. Try Refresh.</span>
           </div>
+
+          <div class="tm-source-health source-health-banner" id="sourceHealthBanner" role="status" aria-live="polite" hidden></div>
 
           <div class="tm-context-bar context-bar" id="contextBar"></div>
           <div class="tm-board-summary board-summary" id="boardSummary" aria-live="polite"></div>
@@ -432,6 +434,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js?v=44" defer></script>
+  <script src="static/js/app.js?v=45" defer></script>
 </body>
 </html>

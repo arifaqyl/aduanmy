@@ -448,6 +448,41 @@
     }
   }
 
+  function renderSourceHealth(payload) {
+    const el = $('sourceHealthBanner');
+    if (!el) return;
+    if (!payload || !payload.primary_degraded) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    const items = (payload.items || []).filter(i => i.degraded);
+    const chips = items.map(i =>
+      `<span class="sh-chip sh-${esc(i.source)}">${esc(i.source)} · ${esc(i.status)}</span>`
+    ).join('');
+    el.innerHTML =
+      `<div class="sh-row">
+         <span class="sh-icon" aria-hidden="true">⚠</span>
+         <div class="sh-text">
+           <strong>${esc(payload.warning || 'Primary rider-report source is degraded.')}</strong>
+           ${chips ? `<div class="sh-chips">${chips}</div>` : ''}
+         </div>
+       </div>`;
+  }
+
+  async function loadSourceHealth() {
+    const el = $('sourceHealthBanner');
+    if (!el) return;
+    try {
+      const res = await fetchWithTimeout(api('/api/trafficmy/source-health'));
+      if (!res.ok) { el.hidden = true; return; }
+      renderSourceHealth(await res.json());
+    } catch {
+      el.hidden = true;
+    }
+  }
+
   function healthClass(score) {
     if (score == null) return '';
     if (score >= 70) return 'good';
@@ -3090,6 +3125,7 @@
       startCountdown();
       refreshHealthSnapshot();
       loadGpsGaps();
+      loadSourceHealth();
     } catch (err) {
       if (gen !== loadGeneration) return;
       // Retry once after 3 seconds

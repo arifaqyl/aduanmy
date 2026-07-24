@@ -328,6 +328,53 @@ def trafficmy_gps_gaps(limit: int = Query(default=20, ge=1, le=50)) -> dict:
     }
 
 
+@router.get("/trafficmy/source-health")
+def trafficmy_source_health() -> dict:
+    """Per-collector health, with a clear warning when the primary source is degraded.
+
+    Surfaces the last ingest's per-source run status (healthy/empty/failed/paused)
+    as a stable contract for the dashboard. When Threads — the primary rider-report
+    source — is failed/empty, `primary_degraded` is True and `warning` carries a
+    plain-language message so the board can tell users rider signals may be
+    incomplete (official + other sources are still shown).
+    """
+    status = get_trafficmy_status()
+    sources = (status.get("ingest") or {}).get("sources") or {}
+    order = ("threads", "reddit", "x", "rss", "official", "gtfs")
+    items = []
+    for name in order:
+        run = sources.get(name)
+        if not run:
+            continue
+        st = str(run.get("status") or "unknown")
+        items.append(
+            {
+                "source": name,
+                "status": st,
+                "degraded": st in {"failed", "empty"},
+                "row_count": int(run.get("row_count") or 0),
+                "error": str(run.get("error") or ""),
+                "finished_at": str(run.get("finished_at") or ""),
+                "duration_seconds": float(run.get("duration_seconds") or 0),
+            }
+        )
+    degraded = [i for i in items if i["degraded"]]
+    primary_degraded = any(i["source"] == "threads" for i in degraded)
+    return {
+        "product": "TrafficMY",
+        "primary_source": "threads",
+        "primary_degraded": primary_degraded,
+        "degraded_count": len(degraded),
+        "items": items,
+        "warning": (
+            "The Threads collector — our primary rider-report source — is degraded. "
+            "Rider signals may be incomplete; official and other sources are still shown."
+            if primary_degraded
+            else ""
+        ),
+    }
+
+
 @router.get("/trafficmy/status")
 def trafficmy_status() -> dict:
     return get_trafficmy_status()

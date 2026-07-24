@@ -2476,4 +2476,46 @@
   line-height: 1.4;
 }
 
+/* Revamp batch 2: source-health warning banner (primary source degraded) */
+.tm-source-health.source-health-banner {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid #b8462f;
+  border-radius: 14px;
+  background: rgba(184, 70, 47, 0.06);
+  display: grid;
+  gap: 8px;
+}
+.source-health-banner .sh-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.source-health-banner .sh-icon {
+  font-size: 1.1rem;
+  line-height: 1.2;
+}
+.source-health-banner .sh-text {
+  display: grid;
+  gap: 6px;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+.source-health-banner .sh-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.source-health-banner .sh-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #b8462f;
+  color: #b8462f;
+  background: transparent;
+  text-transform: capitalize;
+}
+
+
 
