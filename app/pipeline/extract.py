@@ -293,6 +293,8 @@ TRANSPORT_STRONG_INCIDENT_TERMS = [
     "jejas perkhidmatan",
     "disruption",
     "incident",
+    "breakdown",
+    "broke down",
     "fire alarm",
     "tak boleh keluar",
     "tak gerak",
@@ -389,7 +391,7 @@ TRANSPORT_THREADS_TIME_CHROME_RE = re.compile(
 TRANSPORT_RIDER_WAITING_RE = re.compile(
     r"\b(?:kena\s+tunggu|tunggu\s+(?:lama|dekat|lagi|tren|bas|train|platform|stesen|station)|"
     r"menunggu\s+(?:tren|bas|train|dekat|platform|stesen|station)|"
-    r"waiting\s+(?:for|at|on)|waited\s+\d+)\b",
+    r"waiting\s+(?:for|at|on|\d+)|waited\s+\d+)\b",
     re.I,
 )
 
@@ -543,6 +545,8 @@ TRANSPORT_CONCRETE_CAUSE_TERMS = [
     "power failure",
     "door malfunction",
     "manual operation",
+    "breakdown",
+    "broke down",
 ]
 
 TRANSPORT_CHATTER_PATTERNS = [
@@ -1098,6 +1102,9 @@ def transport_incident_signal_ok(text: str, entity_hint: str = "") -> bool:
     if weak_hit and mentions_transit and any(token in low for token in ["tak gerak", "rosak", "lambat", "delay", "gangguan"]):
         if direct_experience_hit or measured_hit:
             return True
+    # Real rider shorthand: "waiting 25 min at Bangsar LRT" — measured wait + transit anchor.
+    if measured_hit and specificity_hit and _transport_rider_waiting_hit(low):
+        return True
     return False
 
 
@@ -1131,6 +1138,13 @@ def transport_rider_signal_worthwhile(text: str, entity_hint: str = "") -> bool:
     incident_now_hit = any(token in low for token in ["incident", "gangguan", "disruption"]) and present_hit
     if riding_delay_hit or incident_now_hit:
         observable_hit = True
+
+    # Historical anecdotes ("throwback dulu… waiting 25 minutes") are never live signals,
+    # even when they contain measured waits that would otherwise pass the shorthand path.
+    if re.search(r"\b(?:throwback|remember when|tahun lepas|last year)\b", low) or re.search(
+        r"\bdulu\b.{0,60}\b(?:delay|lambat|waiting|stuck|rosak|gangguan)\b", low
+    ):
+        return False
 
     # Politics, housing, or infrastructure hypotheticals — never a live rider signal.
     if any(

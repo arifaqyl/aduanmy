@@ -26,7 +26,27 @@ def test_session_round_trip_keeps_only_required_cookie_scope(tmp_path, monkeypat
     assert loaded is not None
     assert {cookie["name"] for cookie in loaded["cookies"]} == {"sessionid", "csrftoken"}
     assert loaded["origins"] == []
-    assert session_status()["available"] is True
+    status = session_status()
+    assert status["available"] is True
+    assert status["stale"] is False
+    assert status["age_hours"] is not None
+    assert status["age_hours"] < 1
+
+
+def test_session_status_marks_old_file_stale(tmp_path, monkeypatch):
+    import os
+    import time
+
+    path = tmp_path / "threads-session.json"
+    monkeypatch.setattr(settings, "threads_session_path", str(path))
+    save_storage_state(_state())
+    stale_mtime = time.time() - (8 * 24 * 3600)
+    os.utime(path, (stale_mtime, stale_mtime))
+
+    status = session_status(stale_after_days=7)
+    assert status["available"] is True
+    assert status["stale"] is True
+    assert status["age_hours"] >= 7 * 24
 
 
 def test_session_rejects_missing_csrf_cookie(tmp_path, monkeypatch):

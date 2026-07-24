@@ -955,11 +955,40 @@ def _collect_seed_posts(seen_urls: set[str], *, skip_profile_discovery: bool = F
 
 def collect_threads_sample() -> list[dict]:
     _reset_diagnostics()
+    from app.collectors.threads.session import session_status
+
+    sess = session_status()
+    _note("session_available", bool(sess.get("available")))
+    _note("session_stale", bool(sess.get("stale")))
+    _note("session_age_hours", sess.get("age_hours"))
+    if not sess.get("available"):
+        _note_reason("threads_session_missing")
+    elif sess.get("stale"):
+        _note_reason("threads_session_stale")
+
     started = time.monotonic()
     deadline = started + THREADS_TIME_BUDGET_SECONDS
     seen_urls: set[str] = set()
     rows: list[dict] = []
-    rows.extend(_collect_keyword_search_posts(seen_urls, deadline=deadline))
+
+    # Watchlist first: known rider/operator profiles are higher-yield and cheaper
+    # than keyword search. Keyword search used to run first and routinely burned
+    # the 210s budget, so watchlist never ran and the board looked empty.
+    if not _budget_expired(deadline):
+        rows.extend(_collect_latest_watchlist_posts(seen_urls))
+        _note("watchlist_rows", len(rows))
+    else:
+        _note_reason("skipped_watchlist_lane_time_budget")
+
+    dated_rows = [r for r in rows if r.get("created_at")]
+    need_keyword = len(dated_rows) < 6
+    if need_keyword and not _budget_expired(deadline):
+        rows.extend(_collect_keyword_search_posts(seen_urls, deadline=deadline))
+    elif _budget_expired(deadline):
+        _note_reason("skipped_keyword_search_lane_time_budget")
+    elif not need_keyword:
+        _note_reason("skipped_keyword_search_lane_watchlist_enough")
+
     diag = get_threads_diagnostics()
     reasons = diag.get("reasons") or []
     queries_run = int(diag.get("keyword_search_queries_run") or 0)
@@ -968,13 +997,7 @@ def collect_threads_sample() -> list[dict]:
         "login_wall" in r or "signup_bait" in r or "search_blocked" in r for r in reasons
     )
     dated_rows = [r for r in rows if r.get("created_at")]
-    need_watchlist = len(dated_rows) < 6 or keyword_starved
-    if need_watchlist and not _budget_expired(deadline):
-        rows.extend(_collect_latest_watchlist_posts(seen_urls))
-    elif _budget_expired(deadline):
-        _note_reason("skipped_watchlist_lane_time_budget")
-    dated_rows = [r for r in rows if r.get("created_at")]
-    if len(dated_rows) < 6 and not _budget_expired(deadline):
+    if (len(dated_rows) < 6 or keyword_starved) and not _budget_expired(deadline):
         rows.extend(_collect_search_discovered_posts(seen_urls))
     elif _budget_expired(deadline):
         _note_reason("skipped_web_search_fallback_lane_time_budget")

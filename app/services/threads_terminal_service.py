@@ -126,6 +126,9 @@ def session_panel() -> dict[str, Any]:
         "path": str(path),
         "available": status.get("available"),
         "updated_at": status.get("updated_at"),
+        "age_hours": status.get("age_hours"),
+        "stale": status.get("stale"),
+        "stale_after_days": status.get("stale_after_days"),
         "size_bytes": path.stat().st_size if path.is_file() else 0,
     }
 

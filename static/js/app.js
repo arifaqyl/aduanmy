@@ -451,22 +451,29 @@
   function renderSourceHealth(payload) {
     const el = $('sourceHealthBanner');
     if (!el) return;
-    if (!payload || !payload.primary_degraded) {
+    const session = (payload && payload.session) || {};
+    const show = Boolean(
+      payload && (payload.primary_degraded || session.stale || session.missing || payload.warning)
+    );
+    if (!show) {
       el.hidden = true;
       el.innerHTML = '';
       return;
     }
     el.hidden = false;
-    const items = (payload.items || []).filter(i => i.degraded);
+    const items = ((payload.items || []).filter(i => i.degraded));
     const chips = items.map(i =>
       `<span class="sh-chip sh-${esc(i.source)}">${esc(i.source)} · ${esc(i.status)}</span>`
     ).join('');
+    const sessionChip = session.missing
+      ? '<span class="sh-chip sh-session">session · missing</span>'
+      : (session.stale ? '<span class="sh-chip sh-session">session · stale</span>' : '');
     el.innerHTML =
       `<div class="sh-row">
          <span class="sh-icon" aria-hidden="true">⚠</span>
          <div class="sh-text">
-           <strong>${esc(payload.warning || 'Primary rider-report source is degraded.')}</strong>
-           ${chips ? `<div class="sh-chips">${chips}</div>` : ''}
+           <strong>${esc(payload.warning || 'Primary rider-report source needs attention.')}</strong>
+           <div class="sh-chips">${chips}${sessionChip}</div>
          </div>
        </div>`;
   }

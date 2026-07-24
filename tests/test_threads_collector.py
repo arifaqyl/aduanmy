@@ -210,6 +210,16 @@ def test_transport_rider_signal_accepts_live_waiting_all_lines():
     )
 
 
+def test_transport_rider_signal_accepts_breakdown_and_measured_wait_shorthand():
+    """Real rider shorthand that used to false-reject and thin the board."""
+    assert transport_rider_signal_worthwhile("KTM Serdang breakdown pagi ni")
+    assert transport_rider_signal_worthwhile("waiting 25 min at Bangsar LRT")
+    assert transport_rider_signal_worthwhile("MRT Kajang breakdown now near Maluri")
+    # Still reject bare opinions / no-anchor waits.
+    assert not transport_rider_signal_worthwhile("LRT delay again")
+    assert not transport_rider_signal_worthwhile("waiting 25 min at the mall")
+
+
 def test_transport_incident_signal_rejects_hypothetical_and_advisory_posts():
     assert not transport_incident_signal_ok(
         "Bayangkan LRT3 dah start operate lepastu KJ line ada problem/delay, "
@@ -450,7 +460,7 @@ def test_is_search_result_candidate_accepts_transport_complaint():
     assert not _is_search_result_candidate("Best nasi lemak near LRT Bangsar", "transport")
 
 
-def test_collect_threads_sample_prioritizes_keyword_search(monkeypatch):
+def test_collect_threads_sample_lane_order_watchlist_first(monkeypatch):
     calls: list[str] = []
     recent = _recent_today_iso()
 
@@ -479,21 +489,21 @@ def test_collect_threads_sample_prioritizes_keyword_search(monkeypatch):
     from app.collectors.threads.client import collect_threads_sample
 
     rows = collect_threads_sample()
-    assert calls == ["keyword", "watchlist", "web", "seed"]
+    assert calls == ["watchlist", "keyword", "web", "seed"]
     assert len(rows) == 1
     assert rows[0]["query"] == "lrt problem"
 
 
-def test_collect_threads_sample_skips_watchlist_when_keyword_enough(monkeypatch):
+def test_collect_threads_sample_skips_keyword_when_watchlist_enough(monkeypatch):
     recent = _recent_today_iso()
 
-    def fake_keyword(seen, **kwargs):
+    def fake_watchlist(seen):
         return [
             {
                 "url": f"https://threads.com/@a/post/{i}",
                 "raw_text": f"LRT delay again, waiting {i + 10} minutes at Bangsar",
                 "created_at": recent,
-                "query": "lrt problem",
+                "query": "latest_profile",
                 "seed_category": "transport",
                 "source_platform": "threads",
                 "post_id": f"abc{i}",
@@ -502,17 +512,14 @@ def test_collect_threads_sample_skips_watchlist_when_keyword_enough(monkeypatch)
             for i in range(6)
         ]
 
-    monkeypatch.setattr("app.collectors.threads.client._collect_keyword_search_posts", fake_keyword)
+    monkeypatch.setattr("app.collectors.threads.client._collect_latest_watchlist_posts", fake_watchlist)
     monkeypatch.setattr(
-        "app.collectors.threads.client._collect_latest_watchlist_posts",
-        lambda seen: (_ for _ in ()).throw(AssertionError("watchlist should be skipped")),
+        "app.collectors.threads.client._collect_keyword_search_posts",
+        lambda seen, **kwargs: (_ for _ in ()).throw(AssertionError("keyword should be skipped")),
     )
     monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", lambda seen, skip_profile_discovery=False: [])
     monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows, deadline=None: rows)
-    monkeypatch.setattr(
-        "app.collectors.threads.client.get_threads_diagnostics",
-        lambda: {"reasons": [], "keyword_search_queries_with_hits": 6},
-    )
+    monkeypatch.setattr("app.collectors.threads.client._collect_search_discovered_posts", lambda seen: [])
 
     from app.collectors.threads.client import collect_threads_sample
 
@@ -520,7 +527,7 @@ def test_collect_threads_sample_skips_watchlist_when_keyword_enough(monkeypatch)
     assert len(rows) == 6
 
 
-def test_collect_threads_sample_runs_watchlist_when_keyword_rows_undated(monkeypatch):
+def test_collect_threads_sample_runs_keyword_when_watchlist_undated(monkeypatch):
     calls: list[str] = []
     recent = _recent_today_iso()
 
@@ -530,14 +537,14 @@ def test_collect_threads_sample_runs_watchlist_when_keyword_rows_undated(monkeyp
             {
                 "url": f"https://threads.com/@a/post/{i}",
                 "raw_text": f"LRT delay again, waiting {i + 10} minutes at Bangsar",
-                "created_at": "",
+                "created_at": recent,
                 "query": "lrt problem",
                 "seed_category": "transport",
                 "source_platform": "threads",
                 "post_id": f"abc{i}",
                 "author_handle": "a",
             }
-            for i in range(6)
+            for i in range(2)
         ]
 
     def fake_watchlist(seen):
@@ -546,7 +553,7 @@ def test_collect_threads_sample_runs_watchlist_when_keyword_rows_undated(monkeyp
             {
                 "url": "https://threads.com/@b/post/1",
                 "raw_text": "MRT delay now, waiting 15 minutes at Maluri",
-                "created_at": recent,
+                "created_at": "",
                 "query": "latest_profile",
                 "seed_category": "transport",
                 "source_platform": "threads",
@@ -560,16 +567,13 @@ def test_collect_threads_sample_runs_watchlist_when_keyword_rows_undated(monkeyp
     monkeypatch.setattr("app.collectors.threads.client._collect_search_discovered_posts", lambda seen: [])
     monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", lambda seen, skip_profile_discovery=False: [])
     monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows, deadline=None: rows)
-    monkeypatch.setattr(
-        "app.collectors.threads.client.get_threads_diagnostics",
-        lambda: {"reasons": [], "keyword_search_queries_with_hits": 6},
-    )
 
     from app.collectors.threads.client import collect_threads_sample
 
     rows = collect_threads_sample()
-    assert "watchlist" in calls
-    assert any(r.get("query") == "latest_profile" for r in rows)
+    assert calls[0] == "watchlist"
+    assert "keyword" in calls
+    assert any(r.get("query") == "lrt problem" for r in rows)
 
 def test_collect_threads_sample_prioritizes_watchlist(monkeypatch):
     calls: list[str] = []
@@ -600,7 +604,7 @@ def test_collect_threads_sample_prioritizes_watchlist(monkeypatch):
     from app.collectors.threads.client import collect_threads_sample
 
     rows = collect_threads_sample()
-    assert calls[0] == "keyword"
+    assert calls[0] == "watchlist"
     assert len(rows) == 1
     assert rows[0]["query"] == "latest_profile"
 

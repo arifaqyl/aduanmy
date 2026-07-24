@@ -336,8 +336,12 @@ def trafficmy_source_health() -> dict:
     as a stable contract for the dashboard. When Threads — the primary rider-report
     source — is failed/empty, `primary_degraded` is True and `warning` carries a
     plain-language message so the board can tell users rider signals may be
-    incomplete (official + other sources are still shown).
+    incomplete (official + other sources are still shown). Also flags a stale
+    Threads session file (cookies not refreshed) — that usually precedes empty
+    keyword searches and a quiet board that looks like 'all clear'.
     """
+    from app.collectors.threads.session import session_status
+
     status = get_trafficmy_status()
     sources = (status.get("ingest") or {}).get("sources") or {}
     order = ("threads", "reddit", "x", "rss", "official", "gtfs")
@@ -360,18 +364,42 @@ def trafficmy_source_health() -> dict:
         )
     degraded = [i for i in items if i["degraded"]]
     primary_degraded = any(i["source"] == "threads" for i in degraded)
+    session = session_status()
+    session_stale = bool(session.get("available") and session.get("stale"))
+    session_missing = not bool(session.get("available"))
+    warnings: list[str] = []
+    if primary_degraded:
+        warnings.append(
+            "The Threads collector — our primary rider-report source — is degraded. "
+            "Rider signals may be incomplete; official and other sources are still shown."
+        )
+    if session_missing:
+        warnings.append(
+            "No Threads session file on this host. Keyword search will hit a login wall; "
+            "renew the session (Threads Terminal → login) so rider signals can flow."
+        )
+    elif session_stale:
+        age = session.get("age_hours")
+        age_bit = f" (~{age:.0f}h old)" if isinstance(age, (int, float)) else ""
+        warnings.append(
+            f"Threads session looks stale{age_bit}. Cookies often die after a few days "
+            "unused — renew soon or the rider-signal lane will go quiet."
+        )
     return {
         "product": "TrafficMY",
         "primary_source": "threads",
         "primary_degraded": primary_degraded,
         "degraded_count": len(degraded),
         "items": items,
-        "warning": (
-            "The Threads collector — our primary rider-report source — is degraded. "
-            "Rider signals may be incomplete; official and other sources are still shown."
-            if primary_degraded
-            else ""
-        ),
+        "session": {
+            "available": bool(session.get("available")),
+            "stale": session_stale,
+            "missing": session_missing,
+            "updated_at": session.get("updated_at"),
+            "age_hours": session.get("age_hours"),
+            "stale_after_days": session.get("stale_after_days"),
+        },
+        "warning": " ".join(warnings),
     }
 
 

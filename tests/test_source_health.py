@@ -32,6 +32,16 @@ def test_source_health_primary_degraded(monkeypatch):
                        "finished_at": "2026-07-24T10:00:00Z", "duration_seconds": 2},
         },
     )
+    monkeypatch.setattr(
+        "app.collectors.threads.session.session_status",
+        lambda **_k: {
+            "available": True,
+            "updated_at": "2026-07-24T09:00:00+00:00",
+            "age_hours": 1.0,
+            "stale": False,
+            "stale_after_days": 7,
+        },
+    )
     client = TestClient(create_app())
     res = client.get("/api/trafficmy/source-health")
     assert res.status_code == 200
@@ -58,6 +68,16 @@ def test_source_health_all_healthy(monkeypatch):
                          "finished_at": "2026-07-24T10:00:00Z", "duration_seconds": 1},
         },
     )
+    monkeypatch.setattr(
+        "app.collectors.threads.session.session_status",
+        lambda **_k: {
+            "available": True,
+            "updated_at": "2026-07-24T09:00:00+00:00",
+            "age_hours": 1.0,
+            "stale": False,
+            "stale_after_days": 7,
+        },
+    )
     client = TestClient(create_app())
     res = client.get("/api/trafficmy/source-health")
     assert res.status_code == 200
@@ -65,7 +85,35 @@ def test_source_health_all_healthy(monkeypatch):
     assert payload["primary_degraded"] is False
     assert payload["degraded_count"] == 0
     assert payload["warning"] == ""
+    assert payload["session"]["stale"] is False
     assert all(not i["degraded"] for i in payload["items"])
+
+
+def test_source_health_warns_on_stale_session(monkeypatch):
+    _set_ingest(
+        monkeypatch,
+        {
+            "threads": {"status": "healthy", "row_count": 2, "error": "",
+                        "finished_at": "2026-07-24T10:00:00Z", "duration_seconds": 3},
+        },
+    )
+    monkeypatch.setattr(
+        "app.collectors.threads.session.session_status",
+        lambda **_k: {
+            "available": True,
+            "updated_at": "2026-07-11T11:41:46+00:00",
+            "age_hours": 312.0,
+            "stale": True,
+            "stale_after_days": 7,
+        },
+    )
+    client = TestClient(create_app())
+    res = client.get("/api/trafficmy/source-health")
+    payload = res.json()
+    assert payload["primary_degraded"] is False
+    assert payload["session"]["stale"] is True
+    assert "stale" in payload["warning"].lower()
+    assert payload["session"]["age_hours"] == 312.0
 
 
 def test_source_health_empty_counts_as_degraded(monkeypatch):
@@ -73,6 +121,16 @@ def test_source_health_empty_counts_as_degraded(monkeypatch):
         monkeypatch,
         {"threads": {"status": "empty", "row_count": 0, "error": "",
                      "finished_at": "2026-07-24T10:00:00Z", "duration_seconds": 1}},
+    )
+    monkeypatch.setattr(
+        "app.collectors.threads.session.session_status",
+        lambda **_k: {
+            "available": True,
+            "updated_at": "2026-07-24T09:00:00+00:00",
+            "age_hours": 1.0,
+            "stale": False,
+            "stale_after_days": 7,
+        },
     )
     client = TestClient(create_app())
     res = client.get("/api/trafficmy/source-health")
@@ -85,10 +143,21 @@ def test_source_health_empty_counts_as_degraded(monkeypatch):
 
 def test_source_health_no_sources(monkeypatch):
     _set_ingest(monkeypatch, {})
+    monkeypatch.setattr(
+        "app.collectors.threads.session.session_status",
+        lambda **_k: {
+            "available": False,
+            "updated_at": None,
+            "age_hours": None,
+            "stale": False,
+            "stale_after_days": 7,
+        },
+    )
     client = TestClient(create_app())
     res = client.get("/api/trafficmy/source-health")
     assert res.status_code == 200
     payload = res.json()
     assert payload["primary_degraded"] is False
     assert payload["items"] == []
-    assert payload["warning"] == ""
+    assert payload["session"]["missing"] is True
+    assert "session" in payload["warning"].lower()

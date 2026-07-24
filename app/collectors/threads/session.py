@@ -69,10 +69,29 @@ def save_storage_state(payload: dict) -> None:
     path.chmod(0o600)
 
 
-def session_status() -> dict:
+def session_status(*, stale_after_days: int = 7) -> dict:
+    """Report whether a Threads session file exists, and whether it looks stale.
+
+    ``available`` means the file has the required cookies. ``stale`` means the
+    file has not been refreshed within ``stale_after_days`` (default 7) — cookies
+    with expires=-1 (session cookies) routinely die after a few days of no use,
+    so an old file is a strong signal the next Playwright run will hit a login
+    wall and burn the ingest budget on empty keyword searches.
+    """
     path = session_path()
     available = load_storage_state() is not None
     updated_at = None
+    age_hours: float | None = None
+    stale = False
     if available:
-        updated_at = datetime.fromtimestamp(path.stat().st_mtime, tz=UTC).isoformat()
-    return {"available": available, "updated_at": updated_at}
+        mtime = path.stat().st_mtime
+        updated_at = datetime.fromtimestamp(mtime, tz=UTC).isoformat()
+        age_hours = round((datetime.now(UTC).timestamp() - mtime) / 3600, 1)
+        stale = age_hours >= max(1, stale_after_days) * 24
+    return {
+        "available": available,
+        "updated_at": updated_at,
+        "age_hours": age_hours,
+        "stale": stale,
+        "stale_after_days": stale_after_days,
+    }
