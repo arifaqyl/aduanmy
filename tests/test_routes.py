@@ -1,8 +1,15 @@
+from datetime import timedelta
+
 from starlette.testclient import TestClient
 
+from app.core.freshness import myt_day_start
 from app.main import create_app
 from app.db.session import reset_complaints, upsert_complaints
 from app.schemas.complaint import ComplaintSchema
+
+
+def _today_iso(hours: int = 0, minutes: int = 0) -> str:
+    return (myt_day_start() + timedelta(hours=hours, minutes=minutes)).isoformat().replace("+00:00", "Z")
 
 
 def test_root_serves_frontend_html():
@@ -349,7 +356,7 @@ def test_trafficmy_incident_detail_route_returns_product_shaped_detail():
                 post_id="x1",
                 url="https://example.com/x1",
                 author_handle="askrapidkl",
-                created_at="2026-06-22T00:00:00Z",
+                created_at=_today_iso(),
                 raw_text="LRT incident",
                 normalized_text="lrt incident kelana jaya line",
                 detected_language_mix="en",
@@ -384,7 +391,7 @@ def test_trafficmy_incident_detail_route_accepts_slash_in_cluster_id():
                 post_id="t1",
                 url="https://example.com/t1",
                 author_handle="thestaronline",
-                created_at="2026-06-22T00:00:00Z",
+                created_at=_today_iso(),
                 raw_text="Ampang and Sri Petaling line disruption at Chan Sow Lin",
                 normalized_text="ampang sri petaling line disruption at chan sow lin",
                 detected_language_mix="en",
@@ -413,7 +420,7 @@ def test_trafficmy_overview_route_includes_counted_entities_and_locations():
                 post_id="x1",
                 url="https://example.com/x1",
                 author_handle="askrapidkl",
-                created_at="2026-06-22T00:00:00Z",
+                created_at=_today_iso(),
                 raw_text="LRT incident",
                 normalized_text="lrt incident kelana jaya line",
                 detected_language_mix="en",

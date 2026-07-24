@@ -27,3 +27,13 @@ def test_deploy_archive_excludes_transient_and_nested_dependency_directories():
 def test_deploy_archive_keeps_runtime_source():
     assert not should_skip(Path("app/main.py"))
     assert not should_skip(Path("static/index.html"))
+
+
+def test_deploy_archive_keeps_static_data_assets_but_skips_root_data():
+    # static/data/ holds product assets (rail-lines.json, etc.) and must ship,
+    # while the root data/ volume must be excluded. Regression for the
+    # should_skip() bug that matched "data" anywhere in the path.
+    assert not should_skip(Path("static/data/rail-lines.json"))
+    assert not should_skip(Path("static/data/lines/kj.json"))
+    assert should_skip(Path("data/aduanmy.db"))
+    assert should_skip(Path("data/private/threads-session.json"))

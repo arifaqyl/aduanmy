@@ -45,17 +45,31 @@ def test_browser_context_receives_session_state(monkeypatch):
     state = _state()
     monkeypatch.setattr("app.collectors.threads.client.load_storage_state", lambda: state)
 
+    class Context:
+        def __init__(self):
+            self.options = None
+
+        def set_default_timeout(self, _ms):
+            pass
+
+        def set_default_navigation_timeout(self, _ms):
+            pass
+
     class Browser:
         options = None
 
+        def __init__(self):
+            self._context = Context()
+
         def new_context(self, **options):
             self.options = options
-            return "context"
+            self._context.options = options
+            return self._context
 
     browser = Browser()
     context, authenticated = _new_threads_context(browser)
 
-    assert context == "context"
+    assert context is browser._context
     assert authenticated is True
     assert browser.options["storage_state"] == state
 
