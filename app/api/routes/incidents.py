@@ -1,4 +1,5 @@
 from urllib.parse import urlparse
+import secrets
 
 from fastapi import APIRouter, Header, HTTPException, Query, Request
 
@@ -26,7 +27,7 @@ def _refresh_allowed(
 ) -> bool:
     if not settings.refresh_api_key:
         return True
-    if x_api_key == settings.refresh_api_key:
+    if x_api_key is not None and secrets.compare_digest(x_api_key, settings.refresh_api_key):
         return True
     if settings.allow_dashboard_refresh and dashboard_header == "1":
         if settings.env != "production":

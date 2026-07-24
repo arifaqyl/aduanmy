@@ -209,6 +209,38 @@ def test_refresh_route_requires_same_origin_dashboard_in_production(monkeypatch)
     assert allowed.status_code == 200
 
 
+def test_refresh_allowed_constant_time_compare_handles_none_and_wrong(monkeypatch):
+    from app.api.routes.incidents import _refresh_allowed
+    from app.core.config import settings
+
+    # No configured key -> refresh is open (dev default).
+    monkeypatch.setattr(settings, "refresh_api_key", "")
+    assert _refresh_allowed(x_api_key=None, referer=None, dashboard_header=None) is True
+
+    # Configured key: correct key accepted; wrong / None / mismatched-length keys
+    # rejected without raising (locks the secrets.compare_digest path).
+    monkeypatch.setattr(settings, "refresh_api_key", "secret-key")
+    monkeypatch.setattr(settings, "allow_dashboard_refresh", False)
+    assert _refresh_allowed(x_api_key="secret-key", referer=None, dashboard_header=None) is True
+    assert _refresh_allowed(x_api_key="wrong", referer=None, dashboard_header=None) is False
+    assert _refresh_allowed(x_api_key=None, referer=None, dashboard_header=None) is False
+    assert _refresh_allowed(x_api_key="x", referer=None, dashboard_header=None) is False
+
+
+def test_telegram_webhook_secret_constant_time(monkeypatch):
+    from app.core.config import settings
+
+    monkeypatch.setattr(settings, "telegram_bot_token", "bot-token")
+    monkeypatch.setattr(settings, "telegram_webhook_secret", "webhook-secret")
+    client = TestClient(create_app())
+
+    # Wrong / mismatched-length / empty secrets all 403 (no 500) — locks the
+    # secrets.compare_digest path so a timing-safe compare stays timing-safe.
+    assert client.post("/api/telegram/webhook?secret=wrong", json={"message": {}}).status_code == 403
+    assert client.post("/api/telegram/webhook?secret=x", json={"message": {}}).status_code == 403
+    assert client.post("/api/telegram/webhook", json={"message": {}}).status_code == 403
+
+
 def test_refresh_route_rejects_overlapping_ingest(monkeypatch):
     monkeypatch.setattr("app.api.routes.incidents.trigger_full_ingest_async", lambda: False)
     client = TestClient(create_app())

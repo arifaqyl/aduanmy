@@ -15,6 +15,7 @@ catalog id), rate limiting, and a /watch flow that lists lines as buttons.
 """
 
 from fastapi import APIRouter, HTTPException, Query, Request
+import secrets
 
 from app.core.config import settings
 from app.services.telegram_alerts import send_message, subscribe, subscriptions_for_chat, unsubscribe
@@ -26,7 +27,7 @@ router = APIRouter()
 async def telegram_webhook(request: Request, secret: str = Query(default="")) -> dict:
     if not settings.telegram_bot_token:
         raise HTTPException(status_code=503, detail="Telegram alerts not configured")
-    if settings.telegram_webhook_secret and secret != settings.telegram_webhook_secret:
+    if settings.telegram_webhook_secret and not secrets.compare_digest(secret, settings.telegram_webhook_secret):
         raise HTTPException(status_code=403, detail="Bad webhook secret")
 
     payload = await request.json()
