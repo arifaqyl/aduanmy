@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     dashboard_poll_interval_seconds: int = 300
     cors_origins: str = "*"
     expose_raw_sources: bool = False
+    rate_limit_enabled: bool = True
+    rate_limit_force: bool = False  # tests only: enforce limits under pytest
 
     stale_after_minutes: int = 120
     retention_days: int = 90

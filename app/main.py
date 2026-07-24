@@ -45,6 +45,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+    from app.core.rate_limit import RateLimitMiddleware
+
+    # Added after CORS so this middleware sits outer and can 429 before handlers.
+    app.add_middleware(RateLimitMiddleware)
     app.include_router(health_router, prefix="/api")
     app.include_router(incidents_router, prefix="/api")
     app.include_router(journey_router, prefix="/api")
