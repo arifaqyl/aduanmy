@@ -35,10 +35,13 @@ async def lifespan(_app: FastAPI):
 
 def create_app() -> FastAPI:
     app = FastAPI(title="TrafficMY", version="0.2.0", lifespan=lifespan)
+    # allow_credentials=True is invalid with a wildcard origin and rejected by
+    # browsers; only enable credentials when origins are explicitly scoped.
+    origins = settings.cors_origin_list
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origin_list,
-        allow_credentials=True,
+        allow_origins=origins,
+        allow_credentials="*" not in origins,
         allow_methods=["*"],
         allow_headers=["*"],
     )

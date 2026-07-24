@@ -1,7 +1,7 @@
 from urllib.parse import urlparse
 import secrets
 
-from fastapi import APIRouter, Header, HTTPException, Query, Request
+from fastapi import APIRouter, Header, HTTPException, Query, Request, Response
 
 from app.core.config import settings
 from app.services.config_service import get_trafficmy_config
@@ -26,6 +26,10 @@ def _refresh_allowed(
     request_host: str | None = None,
 ) -> bool:
     if not settings.refresh_api_key:
+        # In production an empty key would leave /refresh open to anyone — refuse
+        # rather than default-open. Dev stays open for local iteration.
+        if settings.env == "production":
+            return False
         return True
     if x_api_key is not None and secrets.compare_digest(x_api_key, settings.refresh_api_key):
         return True
@@ -236,6 +240,62 @@ def trafficmy_signals_today(
 ) -> dict:
     """Machine-readable live rider signals for today (MYT). Embed / integrations / B2B."""
     return get_today_signals(limit=limit)
+
+
+@router.get("/trafficmy/search")
+def trafficmy_search(
+    q: str = Query(default="", max_length=80),
+    limit: int = Query(default=20, ge=1, le=50),
+) -> dict:
+    """Full-text incident search. Returns public clusters (no raw signal text)."""
+    from app.services.search_service import search_incidents
+
+    return search_incidents(q, limit=limit)
+
+
+@router.get("/trafficmy/export", response_model=None)
+def trafficmy_export(
+    format: str = Query(default="json", pattern="^(json|csv)$"),
+    limit: int = Query(default=100, ge=1, le=500),
+) -> Response | dict:
+    """Export today's rider signals as JSON or CSV. Same public fields as /signals/today."""
+    payload = get_today_signals(limit=limit)
+    if format != "csv":
+        return payload
+
+    import csv
+    import io
+
+    cols = [
+        "id", "line_id", "entity", "location", "issue", "severity", "when",
+        "last_seen_at", "confidence_band", "corroborated_by_official",
+        "sources", "glance_line",
+    ]
+    out = io.StringIO()
+    writer = csv.DictWriter(out, fieldnames=cols)
+    writer.writeheader()
+    for signal in payload.get("signals", []):
+        writer.writerow(
+            {
+                "id": signal.get("id", ""),
+                "line_id": signal.get("line_id", ""),
+                "entity": signal.get("entity", ""),
+                "location": signal.get("location", ""),
+                "issue": signal.get("issue", ""),
+                "severity": signal.get("severity", ""),
+                "when": signal.get("when", ""),
+                "last_seen_at": signal.get("last_seen_at", ""),
+                "confidence_band": signal.get("confidence_band", ""),
+                "corroborated_by_official": "yes" if signal.get("corroborated_by_official") else "no",
+                "sources": "|".join(signal.get("sources") or []),
+                "glance_line": signal.get("glance_line", ""),
+            }
+        )
+    return Response(
+        content=out.getvalue(),
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="trafficmy-signals-today.csv"'},
+    )
 
 
 @router.get("/trafficmy/status")

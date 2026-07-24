@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+import os
 import threading
 import time
+from pathlib import Path
 
 from app.core.config import settings
 
@@ -15,6 +17,61 @@ _last_error: str | None = None
 _last_backup_at: str | None = None
 _last_backup_error: str | None = None
 _scheduler_thread: threading.Thread | None = None
+_scheduler_lock_owner = False
+
+
+def _scheduler_lock_path() -> Path:
+    return Path(settings.data_dir) / ".scheduler.lock"
+
+
+def _try_acquire_scheduler_lock() -> bool:
+    """Advisory single-worker guard for production multi-worker deploys.
+
+    Returns True if this process should run the scheduler. In dev/test it
+    always returns True (single worker). In production we create an exclusive
+    lockfile; if another worker already holds it we defer. A lock older than
+    ~3x the full-refresh interval is treated as stale (owner died) and stolen.
+    """
+    if settings.env != "production":
+        return True
+    global _scheduler_lock_owner
+    lock_path = _scheduler_lock_path()
+    try:
+        lock_path.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        return True  # cannot create dir -> assume single worker
+    # Staleness check: steal a lock that has not been touched recently.
+    try:
+        age = time.time() - lock_path.stat().st_mtime
+        if age > max(3600, settings.full_refresh_interval_seconds * 3):
+            try:
+                lock_path.unlink()
+            except OSError:
+                pass
+    except FileNotFoundError:
+        pass
+    except OSError:
+        pass
+    try:
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+    except FileExistsError:
+        return False  # another worker owns the scheduler
+    try:
+        os.write(fd, f"{os.getpid()}\n{time.time()}\n".encode())
+    finally:
+        os.close(fd)
+    _scheduler_lock_owner = True
+    return True
+
+
+def _touch_scheduler_lock() -> None:
+    """Refresh the lockfile mtime so staleness can detect a dead owner."""
+    if not _scheduler_lock_owner:
+        return
+    try:
+        _scheduler_lock_path().touch()
+    except OSError:
+        pass
 
 
 def scheduler_state() -> dict:
@@ -120,6 +177,7 @@ def _loop() -> None:
     while True:
         try:
             time.sleep(30)
+            _touch_scheduler_lock()
             now = time.time()
             if now >= next_backup:
                 _run_backup()
@@ -142,6 +200,9 @@ def start_scheduler() -> None:
     if not settings.auto_refresh_enabled:
         return
     if _scheduler_thread and _scheduler_thread.is_alive():
+        return
+    if not _try_acquire_scheduler_lock():
+        logger.info("scheduler: deferring to another worker (lock held)")
         return
     _scheduler_thread = threading.Thread(target=_loop, name="trafficmy-scheduler", daemon=True)
     _scheduler_thread.start()
