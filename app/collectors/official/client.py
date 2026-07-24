@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 import os
+import random
 import re
 from urllib.parse import quote_plus
 from bs4 import BeautifulSoup
 
-from app.collectors.common import clean_text, fetch_html, make_post_id, soup_from_html
+from app.collectors.common import USER_AGENTS, clean_text, fetch_html, make_post_id, soup_from_html
 from app.core.freshness import LIVE_WINDOW_DAYS
 
 try:
@@ -263,7 +264,7 @@ def _collect_myrapid_alerts(limit: int = 6) -> list[dict]:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
             viewport={"width": 1280, "height": 2200},
-            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+            user_agent=random.choice(USER_AGENTS),
         )
         page = context.new_page()
         try:
