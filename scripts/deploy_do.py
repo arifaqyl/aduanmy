@@ -87,8 +87,8 @@ def build_tarball() -> io.BytesIO:
 def docker_deploy(ssh: paramiko.SSHClient) -> None:
     run(ssh, f"cd {REMOTE} && docker build -t trafficmy:latest .")
     run(ssh, "docker volume create trafficmy_data >/dev/null 2>&1 || true")
-    run(ssh, "docker stop trafficmy >/dev/null 2>&1 || true")
-    run(ssh, "docker rm trafficmy >/dev/null 2>&1 || true")
+    # -f removes a running/stopped container; plain stop+rm can race with restart policy.
+    run(ssh, "docker rm -f trafficmy >/dev/null 2>&1 || true")
     run(
         ssh,
         "docker run -d --name trafficmy --restart unless-stopped "
