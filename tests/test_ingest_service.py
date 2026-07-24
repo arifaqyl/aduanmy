@@ -18,6 +18,40 @@ def test_gtfs_anomaly_collection_is_disabled_by_default():
     assert reason == "reference_only"
 
 
+def test_reddit_forced_when_threads_empty(monkeypatch):
+    monkeypatch.setattr(
+        "app.services.ingest_service.latest_collector_run",
+        lambda name, include_paused=False: (
+            {"status": "empty", "finished_at": "2026-07-22T09:00:00Z"}
+            if name == "threads"
+            else {"status": "empty", "finished_at": "2026-07-22T09:00:00Z"}
+        ),
+    )
+    monkeypatch.setattr("app.services.ingest_service.settings.reddit_min_interval_seconds", 7200)
+    monkeypatch.setattr("app.services.ingest_service.is_myt_peak_hour", lambda: False)
+    due, reason = _collector_due("reddit", respect_cadence=True)
+    assert due is True
+    assert reason == ""
+
+
+def test_reddit_respects_cadence_when_threads_healthy(monkeypatch):
+    from datetime import UTC, datetime
+
+    now = datetime.now(UTC)
+
+    def fake_latest(name, include_paused=False):
+        if name == "threads":
+            return {"status": "healthy", "finished_at": now.isoformat().replace("+00:00", "Z")}
+        return {"status": "empty", "finished_at": now.isoformat().replace("+00:00", "Z")}
+
+    monkeypatch.setattr("app.services.ingest_service.latest_collector_run", fake_latest)
+    monkeypatch.setattr("app.services.ingest_service.settings.reddit_min_interval_seconds", 7200)
+    monkeypatch.setattr("app.services.ingest_service.is_myt_peak_hour", lambda: False)
+    due, reason = _collector_due("reddit", respect_cadence=True)
+    assert due is False
+    assert reason.startswith("cadence:")
+
+
 def test_transform_rows_rejects_future_opening_sabotage_as_live_disruption():
     rows = transform_rows(
         {

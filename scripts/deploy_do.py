@@ -23,6 +23,7 @@ SKIP_DIRS_ANYWHERE = {
     ".git",
     ".playwright-cli",
     ".pytest_cache",
+    ".stitch-incoming",
     "__pycache__",
     ".venv",
     "node_modules",

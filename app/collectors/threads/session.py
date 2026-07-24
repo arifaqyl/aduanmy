@@ -3,13 +3,14 @@ from __future__ import annotations
 import json
 import os
 import secrets
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from app.core.config import settings
 
 _COOKIE_NAMES = {"sessionid", "csrftoken", "ds_user_id"}
 _COOKIE_DOMAINS = ("threads.com", "threads.net", "instagram.com")
+UTC = timezone.utc
 
 
 def session_path() -> Path:

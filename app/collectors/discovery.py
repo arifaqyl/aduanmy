@@ -34,7 +34,9 @@ def threads_queries(category: str) -> list[str]:
 
 
 def threads_watchlist(category: str) -> list[dict]:
+    """Primary watchlist — excludes news roles (RSS covers news)."""
     items = discovery_config().get("threads_watchlist", {}).get(category, [])
+    items = [item for item in items if (item.get("role") or "commuter") != "news"]
     if settings.discovery_depth == "minimal":
         return items[:2]
     if settings.discovery_depth == "normal":

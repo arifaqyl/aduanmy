@@ -10,7 +10,7 @@
   "orientation": "any",
   "icons": [
     {
-      "src": "static/mascots/stitch-mascot.png",
+      "src": "static/mascots/trafficmy-mascot.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

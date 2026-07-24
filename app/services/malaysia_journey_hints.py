@@ -20,6 +20,10 @@ _ROUTE_TO_LINE = {
 }
 
 
+def route_short_to_line_id(short_name: str) -> str | None:
+    return _ROUTE_TO_LINE.get(short_name or "")
+
+
 @lru_cache(maxsize=1)
 def _interchange_data() -> dict:
     if not _INTERCHANGES_PATH.is_file():
@@ -109,7 +113,7 @@ def enrich_journey_plan(plan: dict) -> dict:
         else:
             legs.append(leg)
             short = leg.get("short_name") or ""
-            line_id = _ROUTE_TO_LINE.get(short)
+            line_id = route_short_to_line_id(short)
             if line_id:
                 line_ids.append(line_id)
     plan = dict(plan)
@@ -130,4 +134,13 @@ def enrich_journey_plan(plan: dict) -> dict:
     ]
     if paid_transfers:
         plan["malaysia"]["paid_transfer_stations"] = [row["station"] for row in paid_transfers]
+    # Keep server-side route_alerts if already attached by plan_rail_journey.
+    plan.setdefault("route_alerts", [])
+    alternate = plan.get("alternate")
+    if isinstance(alternate, dict) and alternate.get("legs"):
+        # Enrich alternate without nested alternate recursion.
+        alt = dict(alternate)
+        alt.pop("alternate", None)
+        alt["fare"] = fare
+        plan["alternate"] = enrich_journey_plan(alt)
     return plan

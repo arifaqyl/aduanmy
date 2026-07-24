@@ -2,8 +2,8 @@
   const api = p => `${APP_BASE}${p.startsWith('/') ? p : '/' + p}`;
   const $ = id => document.getElementById(id);
   const staticUrl = p => `${APP_BASE}/static/${p.replace(/^\//, '')}`;
-  const STITCH_MASCOT = 'mascots/stitch-mascot.png';
-  const STITCH_MASCOT_WORRIED = 'mascots/stitch-mascot-worried.png';
+  const STITCH_MASCOT = 'mascots/trafficmy-mascot.png';
+  const STITCH_MASCOT_WORRIED = 'mascots/trafficmy-mascot-alert.png';
   const stitchMascot = (worried = false) => staticUrl(worried ? STITCH_MASCOT_WORRIED : STITCH_MASCOT);
   if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
@@ -114,11 +114,52 @@
     return uiLang === 'ms' && ms ? ms : (en || '');
   }
 
+  function applyStaticI18n() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const en = el.getAttribute('data-i18n') || '';
+      const ms = el.getAttribute('data-i18n-ms') || '';
+      if (el.hasAttribute('data-i18n-lockup')) {
+        const primary = pickLang(en, ms);
+        const secondary = uiLang === 'ms' ? en : ms;
+        el.innerHTML = secondary
+          ? `${esc(primary)} <span class="stitch-sub-en">(${esc(secondary)})</span>`
+          : esc(primary);
+        return;
+      }
+      if (el.tagName === 'OPTION') {
+        el.textContent = pickLang(en, ms);
+        return;
+      }
+      el.textContent = pickLang(en, ms);
+    });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => {
+      el.innerHTML = pickLang(el.getAttribute('data-i18n-html') || '', el.getAttribute('data-i18n-html-ms') || '');
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = pickLang(
+        el.getAttribute('data-i18n-placeholder') || '',
+        el.getAttribute('data-i18n-placeholder-ms') || ''
+      );
+    });
+    document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+      el.setAttribute(
+        'aria-label',
+        pickLang(el.getAttribute('data-i18n-aria') || '', el.getAttribute('data-i18n-aria-ms') || '')
+      );
+    });
+    document.querySelectorAll('.how-it-works-col[data-lang]').forEach(col => {
+      const isMs = col.getAttribute('data-lang') === 'ms';
+      col.hidden = uiLang === 'ms' ? !isMs : isMs;
+    });
+  }
+
   function isRushHourMYT() {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
     const h = now.getHours();
     return (h >= 7 && h < 10) || (h >= 17 && h < 20);
   }
+
+  let lastLiveStatus = null;
 
   function setUiLang(lang) {
     uiLang = lang === 'ms' ? 'ms' : 'en';
@@ -130,22 +171,26 @@
       btn.setAttribute('aria-pressed', uiLang === 'ms' ? 'true' : 'false');
       btn.title = uiLang === 'ms' ? 'Tukar ke English' : 'Switch to Bahasa Malaysia';
     }
+    applyStaticI18n();
+    renderContextBar();
+    if (lastLiveStatus) updateLiveStatus(lastLiveStatus);
     if (boardSnapshot) {
       renderBoardSummary(boardSnapshot);
       renderRiskStrip(boardSnapshot.lines || []);
       renderBoard();
       renderReports(boardSnapshot.recent_reports || []);
+      renderTrainSchedule();
     }
+    if ($('savingResult') && !$('savingResult').hidden) compareSavings();
   }
 
   function rushHourContext() {
     const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' }));
     const h = now.getHours();
-    const m = now.getMinutes();
-    const time = now.toLocaleTimeString('en-MY', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kuala_Lumpur' });
-    let band = 'Off-peak';
-    if ((h >= 7 && h < 10) || (h >= 17 && h < 20)) band = 'Rush hour';
-    else if (h >= 10 && h < 17) band = 'Midday';
+    const time = now.toLocaleTimeString(uiLang === 'ms' ? 'ms-MY' : 'en-MY', { hour: 'numeric', minute: '2-digit', timeZone: 'Asia/Kuala_Lumpur' });
+    let band = pickLang('Off-peak', 'Luar puncak');
+    if ((h >= 7 && h < 10) || (h >= 17 && h < 20)) band = pickLang('Rush hour', 'Waktu puncak');
+    else if (h >= 10 && h < 17) band = pickLang('Midday', 'Tengah hari');
     return `${band} · ${time} MYT`;
   }
 
@@ -258,7 +303,9 @@
     if (line.region && line.operator) return `${line.region} · ${line.operator}`;
     if (line.region) return line.region;
     if (line.operator) return line.operator;
-    return line.mode === 'bus' ? 'Bus network' : 'Rail service';
+    return line.mode === 'bus'
+      ? pickLang('Bus network', 'Rangkaian bas')
+      : pickLang('Rail service', 'Perkhidmatan rel');
   }
 
   function facilityChip(line) {
@@ -2087,7 +2134,7 @@
 
       const schematicSection = schematic
         ? `<div class="guide-section guide-section--schematic">
-          <h3>Route diagram</h3>
+          <h3>${pickLang('Route diagram', 'Gambar rajah laluan')}</h3>
           <p class="guide-schematic-hint">${pickLang('Tap to enlarge · dots mark interchange stations', 'Ketik untuk besarkan · titik menandakan pertukaran')}</p>
           <div class="guide-schematic-wrap"><img class="guide-schematic schematic-zoomable" src="${esc(schematic)}" alt="${esc(lineName)} route diagram" loading="lazy"></div>
         </div>
@@ -2255,15 +2302,43 @@
     const active = data.active_alert_count ?? data.active_line_count ?? 0;
     const ok = active === 0;
     const lines = data.lines || boardSnapshot?.lines || [];
+    const threadsState = threadsCollectorStatus();
+    const stale = !!(lastLiveStatus?.freshness?.is_stale);
+    const degraded = threadsState === 'broken' || stale;
     if (!summary && !data.lines_tracked_count) {
       el.className = 'play-glance stitch-glance play-glance--ok';
       el.innerHTML = `
         <div class="stitch-glance-mascot-wrap">
-          <img class="stitch-glance-mascot" src="${stitchMascot()}" width="64" height="64" alt="" />
+          <img class="stitch-glance-mascot" src="${stitchMascot()}" width="72" height="72" alt="" />
         </div>
         <div class="stitch-glance-copy">
           <strong>${pickLang('Loading', 'Memuatkan')}</strong>
           <span>${pickLang('Checking your lines', 'Menyemak laluan')}</span>
+        </div>`;
+      return;
+    }
+    if (degraded && ok) {
+      el.className = 'play-glance stitch-glance play-glance--alert';
+      const title = stale
+        ? pickLang('Signals lagging', 'Isyarat tertangguh')
+        : pickLang('Signals lagging', 'Isyarat tertangguh');
+      const sub = threadsState === 'broken'
+        ? pickLang(
+            'Threads collector needs attention — quiet is not an all-clear',
+            'Pengumpul Threads bermasalah — tenang bukan jaminan normal'
+          )
+        : pickLang(
+            'Last collection is stale — quiet is not an all-clear',
+            'Pengumpulan lapuk — tenang bukan jaminan normal'
+          );
+      el.innerHTML = `
+        <div class="stitch-glance-mascot-wrap">
+          <img class="stitch-glance-mascot" src="${stitchMascot(true)}" width="72" height="72" alt="" />
+          <div class="stitch-glance-bubble">${pickLang('Hang on', 'Tunggu')}</div>
+        </div>
+        <div class="stitch-glance-copy">
+          <strong>${title}</strong>
+          <span>${sub}</span>
         </div>`;
       return;
     }
@@ -2273,13 +2348,13 @@
       ? pickLang('Looking quiet', 'Nampak tenang')
       : pickLang(`${active} line${active === 1 ? '' : 's'} need attention`, `${active} laluan perlu perhatian`);
     const sub = ok
-      ? pickLang('No recent delay signals', 'Tiada isyarat kelewatan terkini')
-      : esc(summary);
+      ? pickLang('No recent delay signals — not an all-clear', 'Tiada isyarat kelewatan — bukan jaminan normal')
+      : esc(summary || pickLang('Check lines below', 'Semak laluan di bawah'));
     const chips = ok ? '' : glanceModeChips(lines);
     const bubble = ok ? '' : `<div class="stitch-glance-bubble">${pickLang('Alamak!', 'Alamak!')}</div>`;
     el.innerHTML = `
       <div class="stitch-glance-mascot-wrap">
-        <img class="stitch-glance-mascot" src="${mascot}" width="64" height="64" alt="" />
+        <img class="stitch-glance-mascot" src="${mascot}" width="72" height="72" alt="" />
         ${bubble}
       </div>
       <div class="stitch-glance-copy">
@@ -2457,12 +2532,21 @@
   }
 
   function openStatusHelp() {
-    $('panelTitle').textContent = 'What is Status?';
-    $('panelSub').innerHTML = '<span class="badge unknown" style="display:inline-block;min-width:auto">Crowd reports</span>';
+    $('panelTitle').textContent = pickLang('About TrafficMY', 'Tentang TrafficMY');
+    $('panelSub').innerHTML = `<span class="badge unknown" style="display:inline-block;min-width:auto">${pickLang('Rider signals', 'Isyarat penumpang')}</span>`;
     $('panelBody').innerHTML = `
-      <p>The <strong>Status</strong> tab shows per-line severity from recent public posts — delays, disruptions and minor complaints scraped from Threads, Reddit and news RSS.</p>
-      <p>It is <strong>not</strong> the official RapidKL, Prasarana or KTMB status page. <strong>No current signal</strong> means no public evidence passed the filter in the last 24 hours; it does not confirm trains are running normally.</p>
-      <p>Tap a row with reports to see source evidence. Lines marked <strong>Official</strong> have corroboration from operator notices.</p>`;
+      <p>${pickLang(
+        'TrafficMY shows per-line severity from recent public posts — delays, disruptions and minor complaints from Threads, Reddit and news RSS.',
+        'TrafficMY menunjukkan keterukan setiap laluan daripada siaran awam terkini — kelewatan, gangguan dan aduan kecil dari Threads, Reddit dan RSS berita.'
+      )}</p>
+      <p>${pickLang(
+        'It is <strong>not</strong> the official RapidKL, Prasarana or KTMB status page. <strong>No current signal</strong> means no public evidence passed the filter today (MYT); it does not confirm trains are running normally.',
+        'Ini <strong>bukan</strong> laman status rasmi RapidKL, Prasarana atau KTMB. <strong>Tiada isyarat</strong> bermaksud tiada bukti awam lulus penapis hari ini (MYT); ia tidak mengesahkan kereta api berjalan seperti biasa.'
+      )}</p>
+      <p>${pickLang(
+        'Tap a row with reports to see source evidence. Lines marked <strong>Official</strong> have corroboration from operator notices.',
+        'Ketik baris dengan laporan untuk lihat bukti sumber. Laluan bertanda <strong>Rasmi</strong> ada pengesahan daripada notis pengendali.'
+      )}</p>`;
     showPanel();
   }
 
@@ -2559,8 +2643,8 @@
         <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
         <span class="stitch-count-badge board-count">${lines.length}</span>
       </div>
-      ${priorityLines.length ? rowsHtml(priorityLines) : '<div class="quiet-empty"><strong>All quiet right now</strong><br><span style="font-size:13px">No active delays in your view</span></div>'}
-      ${quietLines.length ? `<details class="quiet-lines"${quietOpen}><summary><span>More lines</span><span>${quietLines.length}</span></summary>${rowsHtml(quietLines)}</details>` : ''}`;
+      ${priorityLines.length ? rowsHtml(priorityLines) : `<div class="quiet-empty"><strong>${pickLang('All quiet right now', 'Semua tenang sekarang')}</strong><br><span style="font-size:13px">${pickLang('No active delays in your view', 'Tiada kelewatan aktif dalam paparan anda')}</span></div>`}
+      ${quietLines.length ? `<details class="quiet-lines"${quietOpen}><summary><span>${pickLang('More lines', 'Laluan lain')}</span><span>${quietLines.length}</span></summary>${rowsHtml(quietLines)}</details>` : ''}`;
   }
 
   function renderPlanned(services) {
@@ -2694,7 +2778,7 @@
       $('reportFeed').innerHTML = `
         <div class="empty tm-live-empty${collectorState === 'broken' ? ' tm-live-empty--degraded' : ''}">
           <div class="empty-icon" aria-hidden="true">${ICON_SVG.train}</div>
-          ${pickLang('No rider delays reported in the last 24 hours.', 'Tiada kelewatan dilaporkan dalam 24 jam terakhir.')}<br>
+          ${pickLang('No rider signals today.', 'Tiada isyarat hari ini.')}<br>
           <span style="font-size:12px;color:var(--text-dim)">${subtext}</span><br>
           <button class="btn-retry" id="emptyReportRefresh" type="button" style="margin-top:14px">${pickLang('Check latest', 'Semak semula')}</button>
         </div>`;
@@ -2771,9 +2855,16 @@
           `Tip pas: ${pass.recommended} (~RM${pass.monthly_cost}/bulan)`
         )
       : '';
-    const alerts = lineStatusOnRoute(data.line_ids_on_route);
+    const serverAlerts = data.route_alerts || [];
+    const alerts = serverAlerts.length
+      ? serverAlerts
+      : lineStatusOnRoute(data.line_ids_on_route).map(l => ({
+          name: l.name,
+          status: l.status,
+          status_label: shortStatusLabel(l),
+        }));
     const alertHtml = alerts.length
-      ? `<div class="journey-alert">${esc(pickLang('Crowd signals on this route:', 'Isyarat penumpang pada laluan ini:'))} ${alerts.map(l => `<strong>${esc(l.name)}</strong> (${esc(shortStatusLabel(l))})`).join(' · ')}</div>`
+      ? `<div class="journey-alert">${esc(pickLang('Crowd signals on this route:', 'Isyarat penumpang pada laluan ini:'))} ${alerts.map(l => `<strong>${esc(l.name)}</strong> (${esc(l.status_label || l.status)})`).join(' · ')}</div>`
       : '';
     const paid = (my.paid_transfer_stations || []).length
       ? `<div class="journey-warn">⚠ ${esc(pickLang('Tap out required at: ', 'Tap keluar di: '))}${esc(my.paid_transfer_stations.join(', '))}</div>`
@@ -2787,20 +2878,89 @@
       </div>`;
   }
 
+  function renderJourneyLegs(data) {
+    const startWalk = data.origin?.walk_minutes
+      ? `<div class="journey-step"><span class="step-mark" style="--step-color:#94a3b8"></span><div><div class="step-title">Walk to ${esc(data.origin.station)}</div><div class="step-copy">About ${esc(data.origin.walk_metres)} m from ${esc(data.origin.label)}</div></div><span class="step-time">${esc(data.origin.walk_minutes)} min</span></div>`
+      : '';
+    const railSteps = (data.legs || []).map(leg => {
+      if (leg.kind === 'transfer') return renderJourneyTransferStep(leg);
+      const stopLabel = Number(leg.stops) === 1 ? 'stop' : 'stops';
+      const lineLabel = leg.short_name && leg.short_name !== leg.line ? `${leg.line} (${leg.short_name})` : leg.line;
+      return `<div class="journey-step"><span class="step-mark" style="--step-color:${esc(leg.color)}"></span><div><div class="step-title">${esc(lineLabel)}</div><div class="step-copy">${esc(leg.from)} → ${esc(leg.to)} · ${esc(leg.stops)} ${stopLabel}</div></div><span class="step-time">${esc(leg.minutes)} min</span></div>`;
+    }).join('');
+    const endWalk = data.destination?.walk_minutes
+      ? `<div class="journey-step"><span class="step-mark" style="--step-color:#94a3b8"></span><div><div class="step-title">Walk to destination</div><div class="step-copy">About ${esc(data.destination.walk_metres)} m from ${esc(data.destination.station)}</div></div><span class="step-time">${esc(data.destination.walk_minutes)} min</span></div>`
+      : '';
+    return `${startWalk}${railSteps}${endWalk}`;
+  }
+
+  function renderJourney(data) {
+    const fare = data.fare;
+    const farePill = fare
+      ? `<div class="stat-pill">~RM<strong>${esc(fare.estimate_typical)}</strong> (${esc(fare.estimate_low)}–${esc(fare.estimate_high)})</div>`
+      : '';
+    const alt = data.alternate;
+    const altHtml = alt
+      ? `<div class="journey-alternate">
+          <h3 class="journey-alt-title">${esc(pickLang('Alternate via other lines', 'Laluan alternatif'))}</h3>
+          <div class="journey-summary">
+            <div class="stat-pill"><strong>${esc(alt.total_minutes)}</strong> min</div>
+            <div class="stat-pill"><strong>${esc(alt.transfers)}</strong> changes</div>
+          </div>
+          ${renderJourneyLegs(alt)}
+        </div>`
+      : (data.route_alerts || []).length && data.alternate_reason === 'no_avoiding_path'
+        ? `<p class="step-copy journey-warn">${esc(pickLang('No alternate Rapid KL rail path avoiding the alerted line.', 'Tiada laluan Rapid KL alternatif mengelak laluan berisyarat.'))}</p>`
+        : '';
+    $('journeyResult').innerHTML = `
+      <div class="journey-summary">
+        <div class="stat-pill"><strong>${esc(data.total_minutes)}</strong> min estimated</div>
+        <div class="stat-pill"><strong>${esc(data.transfers)}</strong> changes</div>
+        ${farePill}
+        <div class="stat-pill">${esc(pickLang('Rapid KL GTFS', 'Rapid KL GTFS'))}</div>
+      </div>
+      ${renderJourneyLegs(data)}
+      ${renderJourneyMalaysiaNotes(data)}
+      ${altHtml}
+      <p class="step-copy" style="margin-top:12px">${esc(data.walking_note || '')} ${fare ? esc(fare.disclaimer) : ''}</p>
+      ${data.mixed_mode_url ? `<p class="step-copy"><a href="${esc(data.mixed_mode_url)}" target="_blank" rel="noopener noreferrer">${esc(pickLang('Official mixed-mode planner', 'Perancang rasmi'))}</a></p>` : ''}`;
+    $('journeyResult').hidden = false;
+  }
+
   function updateLiveStatus(status) {
-    const latest = status.freshness?.latest_checked_at || status.freshness?.latest_inserted_at;
-    const stale = status.freshness?.is_stale;
+    lastLiveStatus = status || lastLiveStatus;
+    const latest = status?.freshness?.latest_checked_at || status?.freshness?.latest_inserted_at;
+    const stale = status?.freshness?.is_stale;
+    const threadsState = threadsCollectorStatus();
     const dot = $('liveDot');
-    dot.classList.toggle('stale', !!stale);
-    const label = stale ? 'Data may be old' : 'Updated';
+    if (dot) dot.classList.toggle('stale', !!stale || threadsState === 'broken');
+    let label = stale
+      ? pickLang('Stale', 'Lapuk')
+      : pickLang('Live', 'Live');
+    if (!stale && threadsState === 'broken') {
+      label = pickLang('Threads down', 'Threads tergendala');
+    }
     const timeStr = latest ? relTime(latest) : '';
-    $('liveMeta').textContent = timeStr ? `${label} ${timeStr} ago` : label;
+    if ($('liveMeta')) {
+      $('liveMeta').textContent = timeStr ? `${label} · ${timeStr}` : label;
+    }
     const banner = $('staleBanner');
     if (banner) {
-      banner.classList.toggle('show', !!stale);
+      const showBanner = !!stale || threadsState === 'broken';
+      banner.classList.toggle('show', showBanner);
       const detail = $('staleBannerDetail');
-      if (detail && timeStr) {
-        detail.textContent = ` — last successful collection check ${timeStr} MYT.`;
+      if (detail) {
+        if (threadsState === 'broken' && !stale) {
+          detail.textContent = pickLang(
+            ' — Threads collector needs attention. Other sources may still update.',
+            ' — Pengumpul Threads perlu perhatian. Sumber lain mungkin masih dikemas kini.'
+          );
+        } else if (timeStr) {
+          detail.textContent = pickLang(
+            ` — last successful collection check ${timeStr}. Tap Refresh.`,
+            ` — semakan pengumpulan terakhir berjaya ${timeStr}. Ketik Muat semula.`
+          );
+        }
       }
     }
   }
@@ -2831,10 +2991,14 @@
     if (Date.now() - healthCheckedAt < 4 * 60 * 1000) return;
     healthCheckedAt = Date.now();
     try {
-      const res = await fetchWithTimeout(api('/health'));
+      const res = await fetchWithTimeout(api('/api/health'));
       if (res.ok) {
         healthSnapshot = await res.json();
-        if (boardSnapshot) renderReports(boardSnapshot.recent_reports || []);
+        if (lastLiveStatus) updateLiveStatus(lastLiveStatus);
+        if (boardSnapshot) {
+          renderBoardSummary(boardSnapshot);
+          renderReports(boardSnapshot.recent_reports || []);
+        }
       }
     } catch {
       // Health check is best-effort — never blocks the main board render.
@@ -3004,36 +3168,6 @@
     stationSearchTimer = setTimeout(() => updateStationOptions(value), 220);
   }
 
-  function renderJourney(data) {
-    const startWalk = data.origin.walk_minutes
-      ? `<div class="journey-step"><span class="step-mark" style="--step-color:#94a3b8"></span><div><div class="step-title">Walk to ${esc(data.origin.station)}</div><div class="step-copy">About ${esc(data.origin.walk_metres)} m from ${esc(data.origin.label)}</div></div><span class="step-time">${esc(data.origin.walk_minutes)} min</span></div>`
-      : '';
-    const railSteps = (data.legs || []).map(leg => {
-      if (leg.kind === 'transfer') return renderJourneyTransferStep(leg);
-      const stopLabel = Number(leg.stops) === 1 ? 'stop' : 'stops';
-      const lineLabel = leg.short_name && leg.short_name !== leg.line ? `${leg.line} (${leg.short_name})` : leg.line;
-      return `<div class="journey-step"><span class="step-mark" style="--step-color:${esc(leg.color)}"></span><div><div class="step-title">${esc(lineLabel)}</div><div class="step-copy">${esc(leg.from)} → ${esc(leg.to)} · ${esc(leg.stops)} ${stopLabel}</div></div><span class="step-time">${esc(leg.minutes)} min</span></div>`;
-    }).join('');
-    const endWalk = data.destination.walk_minutes
-      ? `<div class="journey-step"><span class="step-mark" style="--step-color:#94a3b8"></span><div><div class="step-title">Walk to destination</div><div class="step-copy">About ${esc(data.destination.walk_metres)} m from ${esc(data.destination.station)}</div></div><span class="step-time">${esc(data.destination.walk_minutes)} min</span></div>`
-      : '';
-    const fare = data.fare;
-    const farePill = fare
-      ? `<div class="stat-pill">~RM<strong>${esc(fare.estimate_typical)}</strong> (${esc(fare.estimate_low)}–${esc(fare.estimate_high)})</div>`
-      : '';
-    $('journeyResult').innerHTML = `
-      <div class="journey-summary">
-        <div class="stat-pill"><strong>${esc(data.total_minutes)}</strong> min estimated</div>
-        <div class="stat-pill"><strong>${esc(data.transfers)}</strong> changes</div>
-        ${farePill}
-        <div class="stat-pill">${esc(pickLang('Rapid KL GTFS', 'Rapid KL GTFS'))}</div>
-      </div>
-      ${startWalk}${railSteps}${endWalk}
-      ${renderJourneyMalaysiaNotes(data)}
-      <p class="step-copy" style="margin-top:12px">${esc(data.walking_note)} ${fare ? esc(fare.disclaimer) : ''}</p>`;
-    $('journeyResult').hidden = false;
-  }
-
   async function planJourney(event) {
     event.preventDefault();
     const requestGeneration = ++journeyRequestGeneration;
@@ -3167,6 +3301,12 @@
     localStorage.setItem('trafficmy:contrast', on ? '1' : '0');
   });
   $('langToggle')?.addEventListener('click', () => setUiLang(uiLang === 'ms' ? 'en' : 'ms'));
+  $('quickPlan')?.addEventListener('click', () => switchTab('travel'));
+  $('quickMap')?.addEventListener('click', () => switchTab('map'));
+  $('quickLines')?.addEventListener('click', () => {
+    switchTab('status');
+    $('lineBoard')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
   $('riskStrip')?.addEventListener('click', e => {
     const chip = e.target.closest('.risk-chip');
     if (!chip) return;

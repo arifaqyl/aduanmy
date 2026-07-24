@@ -236,7 +236,14 @@ def _resolve_place(value: str, graph: dict) -> dict | None:
     return {**place, "station_ids": station_ids, "station": nearest["name"], "walk_metres": round(distance)}
 
 
-def _shortest_path(graph: dict, starts: list[str], targets: set[str]) -> tuple[float, list[tuple[str, str, dict]]] | None:
+def _shortest_path(
+    graph: dict,
+    starts: list[str],
+    targets: set[str],
+    *,
+    avoid_route_ids: set[str] | None = None,
+) -> tuple[float, list[tuple[str, str, dict]]] | None:
+    blocked = avoid_route_ids or set()
     queue = [(0.0, stop_id) for stop_id in starts]
     heapq.heapify(queue)
     distances = {stop_id: 0.0 for stop_id in starts}
@@ -250,6 +257,8 @@ def _shortest_path(graph: dict, starts: list[str], targets: set[str]) -> tuple[f
             found = current
             break
         for neighbour, edge in graph["adjacency"].get(current, {}).items():
+            if edge.get("kind") == "ride" and edge.get("route_id") in blocked:
+                continue
             candidate = total + edge["minutes"]
             if candidate >= distances.get(neighbour, float("inf")):
                 continue
@@ -308,17 +317,14 @@ def _legs(graph: dict, edges: list[tuple[str, str, dict]]) -> list[dict]:
     return legs
 
 
-def plan_rail_journey(origin: str, destination: str) -> dict:
-    graph = _graph()
-    start = _resolve_place(origin, graph)
-    end = _resolve_place(destination, graph)
-    if not start or not end:
-        missing = origin if not start else destination
-        raise ValueError(f"Could not find {missing} in Malaysia")
-    result = _shortest_path(graph, start["station_ids"], set(end["station_ids"]))
-    if not result:
-        raise ValueError("No rail route found between those places")
-    rail_minutes, edges = result
+def _pack_journey(
+    *,
+    graph: dict,
+    start: dict,
+    end: dict,
+    rail_minutes: float,
+    edges: list[tuple[str, str, dict]],
+) -> dict:
     start_walk = math.ceil(start.get("walk_metres", 0) / WALKING_METRES_PER_MINUTE)
     end_walk = math.ceil(end.get("walk_metres", 0) / WALKING_METRES_PER_MINUTE)
     legs = _legs(graph, edges)
@@ -343,3 +349,94 @@ def plan_rail_journey(origin: str, destination: str) -> dict:
         "walking_note": "Walking distance is a straight-line estimate with a 20% street factor, not turn-by-turn navigation.",
         "mixed_mode_url": "https://myrapid.com.my/journey-planner/",
     }
+
+
+def _route_alerts_for_legs(legs: list[dict]) -> tuple[list[dict], set[str]]:
+    """Map ride legs to today's board severity. Returns alerts + GTFS route_ids to avoid."""
+    from app.services.line_status_service import get_line_status_board
+    from app.services.malaysia_journey_hints import route_short_to_line_id
+
+    board = get_line_status_board(source_group="social", quality_only=True, malaysia_only=True)
+    by_id = {line["id"]: line for line in board.get("lines") or []}
+    alerts: list[dict] = []
+    avoid_route_ids: set[str] = set()
+    seen_lines: set[str] = set()
+    for leg in legs:
+        if leg.get("kind") != "ride":
+            continue
+        short = leg.get("short_name") or ""
+        line_id = route_short_to_line_id(short)
+        route_id = leg.get("route_id") or ""
+        if not line_id or line_id in seen_lines:
+            continue
+        seen_lines.add(line_id)
+        line = by_id.get(line_id)
+        if not line:
+            continue
+        status = line.get("status") or "unknown"
+        if status not in {"delay", "disruption"}:
+            continue
+        alerts.append(
+            {
+                "line_id": line_id,
+                "name": line.get("name") or leg.get("line") or line_id,
+                "status": status,
+                "status_label": line.get("status_label") or status,
+            }
+        )
+        if route_id:
+            avoid_route_ids.add(route_id)
+    return alerts, avoid_route_ids
+
+
+def plan_rail_journey(origin: str, destination: str) -> dict:
+    graph = _graph()
+    start = _resolve_place(origin, graph)
+    end = _resolve_place(destination, graph)
+    if not start or not end:
+        missing = origin if not start else destination
+        raise ValueError(f"Could not find {missing} in Malaysia")
+    result = _shortest_path(graph, start["station_ids"], set(end["station_ids"]))
+    if not result:
+        raise ValueError("No rail route found between those places")
+    rail_minutes, edges = result
+    primary = _pack_journey(graph=graph, start=start, end=end, rail_minutes=rail_minutes, edges=edges)
+
+    alerts, avoid_route_ids = _route_alerts_for_legs(primary["legs"])
+    # Expand avoid set: any graph route whose short_name maps to an alerted line.
+    if alerts:
+        from app.services.malaysia_journey_hints import route_short_to_line_id
+
+        alerted = {a["line_id"] for a in alerts}
+        for route_id, route in graph.get("routes", {}).items():
+            short = route.get("short_name") or ""
+            if route_short_to_line_id(short) in alerted:
+                avoid_route_ids.add(route_id)
+
+    primary["route_alerts"] = alerts
+    alternate = None
+    alternate_reason = ""
+    if avoid_route_ids:
+        alt = _shortest_path(
+            graph,
+            start["station_ids"],
+            set(end["station_ids"]),
+            avoid_route_ids=avoid_route_ids,
+        )
+        if alt:
+            alt_minutes, alt_edges = alt
+            # Only keep if the path actually differs from primary.
+            primary_keys = [(a, b, e.get("route_id")) for a, b, e in edges]
+            alt_keys = [(a, b, e.get("route_id")) for a, b, e in alt_edges]
+            if alt_keys != primary_keys:
+                alternate = _pack_journey(
+                    graph=graph, start=start, end=end, rail_minutes=alt_minutes, edges=alt_edges
+                )
+            else:
+                alternate_reason = "no_avoiding_path"
+        else:
+            alternate_reason = "no_avoiding_path"
+    primary["alternate"] = alternate
+    if alternate_reason and not alternate:
+        primary["alternate_reason"] = alternate_reason
+    return primary

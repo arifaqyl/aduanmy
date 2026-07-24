@@ -37,19 +37,18 @@ from app.pipeline.extract import (
 
 
 def test_transport_query_rotation_keeps_core_and_lrt3_coverage():
+    from app.collectors.discovery import discovery_config, threads_queries
+    from app.collectors.threads.client import MANDATORY_TRANSPORT_QUERIES
+
     queries = _transport_queries_for_run()
-    assert queries[:9] == [
-        "rapidkl delay",
-        "lrt kelana jaya line delay",
-        "lrt ampang line delay",
-        "lrt sri petaling line delay",
-        "mrt kajang line delay",
-        "mrt putrajaya line delay",
-        "kl monorail delay",
-        "lrt3 shah alam line",
-        "ktm komuter delay",
-    ]
-    assert len(queries) == 12
+    assert queries[:5] == list(MANDATORY_TRANSPORT_QUERIES)
+    assert len(queries) == 8
+    available = set(threads_queries("transport"))
+    assert set(queries[5:]).issubset(available)
+    # Full config still carries LRT3 / KTM terms even when depth-sliced for a single run.
+    full = set(discovery_config().get("threads_queries", {}).get("transport", []))
+    assert any("lrt3" in q for q in full)
+    assert any("ktm" in q for q in full)
 
 
 def test_threads_search_uses_recent_results_tab():
@@ -306,6 +305,19 @@ def test_transport_incident_signal_accepts_concrete_current_evidence():
     assert transport_rider_signal_worthwhile("MRT Kajang delay due to a signal failure")
     assert transport_rider_signal_worthwhile("LRT Ampang tak gerak sekarang, penuh dekat platform")
     assert transport_rider_signal_worthwhile(
+        "Kelana Jaya Line delay 20 min petang ni kat Bangsar"
+    )
+    assert transport_rider_signal_worthwhile(
+        "MRT Kajang stuck dalam tren malam ni, waiting 15 minutes"
+    )
+    from app.pipeline.extract import TRANSPORT_TODAY_RIDER_TERMS
+
+    for cue in ("petang ni", "malam ni", "dalam tren", "kat stesen"):
+        assert cue in TRANSPORT_TODAY_RIDER_TERMS
+    assert not transport_rider_signal_worthwhile(
+        "Throwback dulu Kelana Jaya Line delay was crazy, waiting 25 minutes at Bangsar"
+    )
+    assert transport_rider_signal_worthwhile(
         "Kepada yang stuck traffic jam drpd Kg Melayu Subang menuju ke MRT Kwasa, guna jalan alternatif"
     )
     assert transport_rider_signal_worthwhile(
@@ -462,7 +474,7 @@ def test_collect_threads_sample_prioritizes_keyword_search(monkeypatch):
     monkeypatch.setattr("app.collectors.threads.client._collect_latest_watchlist_posts", fake_watchlist)
     monkeypatch.setattr("app.collectors.threads.client._collect_search_discovered_posts", fake_web)
     monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", fake_seed)
-    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows: rows)
+    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows, deadline=None: rows)
 
     from app.collectors.threads.client import collect_threads_sample
 
@@ -496,13 +508,68 @@ def test_collect_threads_sample_skips_watchlist_when_keyword_enough(monkeypatch)
         lambda seen: (_ for _ in ()).throw(AssertionError("watchlist should be skipped")),
     )
     monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", lambda seen, skip_profile_discovery=False: [])
-    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows: rows)
+    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows, deadline=None: rows)
+    monkeypatch.setattr(
+        "app.collectors.threads.client.get_threads_diagnostics",
+        lambda: {"reasons": [], "keyword_search_queries_with_hits": 6},
+    )
 
     from app.collectors.threads.client import collect_threads_sample
 
     rows = collect_threads_sample()
     assert len(rows) == 6
 
+
+def test_collect_threads_sample_runs_watchlist_when_keyword_rows_undated(monkeypatch):
+    calls: list[str] = []
+    recent = _recent_today_iso()
+
+    def fake_keyword(seen, **kwargs):
+        calls.append("keyword")
+        return [
+            {
+                "url": f"https://threads.com/@a/post/{i}",
+                "raw_text": f"LRT delay again, waiting {i + 10} minutes at Bangsar",
+                "created_at": "",
+                "query": "lrt problem",
+                "seed_category": "transport",
+                "source_platform": "threads",
+                "post_id": f"abc{i}",
+                "author_handle": "a",
+            }
+            for i in range(6)
+        ]
+
+    def fake_watchlist(seen):
+        calls.append("watchlist")
+        return [
+            {
+                "url": "https://threads.com/@b/post/1",
+                "raw_text": "MRT delay now, waiting 15 minutes at Maluri",
+                "created_at": recent,
+                "query": "latest_profile",
+                "seed_category": "transport",
+                "source_platform": "threads",
+                "post_id": "wl1",
+                "author_handle": "b",
+            }
+        ]
+
+    monkeypatch.setattr("app.collectors.threads.client._collect_keyword_search_posts", fake_keyword)
+    monkeypatch.setattr("app.collectors.threads.client._collect_latest_watchlist_posts", fake_watchlist)
+    monkeypatch.setattr("app.collectors.threads.client._collect_search_discovered_posts", lambda seen: [])
+    monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", lambda seen, skip_profile_discovery=False: [])
+    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows, deadline=None: rows)
+    monkeypatch.setattr(
+        "app.collectors.threads.client.get_threads_diagnostics",
+        lambda: {"reasons": [], "keyword_search_queries_with_hits": 6},
+    )
+
+    from app.collectors.threads.client import collect_threads_sample
+
+    rows = collect_threads_sample()
+    assert "watchlist" in calls
+    assert any(r.get("query") == "latest_profile" for r in rows)
 
 def test_collect_threads_sample_prioritizes_watchlist(monkeypatch):
     calls: list[str] = []
@@ -528,7 +595,7 @@ def test_collect_threads_sample_prioritizes_watchlist(monkeypatch):
     monkeypatch.setattr("app.collectors.threads.client._collect_latest_watchlist_posts", fake_watchlist)
     monkeypatch.setattr("app.collectors.threads.client._collect_search_discovered_posts", fake_web)
     monkeypatch.setattr("app.collectors.threads.client._collect_seed_posts", fake_seed)
-    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows: rows)
+    monkeypatch.setattr("app.collectors.threads.client._fill_missing_created_at", lambda rows, deadline=None: rows)
 
     from app.collectors.threads.client import collect_threads_sample
 

@@ -5,36 +5,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>TrafficMY · Live Malaysia Transit Signals</title>
   <meta name="description" content="Live rider delay signals across Malaysian LRT, MRT, KTM and monorail — today MYT. Not ridership stats." />
-  <meta name="theme-color" content="#171c1a" />
+  <meta name="theme-color" content="#58cc02" />
   <meta property="og:title" content="TrafficMY · Live Malaysia Transit Signals" />
   <meta property="og:description" content="What riders report on Malaysia transit today — delays, crowding, disruptions. Not passenger count charts." />
   <meta property="og:type" content="website" />
   <meta property="og:image" content="static/og-image.png" />
   <meta property="og:image:alt" content="TrafficMY" />
-  <link rel="icon" href="static/mascots/stitch-mascot.png" type="image/png" />
-  <link rel="apple-touch-icon" href="static/mascots/stitch-mascot.png" />
+  <link rel="icon" href="static/brand/trafficmy-mark.png" type="image/png" />
+  <link rel="apple-touch-icon" href="static/brand/trafficmy-mark.png" />
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <!-- Type system (Work Sans / IBM Plex Mono / Barlow Condensed) is imported inside static/css/stitch.css -->
+  <!-- Nunito Sans + Material Symbols imported inside static/css/stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css?v=29" />
-  <link rel="stylesheet" href="static/css/play.css?v=29" />
-  <link rel="stylesheet" href="static/css/stitch.css?v=29" />
+  <link rel="stylesheet" href="static/css/components.css?v=42" />
+  <link rel="stylesheet" href="static/css/play.css?v=42" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=42" />
 </head>
 <body class="tm-app play-app stitch-app">
 
   <header class="tm-header stitch-header">
     <div class="stitch-header-inner">
       <a class="stitch-brand" href="#" id="brandLink" aria-label="TrafficMY home">
-        <img class="stitch-brand-mascot" src="static/mascots/stitch-mascot.png" width="32" height="32" alt="" />
-        <span class="stitch-brand-text">TrafficMY</span>
+        <img class="stitch-brand-lockup" src="static/brand/trafficmy-mark.png" height="76" width="380" alt="TrafficMY" />
       </a>
       <div class="stitch-header-meta">
         <span class="tm-live-dot stitch-live-dot" id="liveDot" aria-hidden="true"></span>
         <span class="tm-live-meta" id="liveMeta" aria-live="polite">Checking sources</span>
       </div>
-      <button class="stitch-icon-btn status-info-btn" type="button" aria-label="What is Pulse?" title="Rider-reported signals — not an operator all-clear">?</button>
+      <button class="stitch-icon-btn status-info-btn" type="button" aria-label="About TrafficMY" title="Rider-reported signals — not an operator all-clear" data-i18n-aria="About TrafficMY" data-i18n-aria-ms="Tentang TrafficMY">?</button>
       <button class="stitch-icon-btn" type="button" id="langToggle" aria-pressed="false" title="Bahasa Malaysia / English">EN</button>
       <button class="stitch-refresh-btn" id="refreshBtn" type="button" disabled aria-label="Refresh">
         <span class="material-symbols-outlined" aria-hidden="true">refresh</span>
@@ -66,7 +65,7 @@
         <div class="tm-status-primary">
           <div id="glanceCard" class="play-glance stitch-glance play-glance--ok" aria-live="polite">
             <div class="stitch-glance-mascot-wrap">
-              <img class="stitch-glance-mascot" src="static/mascots/stitch-mascot.png" width="64" height="64" alt="" />
+              <img class="stitch-glance-mascot" src="static/mascots/trafficmy-mascot.png" width="72" height="72" alt="" />
             </div>
             <div class="stitch-glance-copy">
               <strong>Loading</strong>
@@ -74,56 +73,41 @@
             </div>
           </div>
 
-          <aside class="stitch-positioning" aria-label="What TrafficMY is">
-            <div class="stitch-positioning-copy">
-              <strong>Live rider signals · today MYT</strong>
-              <span>Not ridership stats · not operator all-clear</span>
-            </div>
-            <a class="stitch-positioning-link" href="developers" target="_blank" rel="noopener noreferrer">API &amp; embed →</a>
-          </aside>
+          <div class="stitch-quick-actions" role="group" aria-label="Quick actions">
+            <button type="button" class="stitch-quick-btn stitch-quick-btn--primary" id="quickPlan" data-i18n="Plan route" data-i18n-ms="Rancang">Plan route</button>
+            <button type="button" class="stitch-quick-btn" id="quickMap" data-i18n="Open map" data-i18n-ms="Buka peta">Open map</button>
+            <button type="button" class="stitch-quick-btn" id="quickLines" data-i18n="See lines" data-i18n-ms="Lihat laluan">See lines</button>
+          </div>
 
-          <section class="stitch-how-it-works" id="howItWorksCard">
-            <details class="how-it-works-details">
-              <summary class="how-it-works-summary">
-                <span class="material-symbols-outlined how-it-works-icon" aria-hidden="true">info</span>
-                <div class="how-it-works-summary-text">
-                  <strong>How TrafficMY Works / Cara Berfungsi</strong>
-                  <span>absence of signal ≠ all-clear</span>
-                </div>
-                <span class="how-it-works-chevron">▼</span>
-              </summary>
-              <div class="how-it-works-content">
-                <div class="how-it-works-grid">
-                  <div class="how-it-works-col">
-                    <h4>English</h4>
-                    <p><strong>1. Live Rider Signals:</strong> We monitor transit mentions on Threads, Reddit, and RSS. Like a crowd-sourced road traffic app, this shows what passengers are experiencing in real time.</p>
-                    <p><strong>2. Cautious Quiet:</strong> A quiet line means <em>no recent rider reports have been captured</em>. It does not guarantee that service is normal. Always verify before travel.</p>
-                    <p><strong>3. Official Corroboration:</strong> We match rider signals against official announcements. Corroborated signals indicate verified service disruptions.</p>
-                  </div>
-                  <div class="how-it-works-col">
-                    <h4>Bahasa Malaysia</h4>
-                    <p><strong>1. Isyarat Penumpang:</strong> Kami memantau sebutan transit awam di Threads, Reddit, dan RSS. Seperti aplikasi trafik jalan raya, ini menunjukkan apa yang dialami penumpang secara langsung.</p>
-                    <p><strong>2. Senyap Bukan Sempurna:</strong> Laluan yang senyap bermakna <em>tiada laporan penumpang direkodkan baru-baru ini</em>. Ia tidak menjamin perkhidmatan adalah normal.</p>
-                    <p><strong>3. Pengesahan Rasmi:</strong> Laporan penumpang dipadankan dengan notis rasmi operator untuk mengesahkan gangguan perkhidmatan.</p>
-                  </div>
-                </div>
-              </div>
-            </details>
-          </section>
+          <div class="tm-toolbar tm-toolbar--search stitch-search-hero">
+            <div class="tm-search-wrap search-wrap" id="searchWrap">
+              <span class="material-symbols-outlined stitch-search-icon" aria-hidden="true">search</span>
+              <input class="tm-input stitch-search-hero-input" id="placeSearch" type="search" placeholder="Search station or line" autocomplete="off" aria-label="Search station or line" data-i18n-placeholder="Where to? Station or line" data-i18n-placeholder-ms="Ke mana? Stesen atau laluan" data-i18n-aria="Search station or line" data-i18n-aria-ms="Cari stesen atau laluan" />
+              <button class="tm-search-clear search-clear" id="searchClear" type="button" aria-label="Clear" data-i18n-aria="Clear" data-i18n-aria-ms="Padam">×</button>
+              <div class="tm-search-suggestions search-suggestions" id="searchSuggestions" role="listbox"></div>
+            </div>
+          </div>
+
+          <aside class="stitch-positioning stitch-positioning--compact" aria-label="What TrafficMY is" data-i18n-aria="What TrafficMY is" data-i18n-aria-ms="Apakah TrafficMY">
+            <div class="stitch-positioning-copy">
+              <strong data-i18n="Rider delay signals · today MYT" data-i18n-ms="Isyarat kelewatan · hari ini MYT">Rider delay signals · today MYT</strong>
+              <span data-i18n="What riders report — not operator all-clear" data-i18n-ms="Apa yang penumpang laporkan — bukan pengesahan rasmi">What riders report — not operator all-clear</span>
+            </div>
+          </aside>
 
           <div id="riskStrip" class="play-risk-strip" hidden aria-label="My lines during rush hour"></div>
 
           <section class="tm-live-today stitch-live-today" id="liveTodaySection">
             <div class="stitch-section-head">
               <div>
-                <h2 class="tm-live-today-title">Live today <span class="stitch-sub-en">(Utama hari ini)</span></h2>
+                <h2 class="tm-live-today-title" data-i18n-lockup data-i18n="Live today" data-i18n-ms="Utama hari ini">Live today <span class="stitch-sub-en">(Utama hari ini)</span></h2>
                 <p class="tm-section-sub section-sub" id="reportCount">Today · MYT</p>
               </div>
-              <span class="stitch-sub-en" style="font-size:11px;font-weight:700;max-width:110px;text-align:right">Resets midnight MYT</span>
+              <span class="stitch-sub-en" style="font-size:11px;font-weight:700;max-width:110px;text-align:right" data-i18n="Resets midnight MYT" data-i18n-ms="Reset tengah malam MYT">Resets midnight MYT</span>
             </div>
-            <p class="tm-live-today-note">Rider reports only — not official all-clear. Service ends when last train passes.</p>
+            <p class="tm-live-today-note" data-i18n="Rider reports only — not official all-clear." data-i18n-ms="Laporan penumpang sahaja — bukan pengesahan rasmi.">Rider reports only — not official all-clear.</p>
             <div class="tm-official-strip official-strip" id="officialStrip" hidden>
-              <h3>Official corroboration</h3>
+              <h3 data-i18n="Official corroboration" data-i18n-ms="Pengesahan rasmi">Official corroboration</h3>
               <div id="officialFeed"></div>
             </div>
             <div class="tm-last-viewed last-viewed" id="lastViewed" hidden></div>
@@ -134,38 +118,33 @@
             <div class="tm-source-coverage source-coverage-strip" id="sourceCoverageStrip"></div>
           </section>
 
-          <div class="tm-toolbar tm-toolbar--search">
-            <div class="tm-search-wrap search-wrap" id="searchWrap">
-              <input class="tm-input" id="placeSearch" type="search" placeholder="Search station or line" autocomplete="off" aria-label="Search station or line" />
-              <button class="tm-search-clear search-clear" id="searchClear" type="button" aria-label="Clear">×</button>
-              <div class="tm-search-suggestions search-suggestions" id="searchSuggestions" role="listbox"></div>
-            </div>
-            <select class="tm-select" id="sortSelect" aria-label="Sort lines">
-              <option value="severity">Severity</option>
-              <option value="freshest">Freshest</option>
-              <option value="reports">Most reports</option>
+          <div class="tm-toolbar tm-toolbar--filters">
+            <select class="tm-select" id="sortSelect" aria-label="Sort lines" data-i18n-aria="Sort lines" data-i18n-aria-ms="Susun laluan">
+              <option value="severity" data-i18n="Severity" data-i18n-ms="Keterukan">Severity</option>
+              <option value="freshest" data-i18n="Freshest" data-i18n-ms="Terkini">Freshest</option>
+              <option value="reports" data-i18n="Most reports" data-i18n-ms="Paling banyak laporan">Most reports</option>
             </select>
           </div>
 
           <div class="tm-filter-banner filter-active-banner" id="filterBanner">
-            <span>Filter: <strong id="filterLabel"></strong></span>
-            <button class="tm-search-clear search-clear" id="filterClear" type="button">Clear</button>
+            <span><span data-i18n="Filter:" data-i18n-ms="Penapis:">Filter:</span> <strong id="filterLabel"></strong></span>
+            <button class="tm-search-clear search-clear" id="filterClear" type="button" data-i18n="Clear" data-i18n-ms="Padam">Clear</button>
           </div>
 
           <div class="tm-filters filters" id="filters">
-            <button class="tm-chip chip active" data-mode="all">All</button>
-            <button class="tm-chip chip" data-mode="favorites">Saved</button>
-            <button class="tm-chip chip" data-mode="rail">Rail</button>
+            <button class="tm-chip chip active" data-mode="all" data-i18n="All" data-i18n-ms="Semua">All</button>
+            <button class="tm-chip chip" data-mode="favorites" data-i18n="Saved" data-i18n-ms="Disimpan">Saved</button>
+            <button class="tm-chip chip" data-mode="rail" data-i18n="Rail" data-i18n-ms="Rel">Rail</button>
             <button class="tm-chip chip" data-mode="lrt">LRT</button>
             <button class="tm-chip chip" data-mode="mrt">MRT</button>
             <button class="tm-chip chip" data-mode="ktm">KTM</button>
-            <button class="tm-chip chip" data-mode="monorail">Mono</button>
-            <button class="tm-chip chip" data-mode="bus">Bus</button>
+            <button class="tm-chip chip" data-mode="monorail" data-i18n="Mono" data-i18n-ms="Mono">Mono</button>
+            <button class="tm-chip chip" data-mode="bus" data-i18n="Bus" data-i18n-ms="Bas">Bus</button>
           </div>
           <p class="tm-filter-hint filter-hint" id="filterHint" hidden></p>
 
           <div class="tm-stale-banner stale-banner" id="staleBanner">
-            <strong>Stale data</strong>
+            <strong data-i18n="Stale data" data-i18n-ms="Data lapuk">Stale data</strong>
             <span id="staleBannerDetail">. Try Refresh.</span>
           </div>
 
@@ -177,38 +156,67 @@
 
           <div class="tm-schematic-wrap schematic-wrap stitch-schematic-wrap" id="schematicWrap" hidden aria-hidden="true">
             <div class="tm-schematic-head schematic-head stitch-schematic-head">
-              <span>Klang Valley <span class="stitch-sub-en">(Lembah Klang)</span></span>
-              <span class="stitch-schematic-hint">Tap a line</span>
+              <span data-i18n-lockup data-i18n="Klang Valley" data-i18n-ms="Lembah Klang">Klang Valley <span class="stitch-sub-en">(Lembah Klang)</span></span>
+              <span class="stitch-schematic-hint" data-i18n="Tap a line" data-i18n-ms="Ketik laluan">Tap a line</span>
             </div>
             <div class="stitch-schematic-stage" id="schematicStage">
-              <div class="stitch-schematic-loading" id="schematicLoading">Loading schematic…</div>
+              <div class="stitch-schematic-loading" id="schematicLoading" data-i18n="Loading schematic…" data-i18n-ms="Memuatkan gambar rajah…">Loading schematic…</div>
             </div>
           </div>
 
-          <section class="tm-board dep-board board" id="lineBoard" aria-label="Line status board">
+          <section class="tm-board dep-board board" id="lineBoard" aria-label="Line status board" data-i18n-aria="Line status board" data-i18n-aria-ms="Papan status laluan">
             <div class="stitch-section-head" id="lineBoardHead">
-              <h2 class="tm-live-today-title">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
+              <h2 class="tm-live-today-title" data-i18n-lockup data-i18n="Lines" data-i18n-ms="Laluan">Lines <span class="stitch-sub-en">(Laluan)</span></h2>
               <span class="stitch-count-badge board-count">…</span>
             </div>
             <div class="tm-loading-banner loading-banner" id="boardLoadingBanner">
               <span class="tm-loading-spinner loading-spinner" aria-hidden="true"></span>
-              <span>Loading lines</span>
+              <span data-i18n="Loading lines" data-i18n-ms="Memuatkan laluan">Loading lines</span>
             </div>
           </section>
 
           <div class="tm-compare-bar compare-bar" id="compareBar" aria-live="polite">
-            <span>Compare: tap two lines</span>
-            <button type="button" class="tm-search-clear search-clear" id="compareClear">Clear</button>
+            <span data-i18n="Compare: tap two lines" data-i18n-ms="Banding: ketik dua laluan">Compare: tap two lines</span>
+            <button type="button" class="tm-search-clear search-clear" id="compareClear" data-i18n="Clear" data-i18n-ms="Padam">Clear</button>
           </div>
 
           <div class="tm-legend line-legend collapsed-mobile" id="lineLegend">
             <div class="tm-legend-head line-legend-head">
-              <button type="button" class="tm-legend-toggle line-legend-toggle" id="lineLegendToggle" aria-expanded="false" aria-controls="lineLegendGrid">Line colours</button>
-              <button type="button" id="glossaryBtn">Glossary</button>
+              <button type="button" class="tm-legend-toggle line-legend-toggle" id="lineLegendToggle" aria-expanded="false" aria-controls="lineLegendGrid" data-i18n="Line colours" data-i18n-ms="Warna laluan">Line colours</button>
+              <button type="button" id="glossaryBtn" data-i18n="Glossary" data-i18n-ms="Glosari">Glossary</button>
             </div>
             <div class="tm-legend-grid line-legend-grid" id="lineLegendGrid"></div>
           </div>
           <div class="tm-route-legend route-legend" id="routeLegend" aria-label="Disruption colours"></div>
+
+          <section class="stitch-how-it-works" id="howItWorksCard">
+            <details class="how-it-works-details">
+              <summary class="how-it-works-summary">
+                <span class="material-symbols-outlined how-it-works-icon" aria-hidden="true">info</span>
+                <div class="how-it-works-summary-text">
+                  <strong data-i18n-lockup data-i18n="How it works" data-i18n-ms="Cara berfungsi">How it works <span class="stitch-sub-en">(Cara berfungsi)</span></strong>
+                  <span data-i18n="absence ≠ all-clear" data-i18n-ms="tiada isyarat ≠ lancar">absence ≠ all-clear</span>
+                </div>
+                <span class="how-it-works-chevron">▼</span>
+              </summary>
+              <div class="how-it-works-content">
+                <div class="how-it-works-grid">
+                  <div class="how-it-works-col" data-lang="en">
+                    <h4>English</h4>
+                    <p><strong>1. Live Rider Signals:</strong> We monitor transit mentions on Threads, Reddit, and RSS. Like a crowd-sourced road traffic app, this shows what passengers are experiencing in real time.</p>
+                    <p><strong>2. Cautious Quiet:</strong> A quiet line means <em>no recent rider reports have been captured</em>. It does not guarantee that service is normal. Always verify before travel.</p>
+                    <p><strong>3. Official Corroboration:</strong> We match rider signals against official announcements. Corroborated signals indicate verified service disruptions.</p>
+                  </div>
+                  <div class="how-it-works-col" data-lang="ms">
+                    <h4>Bahasa Malaysia</h4>
+                    <p><strong>1. Isyarat Penumpang:</strong> Kami memantau sebutan transit awam di Threads, Reddit, dan RSS. Seperti aplikasi trafik jalan raya, ini menunjukkan apa yang dialami penumpang secara langsung.</p>
+                    <p><strong>2. Senyap Bukan Sempurna:</strong> Laluan yang senyap bermakna <em>tiada laporan penumpang direkodkan baru-baru ini</em>. Ia tidak menjamin perkhidmatan adalah normal.</p>
+                    <p><strong>3. Pengesahan Rasmi:</strong> Laporan penumpang dipadankan dengan notis rasmi operator untuk mengesahkan gangguan perkhidmatan.</p>
+                  </div>
+                </div>
+              </div>
+            </details>
+          </section>
         </div>
 
         <aside class="tm-status-side">
@@ -230,14 +238,14 @@
     <div class="tm-view tab-panel" id="tabMap" role="tabpanel" aria-labelledby="tabBtnMap" hidden>
       <div class="stitch-map-shell">
         <div class="tm-map-toolbar map-toolbar stitch-map-toolbar" role="group" aria-label="Map layers">
-          <button class="tm-chip chip map-on stitch-map-chip" type="button" id="mapLayerAll" data-layer="all" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">layers</span><span>All</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerReports" data-layer="reports" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">warning</span><span>Reports</span></button>
+          <button class="tm-chip chip map-on stitch-map-chip" type="button" id="mapLayerAll" data-layer="all" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">layers</span><span data-i18n="All" data-i18n-ms="Semua">All</span></button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerReports" data-layer="reports" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">warning</span><span data-i18n="Reports" data-i18n-ms="Laporan">Reports</span></button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerLrt" data-layer="lrt" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">train</span><span>LRT</span></button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerMrt" data-layer="mrt" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">subway</span><span>MRT</span></button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerMonorail" data-layer="monorail" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">tram</span><span>Mono</span></button>
           <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerKtm" data-layer="ktm" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">directions_railway</span><span>KTM</span></button>
-          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerInterchanges" data-layer="interchanges" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">hub</span><span>Hubs</span></button>
-          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerBuses" data-layer="buses" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">directions_bus</span><span>Bus</span></button>
+          <button class="tm-chip chip map-on active stitch-map-chip" type="button" id="mapLayerInterchanges" data-layer="interchanges" aria-pressed="true"><span class="material-symbols-outlined" aria-hidden="true">hub</span><span data-i18n="Hubs" data-i18n-ms="Hab">Hubs</span></button>
+          <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerBuses" data-layer="buses" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">directions_bus</span><span data-i18n="Bus" data-i18n-ms="Bas">Bus</span></button>
           <button class="tm-chip chip stitch-map-chip" type="button" id="mapLayerGps" data-layer="gps" aria-pressed="false" title="Official GTFS-RT GPS — reference only, not incident truth"><span class="material-symbols-outlined" aria-hidden="true">sensors</span><span>GPS</span></button>
           <button class="tm-chip chip stitch-map-chip" type="button" id="mapTiltToggle" aria-pressed="false"><span class="material-symbols-outlined" aria-hidden="true">3d_rotation</span><span>3D</span></button>
         </div>
@@ -251,8 +259,8 @@
             <div id="malaysiaMap" role="application" aria-label="Malaysia transport map"></div>
             <form class="stitch-map-search" id="mapSearchForm">
               <span class="material-symbols-outlined stitch-map-search-icon" aria-hidden="true">search</span>
-              <input class="stitch-map-search-input" id="mapSearchInput" type="search" placeholder="Where to? / Ke mana?" autocomplete="off" aria-label="Search destination" />
-              <button class="stitch-map-search-go" type="submit">GO</button>
+              <input class="stitch-map-search-input" id="mapSearchInput" type="search" placeholder="Where to?" autocomplete="off" aria-label="Search destination" data-i18n-placeholder="Where to?" data-i18n-placeholder-ms="Ke mana?" data-i18n-aria="Search destination" data-i18n-aria-ms="Cari destinasi" />
+              <button class="stitch-map-search-go" type="submit" data-i18n="GO" data-i18n-ms="GO">GO</button>
             </form>
             <div id="mapFloatCard" class="stitch-map-float" hidden></div>
           </div>
@@ -262,14 +270,14 @@
 
     <div class="tm-view tab-panel" id="tabTravel" role="tabpanel" aria-labelledby="tabBtnTravel" hidden>
       <div class="tm-travel-layout">
-        <div class="stitch-travel-banner stitch-travel-banner--native" role="img" aria-label="Malaysia Adventures — explore the rail network">
+        <div class="stitch-travel-banner stitch-travel-banner--native" role="img" aria-label="Malaysia Adventures — explore the rail network" data-i18n-aria="Malaysia Adventures — explore the rail network" data-i18n-aria-ms="Pengembaraan Malaysia — terokai rangkaian rel">
           <div class="stitch-travel-banner-art">
-            <img src="static/mascots/stitch-mascot.png" alt="" loading="lazy" width="72" height="72" />
+            <img src="static/mascots/trafficmy-mascot.png" alt="" loading="lazy" width="72" height="72" />
           </div>
           <div class="stitch-travel-banner-copy">
-            <span class="stitch-travel-banner-kicker">Malaysia Adventures</span>
-            <strong>Plan your rail journey</strong>
-            <span>Stations · interchanges · service hours</span>
+            <span class="stitch-travel-banner-kicker" data-i18n-lockup data-i18n="Malaysia Adventures" data-i18n-ms="Pengembaraan">Malaysia Adventures / Pengembaraan</span>
+            <strong data-i18n-lockup data-i18n="Plan your rail journey" data-i18n-ms="Rancang perjalanan">Plan your rail journey / Rancang perjalanan</strong>
+            <span data-i18n="Stations · interchanges · service hours" data-i18n-ms="Stesen · pertukaran · waktu perkhidmatan">Stations · interchanges · service hours</span>
           </div>
         </div>
         <section class="tm-travel-card tm-schedule-card" id="trainScheduleCard" hidden aria-labelledby="scheduleTitle"></section>
@@ -277,48 +285,48 @@
           <div class="tm-travel-card-head">
             <span class="material-symbols-outlined" aria-hidden="true">route</span>
             <div>
-              <h2 id="journeyTitle">Plan route <span class="stitch-sub-en">(Rancang)</span></h2>
-              <p class="tm-travel-lead">Rapid KL rail · station or address</p>
+              <h2 id="journeyTitle" data-i18n-lockup data-i18n="Plan route" data-i18n-ms="Rancang">Plan route <span class="stitch-sub-en">(Rancang)</span></h2>
+              <p class="tm-travel-lead" data-i18n="Rapid KL rail · station or address" data-i18n-ms="Rel Rapid KL · stesen atau alamat">Rapid KL rail · station or address</p>
             </div>
           </div>
           <form class="tm-journey-form journey-form journey-form--compact" id="journeyForm">
             <div class="tm-field field">
-              <label for="journeyFrom">From</label>
+              <label for="journeyFrom" data-i18n="From" data-i18n-ms="Dari">From</label>
               <input class="tm-input" id="journeyFrom" list="stationOptions" placeholder="Wangsa Maju" autocomplete="off" required />
             </div>
-            <button class="tm-swap-btn swap-btn" id="swapJourney" type="button" aria-label="Swap"><span class="material-symbols-outlined" aria-hidden="true">swap_vert</span></button>
+            <button class="tm-swap-btn swap-btn" id="swapJourney" type="button" aria-label="Swap" data-i18n-aria="Swap" data-i18n-aria-ms="Tukar"><span class="material-symbols-outlined" aria-hidden="true">swap_vert</span></button>
             <div class="tm-field field">
-              <label for="journeyTo">To</label>
+              <label for="journeyTo" data-i18n="To" data-i18n-ms="Ke">To</label>
               <input class="tm-input" id="journeyTo" list="stationOptions" placeholder="Bukit Bintang" autocomplete="off" required />
             </div>
             <div class="tm-travel-actions">
-              <button class="tm-use-location use-location" id="useLocation" type="button">📍 Near me</button>
-              <button class="tool-button tm-primary-btn" type="submit">Find route</button>
+              <button class="tm-use-location use-location" id="useLocation" type="button" data-i18n="📍 Near me" data-i18n-ms="📍 Berdekatan">📍 Near me</button>
+              <button class="tool-button tm-primary-btn" type="submit" data-i18n="Find route" data-i18n-ms="Cari laluan">Find route</button>
             </div>
           </form>
           <datalist id="stationOptions"></datalist>
           <div class="tm-journey-result journey-result" id="journeyResult" hidden aria-live="polite"></div>
-          <p class="tm-travel-foot">Not KTM or buses · <a href="https://myrapid.com.my/journey-planner/" target="_blank" rel="noopener noreferrer">MyRapid planner ↗</a></p>
+          <p class="tm-travel-foot" data-i18n-html="Not KTM or buses · <a href=&quot;https://myrapid.com.my/journey-planner/&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;>MyRapid planner ↗</a>" data-i18n-html-ms="Bukan KTM atau bas · <a href=&quot;https://myrapid.com.my/journey-planner/&quot; target=&quot;_blank&quot; rel=&quot;noopener noreferrer&quot;>Perancang MyRapid ↗</a>">Not KTM or buses · <a href="https://myrapid.com.my/journey-planner/" target="_blank" rel="noopener noreferrer">MyRapid planner ↗</a></p>
         </section>
 
         <section class="tm-travel-card tm-travel-card--passes" aria-labelledby="savingsTitle">
           <div class="tm-travel-card-head">
             <span class="material-symbols-outlined" aria-hidden="true">confirmation_number</span>
             <div>
-              <h2 id="savingsTitle">Passes &amp; fares <span class="stitch-sub-en">(Pas)</span></h2>
+              <h2 id="savingsTitle" data-i18n-lockup data-i18n="Passes & fares" data-i18n-ms="Pas & tambang">Passes &amp; fares <span class="stitch-sub-en">(Pas)</span></h2>
               <p class="tm-travel-lead">My50 · Rapid Pelajar · pay-as-you-go</p>
             </div>
           </div>
-          <p class="stitch-tapout-banner"><span class="material-symbols-outlined" aria-hidden="true">info</span> Same card to tap in &amp; out at interchanges</p>
+          <p class="stitch-tapout-banner"><span class="material-symbols-outlined" aria-hidden="true">info</span> <span data-i18n="Same card to tap in & out at interchanges" data-i18n-ms="Kad sama untuk tap masuk & keluar di pertukaran">Same card to tap in &amp; out at interchanges</span></p>
           <form id="savingsForm" class="savings-card savings-card--compact">
             <div class="savings-form savings-form--inline">
-              <div class="tm-field field"><label for="monthlyRides">Trips/mo</label><input class="tm-input" id="monthlyRides" type="number" min="1" max="200" value="44" /></div>
-              <div class="tm-field field"><label for="averageFare">Avg RM</label><input class="tm-input" id="averageFare" type="number" min="0.5" max="20" step="0.10" value="3.00" /></div>
-              <button class="tool-button tm-primary-btn" type="submit">Compare</button>
+              <div class="tm-field field"><label for="monthlyRides" data-i18n="Trips/mo" data-i18n-ms="Trip/bln">Trips/mo</label><input class="tm-input" id="monthlyRides" type="number" min="1" max="200" value="44" /></div>
+              <div class="tm-field field"><label for="averageFare" data-i18n="Avg RM" data-i18n-ms="Purata RM">Avg RM</label><input class="tm-input" id="averageFare" type="number" min="0.5" max="20" step="0.10" value="3.00" /></div>
+              <button class="tool-button tm-primary-btn" type="submit" data-i18n="Compare" data-i18n-ms="Banding">Compare</button>
             </div>
             <div class="check-row">
-              <label><input id="isMalaysian" type="checkbox" checked /> Malaysian</label>
-              <label><input id="isStudent" type="checkbox" /> Student</label>
+              <label><input id="isMalaysian" type="checkbox" checked /> <span data-i18n="Malaysian" data-i18n-ms="Warganegara">Malaysian</span></label>
+              <label><input id="isStudent" type="checkbox" /> <span data-i18n="Student" data-i18n-ms="Pelajar">Student</span></label>
             </div>
           </form>
           <div class="saving-result" id="savingResult" hidden aria-live="polite"></div>
@@ -328,8 +336,8 @@
           <div class="tm-travel-card-head">
             <span class="tm-travel-icon" aria-hidden="true">🎟</span>
             <div>
-              <h2 class="tm-side-title">Deals &amp; launches</h2>
-              <span class="tm-section-sub section-sub" id="updatesAsOf">Verified links</span>
+              <h2 class="tm-side-title" data-i18n="Deals & launches" data-i18n-ms="Tawaran & pelancaran">Deals &amp; launches</h2>
+              <span class="tm-section-sub section-sub" id="updatesAsOf" data-i18n="Verified links" data-i18n-ms="Pautan disahkan">Verified links</span>
             </div>
           </div>
           <div class="tm-updates-grid updates-grid" id="updatesGrid"></div>
@@ -342,15 +350,15 @@
 
     <section class="tm-method" id="methodSection">
       <button class="method-toggle" id="methodToggle" aria-expanded="false">
-        <span>Scope &amp; methodology</span>
+        <span data-i18n="Scope & methodology" data-i18n-ms="Skop & metodologi">Scope &amp; methodology</span>
         <span class="method-chevron">▼</span>
       </button>
       <div class="method-body">
-        <p>Not an official operator site. Malaysia transport only. Sources: Threads, Reddit, RSS, operator notices, GTFS.</p>
+        <p data-i18n="Not an official operator site. Malaysia transport only. Sources: Threads, Reddit, RSS, operator notices, GTFS." data-i18n-ms="Bukan laman operator rasmi. Pengangkutan Malaysia sahaja. Sumber: Threads, Reddit, RSS, notis operator, GTFS.">Not an official operator site. Malaysia transport only. Sources: Threads, Reddit, RSS, operator notices, GTFS.</p>
         <ul>
-          <li>Crowd reports are not confirmation of normal service.</li>
-          <li>Quiet lines mean no recent qualifying signal, not all-clear.</li>
-          <li>Official corroboration requires a time-matched notice.</li>
+          <li data-i18n="Crowd reports are not confirmation of normal service." data-i18n-ms="Laporan orang ramai bukan pengesahan perkhidmatan normal.">Crowd reports are not confirmation of normal service.</li>
+          <li data-i18n="Quiet lines mean no recent qualifying signal, not all-clear." data-i18n-ms="Laluan senyap bermakna tiada isyarat terkini, bukan jaminan lancar.">Quiet lines mean no recent qualifying signal, not all-clear.</li>
+          <li data-i18n="Official corroboration requires a time-matched notice." data-i18n-ms="Pengesahan rasmi memerlukan notis yang sepadan masa.">Official corroboration requires a time-matched notice.</li>
         </ul>
       </div>
     </section>
@@ -359,24 +367,24 @@
   <footer class="tm-footer">
     <div class="tm-footer-inner">
       <img class="tm-footer-logo footer-logo" id="footerLogo" src="static/logo.svg" width="120" height="29" alt="" aria-hidden="true" />
-      <span><span id="footerTagline">Malaysia transport intelligence</span> · <a href="#" id="footerMethodLink">Method</a> · <span class="tm-footer-time" id="footerTime"></span></span>
+      <span><span id="footerTagline" data-i18n="Malaysia transport intelligence" data-i18n-ms="Perisikan pengangkutan Malaysia">Malaysia transport intelligence</span> · <a href="#" id="footerMethodLink" data-i18n="Method" data-i18n-ms="Kaedah">Method</a> · <span class="tm-footer-time" id="footerTime"></span></span>
     </div>
   </footer>
 
-  <button class="tm-fab fab-refresh" id="fabRefresh" type="button" aria-label="Refresh" disabled><span class="btn-icon">↻</span></button>
+  <button class="tm-fab fab-refresh" id="fabRefresh" type="button" aria-label="Refresh" disabled data-i18n-aria="Refresh" data-i18n-aria-ms="Muat semula"><span class="btn-icon">↻</span></button>
 
-  <nav class="tm-bottom-nav stitch-bottom-nav bottom-nav" id="bottomNav" aria-label="Mobile navigation">
-    <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item stitch-nav-item--active" type="button" data-tab="status" aria-label="Home" aria-current="page">
+  <nav class="tm-bottom-nav stitch-bottom-nav bottom-nav" id="bottomNav" aria-label="Mobile navigation" data-i18n-aria="Mobile navigation" data-i18n-aria-ms="Navigasi mudah alih">
+    <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item stitch-nav-item--active" type="button" data-tab="status" aria-label="Home" aria-current="page" data-i18n-aria="Home" data-i18n-aria-ms="Utama">
       <span class="material-symbols-outlined" aria-hidden="true">home</span>
-      <span>Home/Utama</span>
+      <span data-i18n="Home" data-i18n-ms="Utama">Home</span>
     </button>
-    <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item" type="button" data-tab="map" aria-label="Map">
+    <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item" type="button" data-tab="map" aria-label="Map" data-i18n-aria="Map" data-i18n-aria-ms="Peta">
       <span class="material-symbols-outlined" aria-hidden="true">map</span>
-      <span>Map/Peta</span>
+      <span data-i18n="Map" data-i18n-ms="Peta">Map</span>
     </button>
-    <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item" type="button" data-tab="travel" aria-label="Travel">
+    <button class="tm-bottom-nav-btn bottom-nav-btn stitch-nav-item" type="button" data-tab="travel" aria-label="Travel" data-i18n-aria="Travel" data-i18n-aria-ms="Gerak">
       <span class="material-symbols-outlined" aria-hidden="true">directions_transit</span>
-      <span>Travel/Gerak</span>
+      <span data-i18n="Travel" data-i18n-ms="Gerak">Travel</span>
     </button>
   </nav>
 
@@ -415,6 +423,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js?v=29" defer></script>
+  <script src="static/js/app.js?v=42" defer></script>
 </body>
 </html>

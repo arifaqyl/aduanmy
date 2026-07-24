@@ -117,11 +117,28 @@ threads_queries:
     - banjir selangor
     - hujan lebat jalan
 
-# Latest-post watchlist — scraped first (Malaysians post transport/telco incidents here before news/X)
+# Latest-post watchlist — rider/operator accounts that post same-day transit signals.
+# News is covered by RSS; keep news handles out of the primary scrape path.
 threads_watchlist:
   transport:
     - handle: transit.taste.trail
       role: commuter
+    - handle: askrapidkl
+      role: operator
+    - handle: myrapidkl
+      role: operator
+    - handle: ktmb
+      role: operator
+    - handle: ktmb_berhad
+      role: operator
+  telco_internet:
+    - handle: afifah.hgm
+      role: commuter
+  flood_weather: []
+
+# Documented only — not scraped by threads_watchlist() primary path (RSS covers news).
+threads_watchlist_news:
+  transport:
     - handle: thesundaily
       role: news
     - handle: thestaronline
@@ -130,9 +147,6 @@ threads_watchlist:
       role: news
     - handle: malaysiakini
       role: news
-  telco_internet:
-    - handle: afifah.hgm
-      role: commuter
   flood_weather:
     - handle: thesundaily
       role: news

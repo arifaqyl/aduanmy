@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import time
 from collections import Counter
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, TimeoutError as FuturesTimeoutError, wait
 from datetime import UTC, datetime
 
 from app.collectors.gtfs.client import collect_gtfs_sample
@@ -169,17 +169,19 @@ def _collectors() -> dict:
     }
 
 
+# Hard caps so a hung Playwright Chromium cannot freeze the whole ingest + scheduler.
+COLLECTOR_HARD_TIMEOUT_SECONDS = {
+    "threads": 240,
+    "official": 90,
+    "rss": 60,
+    "reddit": 90,
+    "x": 90,
+    "gtfs": 45,
+}
+
+
 def collect_all() -> dict[str, list[dict]]:
-    collectors = _collectors()
-    results: dict[str, list[dict]] = {name: [] for name in collectors}
-    with ThreadPoolExecutor(max_workers=len(collectors)) as executor:
-        future_map = {executor.submit(func): name for name, func in collectors.items()}
-        for future in as_completed(future_map):
-            name = future_map[future]
-            try:
-                results[name] = future.result()
-            except Exception:
-                results[name] = []
+    results, _timings, _runs = collect_all_detailed(respect_cadence=False)
     return results
 
 
@@ -190,6 +192,12 @@ def _collector_due(name: str, *, respect_cadence: bool) -> tuple[bool, str]:
         return False, "disabled_until_authenticated"
     if not respect_cadence:
         return True, ""
+    # When Threads is empty/failed, force Reddit regardless of cadence so the board
+    # is not blind during a starved primary lane.
+    if name == "reddit":
+        threads_prev = latest_collector_run("threads", include_paused=False)
+        if threads_prev and threads_prev.get("status") in {"empty", "failed"}:
+            return True, ""
     # Reddit is the fallback lane when Threads goes quiet — run it more often during
     # KL commute rush hours so a stalled Threads session doesn't leave the pulse blind.
     reddit_interval = (
@@ -222,7 +230,8 @@ def collect_all_detailed(
     started_at: dict[str, float] = {}
     started_iso: dict[str, str] = {}
     runs: list[dict] = []
-    with ThreadPoolExecutor(max_workers=len(collectors)) as executor:
+    executor = ThreadPoolExecutor(max_workers=len(collectors))
+    try:
         future_map = {}
         for name, func in collectors.items():
             due, reason = _collector_due(name, respect_cadence=respect_cadence)
@@ -244,37 +253,103 @@ def collect_all_detailed(
             started_at[name] = time.perf_counter()
             started_iso[name] = datetime.now(UTC).isoformat().replace("+00:00", "Z")
             future_map[executor.submit(func)] = name
-        for future in as_completed(future_map):
-            name = future_map[future]
-            duration = round(time.perf_counter() - started_at[name], 2)
-            timings[name] = duration
-            error = ""
-            try:
-                results[name] = future.result()
-                status = "healthy" if results[name] else "empty"
-            except Exception as exc:
-                results[name] = []
-                status = "failed"
-                error = f"{type(exc).__name__}: {exc}"
-            if name == "threads" and status != "healthy":
-                from app.collectors.threads.client import get_threads_diagnostics
+        pending = set(future_map)
+        while pending:
+            done, pending = wait_done(pending, timeout=1.0)
+            for future in done:
+                name = future_map[future]
+                hard_timeout = COLLECTOR_HARD_TIMEOUT_SECONDS.get(name, 90)
+                elapsed = time.perf_counter() - started_at[name]
+                remaining = max(0.1, hard_timeout - elapsed)
+                error = ""
+                try:
+                    results[name] = future.result(timeout=remaining)
+                    status = "healthy" if results[name] else "empty"
+                except FuturesTimeoutError:
+                    results[name] = []
+                    status = "failed"
+                    error = f"timeout:{hard_timeout}s"
+                    future.cancel()
+                except Exception as exc:
+                    results[name] = []
+                    status = "failed"
+                    error = f"{type(exc).__name__}: {exc}"
+                duration = round(time.perf_counter() - started_at[name], 2)
+                timings[name] = duration
+                if name == "threads" and status != "healthy":
+                    from app.collectors.threads.client import get_threads_diagnostics
 
-                diag = get_threads_diagnostics()
-                reasons = diag.get("reasons") or []
-                if reasons:
-                    error = (error + " | " if error else "") + "; ".join(reasons[:4])
-            runs.append(
-                {
-                    "source": name,
-                    "started_at": started_iso[name],
-                    "finished_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
-                    "status": status,
-                    "row_count": len(results[name]),
-                    "duration_seconds": duration,
-                    "error": error,
-                }
-            )
+                    diag = get_threads_diagnostics()
+                    reasons = diag.get("reasons") or []
+                    bits = list(reasons[:4])
+                    rejected_today = diag.get("rejected_not_today")
+                    rejected_signal = diag.get("rejected_weak_rider_signal")
+                    if rejected_today:
+                        bits.append(f"rejected_not_today={rejected_today}")
+                    if rejected_signal:
+                        bits.append(f"rejected_weak_rider_signal={rejected_signal}")
+                    if bits:
+                        error = (error + " | " if error else "") + "; ".join(bits)
+                runs.append(
+                    {
+                        "source": name,
+                        "started_at": started_iso[name],
+                        "finished_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                        "status": status,
+                        "row_count": len(results[name]),
+                        "duration_seconds": duration,
+                        "error": error,
+                    }
+                )
+            # Sweep long-running futures that never completed a tick.
+            still = set()
+            for future in pending:
+                name = future_map[future]
+                hard_timeout = COLLECTOR_HARD_TIMEOUT_SECONDS.get(name, 90)
+                elapsed = time.perf_counter() - started_at[name]
+                if elapsed < hard_timeout:
+                    still.add(future)
+                    continue
+                results[name] = []
+                timings[name] = round(elapsed, 2)
+                future.cancel()
+                error = f"timeout:{hard_timeout}s"
+                if name == "threads":
+                    from app.collectors.threads.client import get_threads_diagnostics
+
+                    diag = get_threads_diagnostics()
+                    reasons = diag.get("reasons") or []
+                    bits = list(reasons[:4])
+                    rejected_today = diag.get("rejected_not_today")
+                    rejected_signal = diag.get("rejected_weak_rider_signal")
+                    if rejected_today:
+                        bits.append(f"rejected_not_today={rejected_today}")
+                    if rejected_signal:
+                        bits.append(f"rejected_weak_rider_signal={rejected_signal}")
+                    if bits:
+                        error = error + " | " + "; ".join(bits)
+                runs.append(
+                    {
+                        "source": name,
+                        "started_at": started_iso[name],
+                        "finished_at": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
+                        "status": "failed",
+                        "row_count": 0,
+                        "duration_seconds": round(elapsed, 2),
+                        "error": error,
+                    }
+                )
+            pending = still
+    finally:
+        # Never block forever on a hung Playwright process.
+        executor.shutdown(wait=False, cancel_futures=True)
     return results, timings, sorted(runs, key=lambda item: item["source"])
+
+
+def wait_done(futures: set, timeout: float):
+    """Thin wrapper so tests can stub wait behavior if needed."""
+    done, not_done = wait(futures, timeout=timeout, return_when=FIRST_COMPLETED)
+    return done, not_done
 
 
 def collect_all_with_timings() -> tuple[dict[str, list[dict]], dict[str, float]]:

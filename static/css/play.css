@@ -437,6 +437,16 @@ body.play-app.high-contrast {
 }
 
 .play-app .journey-warn { color: #c2410c; }
+.play-app .journey-alternate {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--play-line);
+}
+.play-app .journey-alt-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 800;
+}
 .play-app .journey-paid-badge {
   display: inline-block;
   margin-left: 6px;

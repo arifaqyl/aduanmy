@@ -6,7 +6,9 @@ import threading
 import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
+
+UTC = timezone.utc
 from email.utils import parsedate_to_datetime
 from urllib.parse import quote_plus, unquote
 
@@ -31,22 +33,18 @@ except Exception:  # pragma: no cover - optional dependency at runtime
 
 RECENT_WINDOW_DAYS = 1  # Today MYT only — rider reports must be same-day.
 PROFILE_POST_LIMIT = 20
-SEARCH_RESULT_LIMIT = 10
+SEARCH_RESULT_LIMIT = 12
 SEARCH_ROWS_PER_CATEGORY = 24
-SEARCH_ROWS_PER_QUERY = 2
-SEARCH_SCROLL_ROUNDS = 2
+SEARCH_ROWS_PER_QUERY = 3
+SEARCH_SCROLL_ROUNDS = 4
 SEARCH_MAX_QUERIES_PER_CATEGORY = 12
 SEARCH_CATEGORIES = ["transport"]
 MANDATORY_TRANSPORT_QUERIES = (
+    "lrt kelana jaya delay",
+    "mrt kajang delay",
     "rapidkl delay",
-    "lrt kelana jaya line delay",
-    "lrt ampang line delay",
-    "lrt sri petaling line delay",
-    "mrt kajang line delay",
-    "mrt putrajaya line delay",
-    "kl monorail delay",
-    "lrt3 shah alam line",
     "ktm komuter delay",
+    "lrt ampang delay",
 )
 SEARCH_POST_SELECTOR = "a[href*='/post/'], a[href*='/video/']"
 _PLAYWRIGHT_LOCK = threading.Lock()
@@ -54,7 +52,12 @@ _PLAYWRIGHT_LOCK = threading.Lock()
 # Threads is the primary signal lane but the slowest — a stuck run must never eat the
 # whole 15-min ingest cadence. Once the budget is spent we stop opening new pages and
 # return whatever rows were already collected instead of blocking the scheduler.
-THREADS_TIME_BUDGET_SECONDS = 150
+THREADS_TIME_BUDGET_SECONDS = 210
+# Hard caps inside Playwright so a single hung goto cannot outlive the ingest hard timeout.
+PLAYWRIGHT_DEFAULT_TIMEOUT_MS = 25000
+PLAYWRIGHT_NAV_TIMEOUT_MS = 20000
+# Bail out of keyword search after this many consecutive empty queries (login wall / block).
+SEARCH_ZERO_HIT_ABORT = 4
 
 _diagnostics_lock = threading.Lock()
 _last_diagnostics: dict = {}
@@ -115,7 +118,20 @@ def _new_threads_context(browser):
     state = load_storage_state()
     if state:
         options["storage_state"] = state
-    return browser.new_context(**options), state is not None
+    context = browser.new_context(**options)
+    context.set_default_timeout(PLAYWRIGHT_DEFAULT_TIMEOUT_MS)
+    context.set_default_navigation_timeout(PLAYWRIGHT_NAV_TIMEOUT_MS)
+    return context, state is not None
+
+
+def _close_playwright(context=None, browser=None) -> None:
+    for closer in (context, browser):
+        if closer is None:
+            continue
+        try:
+            closer.close()
+        except Exception:
+            pass
 
 
 def _page_has_authenticated_session(page) -> bool:
@@ -285,6 +301,8 @@ def _is_watchlist_candidate(preview_text: str, exact_text: str, category: str, r
     if not combined:
         return False
     if category == "transport":
+        if role in {"operator", "official"}:
+            return transport_incident_signal_ok(combined) or transport_rider_signal_worthwhile(combined)
         return transport_rider_signal_worthwhile(combined)
     if category == "telco_internet":
         return (is_complaint_signal(combined) or classify_category(combined) == "telco_internet") and any(
@@ -384,10 +402,42 @@ def _scrape_threads_search_page(page, query: str, limit: int = SEARCH_RESULT_LIM
     rows: list[dict[str, str]] = []
     search_url = f"https://www.threads.com/search?q={quote_plus(query)}&filter=recent"
     try:
-        page.goto(search_url, wait_until="domcontentloaded", timeout=35000)
-        page.wait_for_timeout(1500)
+        page.goto(search_url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
+        # Threads search is client-rendered; short waits look like "no results".
+        page.wait_for_timeout(2500)
         for _ in range(SEARCH_SCROLL_ROUNDS):
             batch = page.locator(SEARCH_POST_SELECTOR).evaluate_all(SEARCH_POST_JS)
+            if not batch:
+                # Fallback when locator misses hydrated cards but anchors exist.
+                batch = page.eval_on_selector_all(
+                    "a",
+                    """
+                    els => els.map(a => {
+                      const href = a.href || '';
+                      if (!href || (!href.includes('/post/') && !href.includes('/video/')) || href.endsWith('/media')) {
+                        return null;
+                      }
+                      let node = a;
+                      let bestText = (a.innerText || '').trim();
+                      let bestLen = bestText.length;
+                      for (let i = 0; i < 10 && node; i++, node = node.parentElement) {
+                        const text = (node.innerText || '').trim();
+                        const len = text.length;
+                        if (len >= 40 && len <= 500 && len > bestLen) {
+                          bestText = text;
+                          bestLen = len;
+                        }
+                      }
+                      const timeEl = a.querySelector('time') || a.closest('div')?.querySelector('time');
+                      return {
+                        href,
+                        preview_text: bestText,
+                        link_text: (a.innerText || '').trim(),
+                        created_at: timeEl ? (timeEl.getAttribute('datetime') || '') : ''
+                      };
+                    }).filter(Boolean)
+                    """,
+                )
             for item in batch:
                 href = item.get("href", "")
                 preview_text = clean_text(item.get("preview_text", ""))
@@ -403,8 +453,8 @@ def _scrape_threads_search_page(page, query: str, limit: int = SEARCH_RESULT_LIM
                 )
             if len({item["url"] for item in rows}) >= limit:
                 break
-            page.mouse.wheel(0, 2400)
-            page.wait_for_timeout(500)
+            page.mouse.wheel(0, 2800)
+            page.wait_for_timeout(700)
     except Exception:
         return []
 
@@ -422,43 +472,47 @@ def _playwright_threads_search_results(query: str, limit: int = SEARCH_RESULT_LI
     """Scrape threads.com/search for the latest posts matching a keyword."""
     if sync_playwright is None or not clean_text(query):
         return []
+    browser = None
+    context = None
     try:
         with _PLAYWRIGHT_LOCK:
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True)
                 context, _authenticated = _new_threads_context(browser)
                 page = context.new_page()
-                rows = _scrape_threads_search_page(page, query, limit=limit)
-                context.close()
-                browser.close()
-                return rows
+                return _scrape_threads_search_page(page, query, limit=limit)
     except Exception:
         return []
+    finally:
+        _close_playwright(context, browser)
 
 
 def _playwright_post_timestamps(urls: list[str]) -> dict[str, str]:
     if sync_playwright is None or not urls:
         return {}
     timestamps: dict[str, str] = {}
+    browser = None
+    context = None
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context, _authenticated = _new_threads_context(browser)
-            page = context.new_page()
-            for url in urls:
-                try:
-                    page.goto(url, wait_until="domcontentloaded", timeout=45000)
-                    page.wait_for_timeout(1800)
-                    if page.locator("time").count():
-                        created_at = page.locator("time").first.get_attribute("datetime") or ""
-                        if created_at:
-                            timestamps[url] = created_at
-                except Exception:
-                    continue
-            context.close()
-            browser.close()
+        with _PLAYWRIGHT_LOCK:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context, _authenticated = _new_threads_context(browser)
+                page = context.new_page()
+                for url in urls:
+                    try:
+                        page.goto(url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
+                        page.wait_for_timeout(1200)
+                        if page.locator("time").count():
+                            created_at = page.locator("time").first.get_attribute("datetime") or ""
+                            if created_at:
+                                timestamps[url] = created_at
+                    except Exception:
+                        continue
     except Exception:
         return timestamps
+    finally:
+        _close_playwright(context, browser)
     return timestamps
 
 
@@ -466,62 +520,65 @@ def _playwright_profile_post_previews(profile_url: str, limit: int = PROFILE_POS
     if sync_playwright is None:
         return []
     rows: list[dict[str, str]] = []
+    browser = None
+    context = None
     try:
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context, _authenticated = _new_threads_context(browser)
-            page = context.new_page()
-            page.goto(profile_url, wait_until="domcontentloaded", timeout=45000)
-            page.wait_for_timeout(2000)
-            for _ in range(4):
-                batch = page.locator("a[href*='/post/'], a[href*='/video/']").evaluate_all(
-                    """
-                    els => els.map(a => {
-                      const href = a.href || '';
-                      if (!href || href.endsWith('/media')) {
-                        return null;
-                      }
-                      let node = a;
-                      let bestText = '';
-                      let bestLen = 0;
-                      for (let i = 0; i < 12 && node; i++, node = node.parentElement) {
-                        const text = (node.innerText || '').trim();
-                        const len = text.length;
-                        if (len >= 35 && len <= 320 && len > bestLen) {
-                          bestText = text;
-                          bestLen = len;
-                        }
-                      }
-                      const timeEl = a.querySelector('time') || a.closest('div')?.querySelector('time');
-                      return {
-                        href,
-                        preview_text: bestText,
-                        created_at: timeEl ? (timeEl.getAttribute('datetime') || '') : ''
-                      };
-                    }).filter(Boolean)
-                    """
-                )
-                for item in batch:
-                    href = item.get("href", "")
-                    preview_text = clean_text(item.get("preview_text", ""))
-                    if _looks_like_pinned_preview(preview_text):
-                        continue
-                    created_at = item.get("created_at", "") or created_at_from_text(preview_text)
-                    rows.append(
-                        {
-                            "url": href,
-                            "preview_text": preview_text,
-                            "created_at": created_at,
-                        }
+        with _PLAYWRIGHT_LOCK:
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                context, _authenticated = _new_threads_context(browser)
+                page = context.new_page()
+                page.goto(profile_url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
+                page.wait_for_timeout(1800)
+                for _ in range(4):
+                    batch = page.locator("a[href*='/post/'], a[href*='/video/']").evaluate_all(
+                        """
+                        els => els.map(a => {
+                          const href = a.href || '';
+                          if (!href || href.endsWith('/media')) {
+                            return null;
+                          }
+                          let node = a;
+                          let bestText = '';
+                          let bestLen = 0;
+                          for (let i = 0; i < 12 && node; i++, node = node.parentElement) {
+                            const text = (node.innerText || '').trim();
+                            const len = text.length;
+                            if (len >= 35 && len <= 320 && len > bestLen) {
+                              bestText = text;
+                              bestLen = len;
+                            }
+                          }
+                          const timeEl = a.querySelector('time') || a.closest('div')?.querySelector('time');
+                          return {
+                            href,
+                            preview_text: bestText,
+                            created_at: timeEl ? (timeEl.getAttribute('datetime') || '') : ''
+                          };
+                        }).filter(Boolean)
+                        """
                     )
-                if len({item["url"] for item in rows}) >= limit:
-                    break
-                page.mouse.wheel(0, 2800)
-                page.wait_for_timeout(1000)
-            context.close()
-            browser.close()
+                    for item in batch:
+                        href = item.get("href", "")
+                        preview_text = clean_text(item.get("preview_text", ""))
+                        if _looks_like_pinned_preview(preview_text):
+                            continue
+                        created_at = item.get("created_at", "") or created_at_from_text(preview_text)
+                        rows.append(
+                            {
+                                "url": href,
+                                "preview_text": preview_text,
+                                "created_at": created_at,
+                            }
+                        )
+                    if len({item["url"] for item in rows}) >= limit:
+                        break
+                    page.mouse.wheel(0, 2800)
+                    page.wait_for_timeout(800)
     except Exception:
-        return []
+        rows = rows or []
+    finally:
+        _close_playwright(context, browser)
 
     deduped: list[dict[str, str]] = []
     seen_urls: set[str] = set()
@@ -530,8 +587,7 @@ def _playwright_profile_post_previews(profile_url: str, limit: int = PROFILE_POS
             continue
         seen_urls.add(item["url"])
         deduped.append(item)
-    deduped = _sort_rows_by_created_at(deduped)
-    return deduped[:limit]
+    return _sort_rows_by_created_at(deduped)[:limit]
 
 
 def _apply_text_created_at(row: dict) -> None:
@@ -544,15 +600,24 @@ def _apply_text_created_at(row: dict) -> None:
         row["created_at"] = created_at
 
 
-def _fill_missing_created_at(rows: list[dict]) -> list[dict]:
+def _fill_missing_created_at(rows: list[dict], *, deadline: float | None = None) -> list[dict]:
     for row in rows:
         _apply_text_created_at(row)
     missing_urls = [row["url"] for row in rows if row.get("url") and not row.get("created_at")]
     if missing_urls:
-        timestamps = _playwright_post_timestamps(missing_urls[:5])
-        for row in rows:
-            if not row.get("created_at"):
-                row["created_at"] = timestamps.get(row["url"], "")
+        # Cap at 15 URLs, or stop early when Threads budget is nearly spent.
+        limit = 15
+        if deadline is not None:
+            remaining = deadline - time.monotonic()
+            if remaining < 30:
+                limit = 0
+            elif remaining < 90:
+                limit = min(limit, 8)
+        if limit:
+            timestamps = _playwright_post_timestamps(missing_urls[:limit])
+            for row in rows:
+                if not row.get("created_at"):
+                    row["created_at"] = timestamps.get(row["url"], "")
     for row in rows:
         _apply_text_created_at(row)
     return rows
@@ -616,6 +681,9 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
     rows: list[dict] = []
     queries_run = 0
     queries_with_hits = 0
+    consecutive_zeros = 0
+    browser = None
+    context = None
     try:
         with _PLAYWRIGHT_LOCK:
             with sync_playwright() as p:
@@ -624,20 +692,22 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
                 page = context.new_page()
                 authenticated = False
                 session_checked = False
+                stop_all = False
                 for category in SEARCH_CATEGORIES:
+                    if stop_all:
+                        break
                     category_rows = 0
                     queries = _transport_queries_for_run()
                     for query_index, query in enumerate(queries):
                         if deadline is not None and _budget_expired(deadline):
                             _note_reason(f"keyword_search_time_budget_exceeded_after_{queries_run}_queries")
+                            stop_all = True
                             break
                         mandatory = query_index < len(MANDATORY_TRANSPORT_QUERIES)
                         if not mandatory and category_rows >= SEARCH_ROWS_PER_CATEGORY:
                             break
                         hits = _scrape_threads_search_page(page, query)
                         queries_run += 1
-                        if hits:
-                            queries_with_hits += 1
                         if not session_checked:
                             authenticated = session_loaded and _page_has_authenticated_session(page)
                             session_checked = True
@@ -645,6 +715,33 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
                             _note("authenticated", authenticated)
                             if session_loaded and not authenticated:
                                 _note_reason("session_expired_or_login_wall")
+                        if hits:
+                            queries_with_hits += 1
+                            consecutive_zeros = 0
+                        else:
+                            consecutive_zeros += 1
+                            # Abort only on login wall / unauthenticated zero streak — not quiet keywords.
+                            signup_bait = False
+                            try:
+                                page_text = (page.inner_text("body") or "")[:800]
+                                signup_bait = _looks_like_threads_signup_bait(page_text)
+                            except Exception:
+                                signup_bait = False
+                            if signup_bait:
+                                _note_reason("keyword_search_aborted_signup_bait")
+                                stop_all = True
+                                break
+                            past_mandatory = query_index + 1 >= len(MANDATORY_TRANSPORT_QUERIES)
+                            if (
+                                past_mandatory
+                                and consecutive_zeros >= SEARCH_ZERO_HIT_ABORT
+                                and not authenticated
+                            ):
+                                _note_reason(
+                                    f"keyword_search_aborted_after_{consecutive_zeros}_consecutive_zero_hits_unauthenticated"
+                                )
+                                stop_all = True
+                                break
                         query_rows = 0
                         for item in hits:
                             if query_rows >= SEARCH_ROWS_PER_QUERY or category_rows >= SEARCH_ROWS_PER_CATEGORY:
@@ -654,7 +751,11 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
                                 continue
                             preview_text = clean_text(item.get("preview_text", ""))
                             link_text = clean_text(item.get("link_text", ""))
-                            created_at = item.get("created_at", "") or created_at_from_text(preview_text) or created_at_from_text(link_text)
+                            created_at = (
+                                item.get("created_at", "")
+                                or created_at_from_text(preview_text)
+                                or created_at_from_text(link_text)
+                            )
                             if created_at and not _is_recent_enough(created_at):
                                 continue
                             snippet = _clean_search_preview(preview_text) or _strip_leading_handle_time(link_text)
@@ -679,14 +780,15 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
                             )
                             category_rows += 1
                             query_rows += 1
-                if authenticated:
-                    save_storage_state(context.storage_state())
-                context.close()
-                browser.close()
+                if authenticated and context is not None:
+                    try:
+                        save_storage_state(context.storage_state())
+                    except Exception:
+                        pass
     except Exception as exc:
         _note_reason(f"keyword_search_exception:{type(exc).__name__}")
-        return rows
     finally:
+        _close_playwright(context, browser)
         _note("keyword_search_queries_run", queries_run)
         _note("keyword_search_queries_with_hits", queries_with_hits)
         _note("keyword_search_rows", len(rows))
@@ -858,33 +960,51 @@ def collect_threads_sample() -> list[dict]:
     seen_urls: set[str] = set()
     rows: list[dict] = []
     rows.extend(_collect_keyword_search_posts(seen_urls, deadline=deadline))
-    if len(rows) < 6 and not _budget_expired(deadline):
+    diag = get_threads_diagnostics()
+    reasons = diag.get("reasons") or []
+    queries_run = int(diag.get("keyword_search_queries_run") or 0)
+    queries_with_hits = int(diag.get("keyword_search_queries_with_hits") or 0)
+    keyword_starved = (queries_run > 0 and queries_with_hits == 0) or any(
+        "login_wall" in r or "signup_bait" in r or "search_blocked" in r for r in reasons
+    )
+    dated_rows = [r for r in rows if r.get("created_at")]
+    need_watchlist = len(dated_rows) < 6 or keyword_starved
+    if need_watchlist and not _budget_expired(deadline):
         rows.extend(_collect_latest_watchlist_posts(seen_urls))
     elif _budget_expired(deadline):
         _note_reason("skipped_watchlist_lane_time_budget")
-    if len(rows) < 6 and not _budget_expired(deadline):
+    dated_rows = [r for r in rows if r.get("created_at")]
+    if len(dated_rows) < 6 and not _budget_expired(deadline):
         rows.extend(_collect_search_discovered_posts(seen_urls))
     elif _budget_expired(deadline):
         _note_reason("skipped_web_search_fallback_lane_time_budget")
-    if not _budget_expired(deadline):
-        rows.extend(_collect_seed_posts(seen_urls, skip_profile_discovery=len(rows) >= 10))
-    else:
+    # Fixed seed URLs almost never pass today-MYT — skip when budget is tight.
+    if _budget_expired(deadline) or (deadline - time.monotonic()) < 60:
         _note_reason("skipped_seed_posts_lane_time_budget")
+    else:
+        rows.extend(_collect_seed_posts(seen_urls, skip_profile_discovery=len(dated_rows) >= 10))
 
     _note("raw_rows_before_filter", len(rows))
-    rows = _fill_missing_created_at(rows)
+    rows = _fill_missing_created_at(rows, deadline=deadline)
     rows = _sort_rows_by_created_at(rows)
-    filtered = [
-        row
-        for row in rows
-        if _is_usable_threads_row(row)
-        and _is_recent_enough(row.get("created_at", ""), max_age_days=1)
-        and (
-            row.get("seed_category") != "transport"
-            or transport_rider_signal_worthwhile(row.get("raw_text", ""))
-        )
-    ]
+    rejected_today = 0
+    rejected_signal = 0
+    filtered: list[dict] = []
+    for row in rows:
+        if not _is_usable_threads_row(row):
+            continue
+        if not _is_recent_enough(row.get("created_at", ""), max_age_days=1):
+            rejected_today += 1
+            continue
+        if row.get("seed_category") == "transport" and not transport_rider_signal_worthwhile(
+            row.get("raw_text", "")
+        ):
+            rejected_signal += 1
+            continue
+        filtered.append(row)
     _note("filtered_rows", len(filtered))
+    _note("rejected_not_today", rejected_today)
+    _note("rejected_weak_rider_signal", rejected_signal)
     _note("duration_seconds", round(time.monotonic() - started, 1))
     if rows and not filtered:
         _note_reason("all_candidate_rows_rejected_by_today_or_rider_signal_filters")

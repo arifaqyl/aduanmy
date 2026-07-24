@@ -17,6 +17,7 @@ exports/
 !.env.example
 .cursor/
 .deepsec/
+.stitch-incoming/
 node_modules/
 *.exe
 .probe_*.json

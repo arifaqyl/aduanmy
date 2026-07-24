@@ -20,7 +20,7 @@
       "max_speed_kmh": 80,
       "capacity_note": "22 three-car trains · up to ~624 passengers per train",
       "official_colour": "#7b2d8e",
-      "schematic_svg": "lines/lrt3.svg",
+      "schematic_svg": "lines/lrt3.png",
       "major_stations": [
         "Bandar Utama",
         "Glenmarie",
@@ -96,7 +96,8 @@
         "Klang Jaya",
         "Bandar Bukit Tinggi",
         "Johan Setia"
-      ]
+      ],
+      "schematic_svg_fallback": "lines/lrt3.svg"
     },
     {
       "id": "kelana-jaya",
@@ -114,7 +115,7 @@
       "max_speed_kmh": 80,
       "capacity_note": "LRT trains · high-frequency KV corridor",
       "official_colour": "#e31837",
-      "schematic_svg": "lines/kelana-jaya.svg",
+      "schematic_svg": "lines/kelana-jaya.png",
       "major_stations": [
         "Gombak",
         "KLCC",
@@ -206,7 +207,8 @@
         "Alam Megah",
         "Subang Alam",
         "Putra Heights"
-      ]
+      ],
+      "schematic_svg_fallback": "lines/kelana-jaya.svg"
     },
     {
       "id": "ampang-sri-petaling",
@@ -222,7 +224,7 @@
       "stations_count": 35,
       "journey_minutes": 65,
       "official_colour": "#f7941d",
-      "schematic_svg": "lines/ampang-sri-petaling.svg",
+      "schematic_svg": "lines/ampang-sri-petaling.png",
       "major_stations": [
         "Ampang",
         "Chan Sow Lin",
@@ -300,7 +302,8 @@
         "Alam Megah",
         "Subang Alam",
         "Putra Heights"
-      ]
+      ],
+      "schematic_svg_fallback": "lines/ampang-sri-petaling.svg"
     },
     {
       "id": "kajang",
@@ -317,7 +320,7 @@
       "journey_minutes": 90,
       "max_speed_kmh": 100,
       "official_colour": "#007a33",
-      "schematic_svg": "lines/kajang.svg",
+      "schematic_svg": "lines/kajang.png",
       "major_stations": [
         "Kwasa Damansara",
         "Bandar Utama",
@@ -399,7 +402,8 @@
         "Sungai Jernih",
         "Stadium Kajang",
         "Kajang"
-      ]
+      ],
+      "schematic_svg_fallback": "lines/kajang.svg"
     },
     {
       "id": "putrajaya",
@@ -416,7 +420,7 @@
       "journey_minutes": 95,
       "max_speed_kmh": 100,
       "official_colour": "#f4c300",
-      "schematic_svg": "lines/putrajaya.svg",
+      "schematic_svg": "lines/putrajaya.png",
       "major_stations": [
         "Kwasa Damansara",
         "Tun Razak Exchange",
@@ -490,7 +494,8 @@
         "16 Sierra",
         "Cyberjaya City Centre",
         "Putrajaya Sentral"
-      ]
+      ],
+      "schematic_svg_fallback": "lines/putrajaya.svg"
     },
     {
       "id": "monorail",
@@ -506,7 +511,7 @@
       "stations_count": 11,
       "journey_minutes": 22,
       "official_colour": "#8dc63f",
-      "schematic_svg": "lines/monorail.svg",
+      "schematic_svg": "lines/monorail.png",
       "major_stations": [
         "KL Sentral",
         "Bukit Bintang",
@@ -563,7 +568,8 @@
         "Medan Tuanku",
         "Chow Kit",
         "Titiwangsa"
-      ]
+      ],
+      "schematic_svg_fallback": "lines/monorail.svg"
     },
     {
       "id": "ktm-komuter",
@@ -579,7 +585,7 @@
       "stations_count": 53,
       "journey_minutes": 120,
       "official_colour": "#0066b3",
-      "schematic_svg": "lines/ktm-komuter.svg",
+      "schematic_svg": "lines/ktm-komuter.png",
       "major_stations": [
         "Batu Caves",
         "KL Sentral",
@@ -635,7 +641,8 @@
         "Klang",
         "Port Klang",
         "Seremban"
-      ]
+      ],
+      "schematic_svg_fallback": "lines/ktm-komuter.svg"
     },
     {
       "id": "kajang-putrajaya",
@@ -669,7 +676,8 @@
       "keywords": [
         "brt sunway",
         "sunway line"
-      ]
+      ],
+      "schematic_svg": "lines/brt-sunway.png"
     },
     {
       "id": "ktm-north",
@@ -686,7 +694,8 @@
         "ktm utara",
         "komuter utara",
         "padang besar butterworth"
-      ]
+      ],
+      "schematic_svg": "lines/ktm-komuter-utara.png"
     },
     {
       "id": "ets-intercity",
@@ -704,7 +713,8 @@
         "intercity",
         "ktm ets",
         "shuttle tebrau"
-      ]
+      ],
+      "schematic_svg": "lines/ktm-ets.png"
     },
     {
       "id": "klia-rail",
@@ -723,7 +733,8 @@
         "klia ekspres",
         "klia transit",
         "erl"
-      ]
+      ],
+      "schematic_svg": "lines/klia-ekspres.png"
     },
     {
       "id": "sabah-railway",
@@ -739,7 +750,8 @@
       "keywords": [
         "sabah railway",
         "keretapi negeri sabah"
-      ]
+      ],
+      "schematic_svg": "lines/sabah-railway.png"
     },
     {
       "id": "rapid-bus",
@@ -756,7 +768,8 @@
         "rapid kl bus",
         "bas rapid",
         "rapidkl bus"
-      ]
+      ],
+      "schematic_svg": "lines/bus-networks.png"
     },
     {
       "id": "penang",
@@ -803,7 +816,8 @@
       "keywords": [
         "bas.my",
         "mybas"
-      ]
+      ],
+      "schematic_svg": "lines/bas-my-network.png"
     },
     {
       "id": "ecrl",

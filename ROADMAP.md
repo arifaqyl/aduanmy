@@ -23,6 +23,11 @@ Live: [arifaqyl.me/traffic](https://arifaqyl.me/traffic/)
 - [x] `GET /lines/{id}/history` — "is this normal?" 14-day rider-signal trend per line
 - [x] B2B Signals API (`/api/trafficmy/signals/today`), developer docs, embed widget
 - [x] 236-test regression suite + CI on push/PR
+- [x] Explosive core: rider/operator Threads watchlist, dated-row watchlist gate, smarter abort, timestamp backfill
+- [x] BM same-day cues (`petang ni`, `malam ni`, `dalam tren`, `kat stesen`) in rider gate
+- [x] Force Reddit when latest Threads run is empty/failed
+- [x] Home glance never says “Looking quiet” when Threads broken or data stale
+- [x] Journey `route_alerts` + one alternate path avoiding disrupted Rapid KL lines
 
 ## Next
 
