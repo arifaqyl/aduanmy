@@ -411,6 +411,43 @@
     ).join('');
   }
 
+  function renderGpsGapStrip(payload) {
+    const el = $('gpsGapStrip');
+    if (!el) return;
+    const items = (payload && payload.items) || [];
+    if (!items.length) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    const disclaimer = payload.disclaimer || '';
+    const chips = items.map(item => {
+      const label = item.glance_line || item.headline || item.entity || item.cluster_id || '';
+      const sev = item.severity || 'low';
+      return `<button type="button" class="gps-chip gps-sev-${esc(sev)}" data-cluster-id="${esc(item.cluster_id || '')}" title="${esc(disclaimer)}">${esc(label)}</button>`;
+    }).join('');
+    el.innerHTML =
+      `<div class="gps-strip-head">
+         <span class="gps-strip-title">GPS gap hints · low confidence</span>
+         <span class="gps-strip-count">${items.length}</span>
+       </div>
+       <div class="gps-strip-chips">${chips}</div>
+       <p class="gps-strip-note">${esc(disclaimer)}</p>`;
+  }
+
+  async function loadGpsGaps() {
+    const el = $('gpsGapStrip');
+    if (!el) return;
+    try {
+      const res = await fetchWithTimeout(api('/api/trafficmy/gps-gaps?limit=20'));
+      if (!res.ok) { el.hidden = true; return; }
+      renderGpsGapStrip(await res.json());
+    } catch {
+      el.hidden = true;
+    }
+  }
+
   function healthClass(score) {
     if (score == null) return '';
     if (score >= 70) return 'good';
@@ -3052,6 +3089,7 @@
       checkNotify(board.lines || []);
       startCountdown();
       refreshHealthSnapshot();
+      loadGpsGaps();
     } catch (err) {
       if (gen !== loadGeneration) return;
       // Retry once after 3 seconds

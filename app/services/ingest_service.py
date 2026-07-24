@@ -469,11 +469,34 @@ def transform_rows(collected: dict[str, list[dict]]) -> list[ComplaintSchema]:
 
 
 def prune_gtfs_rt_complaints() -> int:
-    """GTFS-RT anomaly rows are reference telemetry, not rider incidents."""
+    """Prune stale GTFS-RT anomaly rows; keep today's GPS-gap hints.
+
+    GTFS-RT 'no active vehicles' rows are low-confidence telemetry hints, not
+    rider incidents. We keep today's rows so they can surface as a distinct
+    low-confidence 'GPS gap' layer (labelled clearly in the UI), and prune rows
+    from prior days (resolved gaps or stale telemetry) so the table doesn't
+    accumulate. The anomaly detector re-upserts today's rows each GTFS tick, so a
+    persistent gap stays fresh and a resolved gap stops refreshing and ages out.
+    """
     init_db()
     with connect() as conn:
-        cur = conn.execute("DELETE FROM complaints WHERE source_platform = 'gtfs_rt'")
-        return int(cur.rowcount or 0)
+        rows = conn.execute(
+            "SELECT id, created_at FROM complaints WHERE source_platform = 'gtfs_rt'"
+        ).fetchall()
+        stale_ids = [
+            int(row["id"])
+            for row in rows
+            if not is_inside_myt_today(row["created_at"] or "")
+        ]
+        if not stale_ids:
+            return 0
+        deleted = 0
+        for start in range(0, len(stale_ids), 500):
+            batch = stale_ids[start : start + 500]
+            placeholders = ",".join("?" for _ in batch)
+            cur = conn.execute(f"DELETE FROM complaints WHERE id IN ({placeholders})", batch)
+            deleted += int(cur.rowcount or 0)
+        return deleted
 
 
 def prune_rejected_social_complaints() -> int:

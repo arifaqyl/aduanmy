@@ -298,6 +298,36 @@ def trafficmy_export(
     )
 
 
+@router.get("/trafficmy/gps-gaps")
+def trafficmy_gps_gaps(limit: int = Query(default=20, ge=1, le=50)) -> dict:
+    """Low-confidence GTFS-RT 'GPS gap' hints — routes showing no active vehicles.
+
+    Telemetry hints, NOT rider reports. A route showing no active vehicles during
+    service hours may indicate a real disruption OR a GPS/feed gap. Always presented
+    separately from rider signals and never as an operator all-clear.
+    """
+    payload = get_trafficmy_incidents(
+        source_group="gps",
+        freshness_band="recent",
+        quality_only=True,
+        include_stale=False,
+        malaysia_only=True,
+    )
+    items = [public_cluster(item) for item in payload.get("items", [])][:limit]
+    return {
+        "product": "TrafficMY",
+        "layer": "gps_gaps",
+        "confidence": "low",
+        "disclaimer": (
+            "Telemetry hints from GTFS-RT — not rider reports. A route showing no "
+            "active vehicles may indicate a disruption OR a GPS/feed gap. Never an "
+            "operator all-clear."
+        ),
+        "count": len(items),
+        "items": items,
+    }
+
+
 @router.get("/trafficmy/status")
 def trafficmy_status() -> dict:
     return get_trafficmy_status()
