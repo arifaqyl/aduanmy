@@ -1,62 +1,88 @@
 {
   "ingest": {
-    "written": 13,
-    "threads": 5,
-    "reddit": 5,
-    "x": 1,
-    "official": 11,
+    "status": "degraded",
+    "run_id": "2026-07-24T08:34:17.907643Z",
+    "started_at": "2026-07-24T08:34:17.907643Z",
+    "finished_at": "2026-07-24T08:34:26.081780Z",
+    "duration_seconds": 8.17,
+    "written": 0,
+    "pruned": 0,
+    "gtfs_pruned": 0,
+    "threads_pruned_rejected": 0,
+    "threads": 0,
+    "reddit": 0,
+    "x": 0,
+    "official": 0,
+    "rss": 0,
+    "gtfs": 0,
     "timings": {
-      "x": 10.77,
-      "reddit": 24.95,
-      "official": 30.71,
-      "threads": 44.47
+      "x": 0.0,
+      "gtfs": 0.0,
+      "official": 1.75,
+      "reddit": 2.58,
+      "rss": 4.24,
+      "threads": 8.17
     },
-    "categories": {
-      "telco_internet": 4,
-      "transport": 9
+    "categories": {},
+    "states": {},
+    "modes": {},
+    "sources": {
+      "gtfs": {
+        "source": "gtfs",
+        "started_at": "2026-07-24T08:34:17.913431Z",
+        "finished_at": "2026-07-24T08:34:17.913431Z",
+        "status": "paused",
+        "row_count": 0,
+        "duration_seconds": 0,
+        "error": "reference_only"
+      },
+      "official": {
+        "source": "official",
+        "started_at": "2026-07-24T08:34:17.909610Z",
+        "finished_at": "2026-07-24T08:34:19.655334Z",
+        "status": "failed",
+        "row_count": 0,
+        "duration_seconds": 1.75,
+        "error": "Error: BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1148/chrome-linux/headless_shell\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     playwright install                                     ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝"
+      },
+      "reddit": {
+        "source": "reddit",
+        "started_at": "2026-07-24T08:34:17.908236Z",
+        "finished_at": "2026-07-24T08:34:20.488198Z",
+        "status": "empty",
+        "row_count": 0,
+        "duration_seconds": 2.58,
+        "error": ""
+      },
+      "rss": {
+        "source": "rss",
+        "started_at": "2026-07-24T08:34:17.909999Z",
+        "finished_at": "2026-07-24T08:34:22.153647Z",
+        "status": "empty",
+        "row_count": 0,
+        "duration_seconds": 4.24,
+        "error": ""
+      },
+      "threads": {
+        "source": "threads",
+        "started_at": "2026-07-24T08:34:17.907722Z",
+        "finished_at": "2026-07-24T08:34:26.079079Z",
+        "status": "empty",
+        "row_count": 0,
+        "duration_seconds": 8.17,
+        "error": "keyword_search_exception:Error; all_candidate_rows_rejected_by_today_or_rider_signal_filters"
+      },
+      "x": {
+        "source": "x",
+        "started_at": "2026-07-24T08:34:17.909598Z",
+        "finished_at": "2026-07-24T08:34:17.909598Z",
+        "status": "paused",
+        "row_count": 0,
+        "duration_seconds": 0,
+        "error": "disabled_until_authenticated"
+      }
     }
   },
-  "stored_by_source": {
-    "official": 2,
-    "reddit": 5,
-    "threads": 5,
-    "x": 1
-  },
-  "stored_by_category": [
-    {
-      "category": "telco_internet",
-      "source_platform": "official",
-      "volume": 1
-    },
-    {
-      "category": "telco_internet",
-      "source_platform": "reddit",
-      "volume": 2
-    },
-    {
-      "category": "telco_internet",
-      "source_platform": "threads",
-      "volume": 1
-    },
-    {
-      "category": "transport",
-      "source_platform": "official",
-      "volume": 1
-    },
-    {
-      "category": "transport",
-      "source_platform": "reddit",
-      "volume": 3
-    },
-    {
-      "category": "transport",
-      "source_platform": "threads",
-      "volume": 4
-    },
-    {
-      "category": "transport",
-      "source_platform": "x",
-      "volume": 1
-    }
-  ]
+  "stored_by_source": {},
+  "stored_by_category": []
 }

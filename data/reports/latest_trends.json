@@ -1,228 +1,101 @@
 {
   "ingest": {
-    "written": 13,
-    "threads": 5,
-    "reddit": 5,
-    "x": 1,
-    "official": 11,
+    "status": "degraded",
+    "run_id": "2026-07-24T08:34:17.907643Z",
+    "started_at": "2026-07-24T08:34:17.907643Z",
+    "finished_at": "2026-07-24T08:34:26.081780Z",
+    "duration_seconds": 8.17,
+    "written": 0,
+    "pruned": 0,
+    "gtfs_pruned": 0,
+    "threads_pruned_rejected": 0,
+    "threads": 0,
+    "reddit": 0,
+    "x": 0,
+    "official": 0,
+    "rss": 0,
+    "gtfs": 0,
     "timings": {
-      "x": 10.77,
-      "reddit": 24.95,
-      "official": 30.71,
-      "threads": 44.47
+      "x": 0.0,
+      "gtfs": 0.0,
+      "official": 1.75,
+      "reddit": 2.58,
+      "rss": 4.24,
+      "threads": 8.17
     },
-    "categories": {
-      "telco_internet": 4,
-      "transport": 9
+    "categories": {},
+    "states": {},
+    "modes": {},
+    "sources": {
+      "gtfs": {
+        "source": "gtfs",
+        "started_at": "2026-07-24T08:34:17.913431Z",
+        "finished_at": "2026-07-24T08:34:17.913431Z",
+        "status": "paused",
+        "row_count": 0,
+        "duration_seconds": 0,
+        "error": "reference_only"
+      },
+      "official": {
+        "source": "official",
+        "started_at": "2026-07-24T08:34:17.909610Z",
+        "finished_at": "2026-07-24T08:34:19.655334Z",
+        "status": "failed",
+        "row_count": 0,
+        "duration_seconds": 1.75,
+        "error": "Error: BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1148/chrome-linux/headless_shell\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     playwright install                                     ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝"
+      },
+      "reddit": {
+        "source": "reddit",
+        "started_at": "2026-07-24T08:34:17.908236Z",
+        "finished_at": "2026-07-24T08:34:20.488198Z",
+        "status": "empty",
+        "row_count": 0,
+        "duration_seconds": 2.58,
+        "error": ""
+      },
+      "rss": {
+        "source": "rss",
+        "started_at": "2026-07-24T08:34:17.909999Z",
+        "finished_at": "2026-07-24T08:34:22.153647Z",
+        "status": "empty",
+        "row_count": 0,
+        "duration_seconds": 4.24,
+        "error": ""
+      },
+      "threads": {
+        "source": "threads",
+        "started_at": "2026-07-24T08:34:17.907722Z",
+        "finished_at": "2026-07-24T08:34:26.079079Z",
+        "status": "empty",
+        "row_count": 0,
+        "duration_seconds": 8.17,
+        "error": "keyword_search_exception:Error; all_candidate_rows_rejected_by_today_or_rider_signal_filters"
+      },
+      "x": {
+        "source": "x",
+        "started_at": "2026-07-24T08:34:17.909598Z",
+        "finished_at": "2026-07-24T08:34:17.909598Z",
+        "status": "paused",
+        "row_count": 0,
+        "duration_seconds": 0,
+        "error": "disabled_until_authenticated"
+      }
     }
   },
   "trends": {
     "totals": {
-      "complaints": 11,
-      "grounding_rows": 2,
-      "categories": 2,
-      "entities": 5,
-      "locations": 7
+      "complaints": 0,
+      "grounding_rows": 0,
+      "categories": 0,
+      "entities": 0,
+      "locations": 0
     },
-    "top_categories": [
-      {
-        "name": "transport",
-        "count": 8
-      },
-      {
-        "name": "telco_internet",
-        "count": 3
-      }
-    ],
-    "top_entities": [
-      {
-        "name": "Kelana Jaya Line",
-        "count": 5
-      },
-      {
-        "name": "Unifi",
-        "count": 3
-      },
-      {
-        "name": "Kajang/Putrajaya Lines",
-        "count": 1
-      },
-      {
-        "name": "Ampang/Sri Petaling Line",
-        "count": 1
-      },
-      {
-        "name": "MRT",
-        "count": 1
-      }
-    ],
-    "top_locations": [
-      {
-        "name": "KL Gateway",
-        "count": 1
-      },
-      {
-        "name": "Kelantan",
-        "count": 1
-      },
-      {
-        "name": "Pasar Seni",
-        "count": 1
-      },
-      {
-        "name": "Ara Damansara",
-        "count": 1
-      },
-      {
-        "name": "Chan Sow Lin",
-        "count": 1
-      },
-      {
-        "name": "Dang Wangi",
-        "count": 1
-      },
-      {
-        "name": "Maluri",
-        "count": 1
-      }
-    ],
-    "top_terms": [
-      {
-        "term": "station",
-        "count": 8
-      },
-      {
-        "term": "commuters",
-        "count": 6
-      },
-      {
-        "term": "longer",
-        "count": 6
-      },
-      {
-        "term": "expected",
-        "count": 6
-      },
-      {
-        "term": "brake",
-        "count": 5
-      },
-      {
-        "term": "system",
-        "count": 5
-      },
-      {
-        "term": "being",
-        "count": 5
-      },
-      {
-        "term": "due",
-        "count": 4
-      },
-      {
-        "term": "trains",
-        "count": 4
-      },
-      {
-        "term": "failure",
-        "count": 4
-      },
-      {
-        "term": "internet",
-        "count": 4
-      },
-      {
-        "term": "times",
-        "count": 4
-      }
-    ],
-    "severity_mix": [
-      {
-        "severity": "medium",
-        "count": 6
-      },
-      {
-        "severity": "high",
-        "count": 5
-      },
-      {
-        "severity": "low",
-        "count": 2
-      }
-    ],
-    "freshest": [
-      {
-        "category": "transport",
-        "entity": "Kelana Jaya Line",
-        "location": "KL Gateway",
-        "severity": "medium",
-        "created_at": "2026-05-12T11:50:51.675000Z",
-        "url": "https://x.com/askrapidkl/status/2054167417925026265",
-        "text": "Kelewatan Tren: Laluan Kelana Jaya / Train Delays: Kelana Jaya Line. Perkhidmatan bas perantara ulang-alik percuma disediakan di antara Bangsar dan KL Gateway."
-      },
-      {
-        "category": "transport",
-        "entity": "Kajang/Putrajaya Lines",
-        "location": "",
-        "severity": "medium",
-        "created_at": "2026-04-16T15:18:14+00:00",
-        "url": "https://old.reddit.com/r/malaysia/comments/1sn6ky0/delays_on_putrajaya_kajang_mrt_lines_due_to_brake/",
-        "text": "Delays on Putrajaya, Kajang MRT lines due to brake failures Great, oil shortage even affects electric trains as hydraulic fluid is too expensive... /s You kid, but 90% of our energy comes from coal and LNG. Unrelated to "
-      },
-      {
-        "category": "telco_internet",
-        "entity": "Unifi",
-        "location": "",
-        "severity": "high",
-        "created_at": "2026-01-15T01:41:30+00:00",
-        "url": "https://old.reddit.com/r/Bolehland/comments/1qd67kk/unifi_down_almost_24_hour_already_also_a_cat_tax/",
-        "text": "Unifi down almost 24 hour already.. also a cat tax included Neighbor install unifi at the same time all house on the same road lost internet access like dafuq? Report already been made, said resolve at 3.55pm yesterday, "
-      },
-      {
-        "category": "telco_internet",
-        "entity": "Unifi",
-        "location": "Kelantan",
-        "severity": "high",
-        "created_at": "2025-11-30T12:59:35+00:00",
-        "url": "https://old.reddit.com/r/malaysia/comments/1pahpti/unifi_down_all_week_why/",
-        "text": "UNIFI down all week…. Why Anyone in kelantan experiencing problems with unifi home internet? 3 times this week around 8:30pm it keeps shutting off for about 1-2 hours.. why this always happen. Is anyone know of any work "
-      },
-      {
-        "category": "transport",
-        "entity": "Kelana Jaya Line",
-        "location": "",
-        "severity": "medium",
-        "created_at": "2026-02-03T23:47:18+00:00",
-        "url": "https://old.reddit.com/r/malaysia/comments/1qv8f5x/lrt_kelana_jaya_line_having_problems_again_this/",
-        "text": "LRT Kelana Jaya line having problems again this morning. This is getting too frequent"
-      },
-      {
-        "category": "transport",
-        "entity": "Kelana Jaya Line",
-        "location": "Pasar Seni",
-        "severity": "high",
-        "created_at": "2026-06-24T03:35:05+00:00",
-        "url": "https://old.reddit.com/r/malaysia/comments/1ue2exe/commuters_on_kelana_jaya_line_can_expect_delays/",
-        "text": "Commuters On Kelana Jaya Line Can Expect Delays Rapid KL has advised commuters on the Kelana Jaya Line to expect delays and longer waiting times following technical issues involving a train’s brake system and a door malf"
-      },
-      {
-        "category": "transport",
-        "entity": "Kelana Jaya Line",
-        "location": "Ara Damansara",
-        "severity": "medium",
-        "created_at": "2026-05-18T02:01:37.000Z",
-        "url": "https://www.threads.com/@thesundaily/video/DYdmVoxiOw_",
-        "text": "18 May 2026: Commuters on the Kelana Jaya LRT Line experienced delays this morning (May 18) after a train suffered a technical fault. Services were disrupted particularly at Ara Damansara and Kelana Jaya stations. Rapid "
-      },
-      {
-        "category": "transport",
-        "entity": "Ampang/Sri Petaling Line",
-        "location": "Chan Sow Lin",
-        "severity": "medium",
-        "created_at": "2026-05-28T02:35:15.000Z",
-        "url": "https://www.threads.com/@thestaronline/post/DY3aL9xjtLQ",
-        "text": "Services on the Ampang and Sri Petaling LRT Lines are experiencing a disruption Thursday (May 28) morning following a track switch failure at Chan Sow Lin Station, causing delays across several routes. https://www.thesta"
-      }
-    ]
+    "top_categories": [],
+    "top_entities": [],
+    "top_locations": [],
+    "top_terms": [],
+    "severity_mix": [],
+    "freshest": []
   }
 }
