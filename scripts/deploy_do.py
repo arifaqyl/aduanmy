@@ -203,6 +203,8 @@ def write_remote_env(sftp: paramiko.SFTPClient, refresh_key: str) -> None:
             "ADUANMY_ALLOW_DASHBOARD_REFRESH=false",
             "ADUANMY_EXPOSE_RAW_SOURCES=false",
             "ADUANMY_X_AUTO_COLLECT_ENABLED=false",
+            "ADUANMY_X_TRUSTED_HANDLES_ENABLED=true",
+            "ADUANMY_RATE_LIMIT_ENABLED=true",
             "ADUANMY_THREADS_SESSION_PATH=/data/private/threads-session.json",
             "ADUANMY_REDDIT_MIN_INTERVAL_SECONDS=7200",
             "ADUANMY_X_MIN_INTERVAL_SECONDS=21600",
