@@ -1,4 +1,4 @@
-const CACHE = 'trafficmy-shell-v42';
+const CACHE = 'trafficmy-shell-v43';
 const scopeUrl = new URL(self.registration.scope);
 const base = scopeUrl.pathname.replace(/\/$/, '');
 const shell = [

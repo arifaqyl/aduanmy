@@ -18,9 +18,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Nunito Sans + Material Symbols imported inside static/css/stitch.css -->
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css" />
-  <link rel="stylesheet" href="static/css/components.css?v=42" />
-  <link rel="stylesheet" href="static/css/play.css?v=42" />
-  <link rel="stylesheet" href="static/css/stitch.css?v=42" />
+  <link rel="stylesheet" href="static/css/components.css?v=43" />
+  <link rel="stylesheet" href="static/css/play.css?v=43" />
+  <link rel="stylesheet" href="static/css/stitch.css?v=43" />
 </head>
 <body class="tm-app play-app stitch-app">
 
@@ -141,6 +141,14 @@
             <button class="tm-chip chip" data-mode="monorail" data-i18n="Mono" data-i18n-ms="Mono">Mono</button>
             <button class="tm-chip chip" data-mode="bus" data-i18n="Bus" data-i18n-ms="Bas">Bus</button>
           </div>
+
+          <div class="tm-toolbar tm-toolbar--tools" role="group" aria-label="Tools">
+            <input class="tm-input tm-incident-search" id="incidentSearch" type="search" placeholder="Search incidents — place, line or issue" autocomplete="off" aria-label="Search incidents" data-i18n-placeholder="Search incidents — place, line or issue" data-i18n-placeholder-ms="Cari insiden — tempat, laluan atau isu" data-i18n-aria="Search incidents" data-i18n-aria-ms="Cari insiden" />
+            <button class="tm-chip chip tm-tool-btn" id="exportJsonBtn" type="button" data-i18n="Export JSON" data-i18n-ms="Eksport JSON">Export JSON</button>
+            <button class="tm-chip chip tm-tool-btn" id="exportCsvBtn" type="button" data-i18n="Export CSV" data-i18n-ms="Eksport CSV">Export CSV</button>
+          </div>
+          <div class="tm-incident-results incident-results" id="incidentSearchResults" hidden aria-live="polite"></div>
+
           <p class="tm-filter-hint filter-hint" id="filterHint" hidden></p>
 
           <div class="tm-stale-banner stale-banner" id="staleBanner">
@@ -423,6 +431,6 @@
     <span class="panel-focus-sentinel" tabindex="0" id="panelFocusEnd"></span>
   </aside>
 
-  <script src="static/js/app.js?v=42" defer></script>
+  <script src="static/js/app.js?v=43" defer></script>
 </body>
 </html>

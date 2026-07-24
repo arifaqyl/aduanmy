@@ -2370,3 +2370,55 @@
 .play-app.stitch-app .tm-journey-result .journey-leg {
   border-radius: 12px;
 }
+
+/* Revamp batch 1: incident search + export tools */
+.tm-toolbar--tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+}
+.tm-incident-search {
+  flex: 1 1 280px;
+  min-width: 0;
+}
+.tm-tool-btn { cursor: pointer; }
+.tm-incident-results {
+  margin-top: 12px;
+  display: grid;
+  gap: 10px;
+}
+.tm-incident-results .ir-empty,
+.tm-incident-results .ir-hint {
+  color: var(--muted, #6b7280);
+  font-size: 0.9rem;
+  margin: 0;
+}
+.tm-incident-result {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--border, rgba(0,0,0,0.1));
+  border-radius: 14px;
+  background: var(--surface, rgba(0,0,0,0.02));
+}
+.tm-incident-result .ir-title { margin: 0; font-weight: 600; line-height: 1.3; }
+.tm-incident-result .ir-meta { margin: 0; font-size: 0.82rem; color: var(--muted, #6b7280); }
+.tm-incident-result .ir-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+.tm-incident-result .ir-badge {
+  font-size: 0.72rem; padding: 3px 8px; border-radius: 999px;
+  border: 1px solid var(--border, rgba(0,0,0,0.12));
+  background: var(--surface-strong, rgba(0,0,0,0.04));
+}
+.tm-incident-result .ir-badge.ir-sev-high { border-color: #b8462f; color: #b8462f; }
+.tm-incident-result .ir-open {
+  align-self: start;
+  cursor: pointer;
+  font: inherit;
+  border: 1px solid var(--border, rgba(0,0,0,0.12));
+  background: transparent;
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+

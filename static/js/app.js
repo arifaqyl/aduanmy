@@ -3564,6 +3564,117 @@
     }
   });
 
+  // --- Revamp batch 1: full-text incident search + export ---
+  const _esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+  let _irTimer = null;
+  const irBox = $('incidentSearchResults');
+  const irInput = $('incidentSearch');
+
+  function _lineIdForResult(item) {
+    const direct = item.line_id || item.line || '';
+    if (direct) return direct;
+    const entity = (item.entity || '').toLowerCase();
+    if (entity && typeof boardData !== 'undefined' && boardData && boardData.lines) {
+      const match = boardData.lines.find(l => (
+        (l.name && entity.includes(l.name.toLowerCase())) ||
+        (l.id && entity.includes(l.id.toLowerCase()))
+      ));
+      if (match) return match.id;
+    }
+    return '';
+  }
+
+  function _renderIncidentResults(payload) {
+    if (!irBox) return;
+    const items = (payload && payload.items) || [];
+    if (!items.length) {
+      irBox.hidden = false;
+      irBox.innerHTML = '<p class="ir-empty">No matching incidents found.</p>';
+      return;
+    }
+    irBox.hidden = false;
+    irBox.innerHTML = items.map(item => {
+      const sev = item.severity || 'low';
+      const band = item.confidence_band || 'weak';
+      const meta = [item.entity, item.location].filter(Boolean).join(' · ');
+      const lineId = _lineIdForResult(item);
+      const openBtn = lineId
+        ? `<button class="ir-open" type="button" data-ir-line="${_esc(lineId)}" data-ir-label="${_esc(item.glance_line || item.headline || '')}">Open line</button>`
+        : (item.example_url
+            ? `<a class="ir-open" href="${_esc(item.example_url)}" target="_blank" rel="noreferrer">Source</a>`
+            : '');
+      const n = item.matched_signals || 0;
+      return `<article class="tm-incident-result">
+        <p class="ir-title">${_esc(item.glance_line || item.headline || item.cluster_id || '')}</p>
+        ${meta ? `<p class="ir-meta">${_esc(meta)}</p>` : ''}
+        <div class="ir-badges">
+          <span class="ir-badge ir-sev-${_esc(sev)}">${_esc(sev)}</span>
+          <span class="ir-badge">${_esc(band)}</span>
+          <span class="ir-badge">${n} match${n === 1 ? '' : 'es'}</span>
+        </div>
+        ${openBtn}
+      </article>`;
+    }).join('');
+  }
+
+  function _runIncidentSearch(q) {
+    if (!irInput) return;
+    const val = (q || '').trim();
+    if (val.length < 2) {
+      if (irBox) { irBox.hidden = true; irBox.innerHTML = ''; }
+      return;
+    }
+    fetch(api(`/api/trafficmy/search?q=${encodeURIComponent(val)}`))
+      .then(r => r.ok ? r.json() : { items: [] })
+      .then(_renderIncidentResults)
+      .catch(() => { if (irBox) { irBox.hidden = false; irBox.innerHTML = '<p class="ir-empty">Search unavailable.</p>'; } });
+  }
+
+  if (irInput) {
+    irInput.addEventListener('input', e => {
+      const val = e.target.value;
+      if (_irTimer) clearTimeout(_irTimer);
+      _irTimer = setTimeout(() => _runIncidentSearch(val), 250);
+    });
+    irInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); _runIncidentSearch(e.target.value); }
+    });
+  }
+  if (irBox) {
+    irBox.addEventListener('click', e => {
+      const btn = e.target.closest('.ir-open[data-ir-line]');
+      if (!btn) return;
+      const lineId = btn.dataset.irLine;
+      const label = btn.dataset.irLabel || '';
+      if (typeof openLineGuide === 'function') {
+        openLineGuide(lineId, { label, clusterId: '' });
+      }
+    });
+  }
+
+  function _downloadExport(format) {
+    const base = api(`/api/trafficmy/export?format=${format}&limit=200`);
+    if (format === 'csv') {
+      const a = document.createElement('a');
+      a.href = base;
+      a.download = 'trafficmy-signals-today.csv';
+      document.body.appendChild(a); a.click(); a.remove();
+      return;
+    }
+    fetch(base).then(r => r.json()).then(data => {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'trafficmy-signals-today.json';
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(a.href);
+    }).catch(() => {});
+  }
+  $('exportJsonBtn')?.addEventListener('click', () => _downloadExport('json'));
+  $('exportCsvBtn')?.addEventListener('click', () => _downloadExport('csv'));
+
   function initFromHash() {
     const hash = location.hash.replace(/^#/, '');
     if (hash === 'plan' || hash === 'passes') {
