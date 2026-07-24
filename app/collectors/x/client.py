@@ -418,3 +418,54 @@ def collect_x_sample() -> list[dict]:
                         }
                     )
     return rows
+
+
+def collect_x_trusted_sample() -> list[dict]:
+    """Trusted-operator X alerts only, via public syndication + fxtwitter.
+
+    Runs even when full X auto-collect is disabled (``x_auto_collect_enabled`` is
+    False) because the trusted transit operators (askrapidkl, myrapidkl, ktmb)
+    post real service alerts on X. Uses only the public syndication.twitter.com
+    profile timeline + api.fxtwitter.com for text — no Playwright, no Bing search,
+    no authenticated API — so it is safe to run by default. Only seed profiles
+    marked ``discover_profile: true`` are polled.
+    """
+    rows: list[dict] = []
+    seen_urls: set[str] = set()
+    seed_urls = load_yaml("seed_urls.yaml").get("x", [])
+
+    profile_map: dict[str, str] = {}
+    for item in seed_urls:
+        if not item.get("discover_profile"):
+            continue
+        profile_url = _profile_url_from_seed(item["url"])
+        if profile_url:
+            profile_map[profile_url] = item["category"]
+
+    for profile_url, fallback_category in profile_map.items():
+        for href in _syndication_profile_status_urls(profile_url):
+            if href in seen_urls:
+                continue
+            created_at = _x_created_at_from_status_url(href)
+            if not _is_recent_enough(created_at):
+                continue
+            handle = href.split("x.com/")[-1].split("/")[0] if "x.com/" in href else ""
+            raw_text = _fxtwitter_status_text(href) or _fetch_x_status_text(href)
+            if not raw_text:
+                continue
+            if not _is_x_row_signal(raw_text, handle=handle):
+                continue
+            seen_urls.add(href)
+            rows.append(
+                {
+                    "source_platform": "x",
+                    "post_id": make_post_id(href),
+                    "url": href,
+                    "author_handle": handle or "x",
+                    "created_at": created_at,
+                    "raw_text": raw_text,
+                    "query": "trusted_profile_syndication",
+                    "seed_category": fallback_category,
+                }
+            )
+    return rows

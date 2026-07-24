@@ -11,7 +11,7 @@ from app.collectors.official.client import collect_official_sample
 from app.collectors.reddit.client import collect_reddit_sample
 from app.collectors.rss.client import collect_rss_sample
 from app.collectors.threads.client import collect_threads_sample
-from app.collectors.x.client import collect_x_sample
+from app.collectors.x.client import collect_x_sample, collect_x_trusted_sample
 from app.core.config import settings
 from app.core.files import raw_path, report_path, write_json_atomic
 from app.core.freshness import is_myt_peak_hour, parse_dt
@@ -159,14 +159,21 @@ def build_cluster_id(category: str, entity: str, location: str, issue_key: str, 
 
 
 def _collectors() -> dict:
-    return {
+    collectors = {
         "threads": collect_threads_sample,
         "reddit": collect_reddit_sample,
-        "x": collect_x_sample,
         "official": collect_official_sample,
         "rss": collect_rss_sample,
         "gtfs": collect_gtfs_sample,
     }
+    if settings.x_auto_collect_enabled:
+        collectors["x"] = collect_x_sample
+    elif settings.x_trusted_handles_enabled:
+        # Full X auto-collect is off, but trusted operator handles post real
+        # service alerts — poll them via public syndication + fxtwitter only
+        # (no Playwright/Bing/auth) so the X lane is never fully blind.
+        collectors["x"] = collect_x_trusted_sample
+    return collectors
 
 
 # Hard caps so a hung Playwright Chromium cannot freeze the whole ingest + scheduler.
@@ -188,7 +195,7 @@ def collect_all() -> dict[str, list[dict]]:
 def _collector_due(name: str, *, respect_cadence: bool) -> tuple[bool, str]:
     if name == "gtfs" and not settings.gtfs_anomaly_enabled:
         return False, "reference_only"
-    if name == "x" and not settings.x_auto_collect_enabled:
+    if name == "x" and not (settings.x_auto_collect_enabled or settings.x_trusted_handles_enabled):
         return False, "disabled_until_authenticated"
     if not respect_cadence:
         return True, ""

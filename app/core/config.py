@@ -38,6 +38,7 @@ class Settings(BaseSettings):
     reddit_provider: str = "public_html"
     rss_provider: str = "public_rss"
     x_auto_collect_enabled: bool = False
+    x_trusted_handles_enabled: bool = True
     reddit_min_interval_seconds: int = 7200
     x_min_interval_seconds: int = 21600
 
