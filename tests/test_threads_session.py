@@ -68,12 +68,16 @@ def test_browser_context_receives_session_state(monkeypatch):
     class Context:
         def __init__(self):
             self.options = None
+            self.init_scripts = []
 
         def set_default_timeout(self, _ms):
             pass
 
         def set_default_navigation_timeout(self, _ms):
             pass
+
+        def add_init_script(self, script):
+            self.init_scripts.append(script)
 
     class Browser:
         options = None
@@ -92,6 +96,8 @@ def test_browser_context_receives_session_state(monkeypatch):
     assert context is browser._context
     assert authenticated is True
     assert browser.options["storage_state"] == state
+    assert browser.options["user_agent"]
+    assert context.init_scripts
 
 
 def test_session_cookie_domain_does_not_accept_suffix_spoof(tmp_path, monkeypatch):

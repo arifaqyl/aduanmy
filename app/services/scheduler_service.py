@@ -18,6 +18,7 @@ _last_backup_at: str | None = None
 _last_backup_error: str | None = None
 _scheduler_thread: threading.Thread | None = None
 _scheduler_lock_owner = False
+_scheduler_lock_fd: int | None = None
 
 
 def _scheduler_lock_path() -> Path:
@@ -28,22 +29,54 @@ def _try_acquire_scheduler_lock() -> bool:
     """Advisory single-worker guard for production multi-worker deploys.
 
     Returns True if this process should run the scheduler. In dev/test it
-    always returns True (single worker). In production we create an exclusive
-    lockfile; if another worker already holds it we defer. A lock older than
-    ~3x the full-refresh interval is treated as stale (owner died) and stolen.
+    always returns True (single worker). In production we hold an fcntl flock
+    on the lockfile for the process lifetime so a container restart releases
+    it immediately (volume file alone must not block the next boot).
     """
     if settings.env != "production":
         return True
-    global _scheduler_lock_owner
+    global _scheduler_lock_owner, _scheduler_lock_fd
+    if _scheduler_lock_fd is not None:
+        return True
     lock_path = _scheduler_lock_path()
     try:
         lock_path.parent.mkdir(parents=True, exist_ok=True)
     except Exception:
         return True  # cannot create dir -> assume single worker
-    # Staleness check: steal a lock that has not been touched recently.
+    try:
+        import fcntl
+    except ImportError:
+        # Windows/dev without fcntl — exclusive create + short age steal.
+        return _try_acquire_scheduler_lock_fallback(lock_path)
+
+    try:
+        fd = os.open(str(lock_path), os.O_CREAT | os.O_RDWR)
+    except OSError:
+        return True
+    try:
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        os.close(fd)
+        return False
+    except OSError:
+        os.close(fd)
+        return True
+    try:
+        os.ftruncate(fd, 0)
+        os.write(fd, f"{os.getpid()}\n{time.time()}\n".encode())
+    except OSError:
+        pass
+    _scheduler_lock_fd = fd  # keep open — flock dies with process/container
+    _scheduler_lock_owner = True
+    return True
+
+
+def _try_acquire_scheduler_lock_fallback(lock_path: Path) -> bool:
+    """O_EXCL fallback when fcntl is unavailable (Windows)."""
+    global _scheduler_lock_owner
     try:
         age = time.time() - lock_path.stat().st_mtime
-        if age > max(3600, settings.full_refresh_interval_seconds * 3):
+        if age > 120:
             try:
                 lock_path.unlink()
             except OSError:
@@ -55,7 +88,7 @@ def _try_acquire_scheduler_lock() -> bool:
     try:
         fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
     except FileExistsError:
-        return False  # another worker owns the scheduler
+        return False
     try:
         os.write(fd, f"{os.getpid()}\n{time.time()}\n".encode())
     finally:
@@ -65,7 +98,7 @@ def _try_acquire_scheduler_lock() -> bool:
 
 
 def _touch_scheduler_lock() -> None:
-    """Refresh the lockfile mtime so staleness can detect a dead owner."""
+    """Refresh the lockfile mtime (fallback/age diagnostics)."""
     if not _scheduler_lock_owner:
         return
     try:

@@ -58,6 +58,12 @@ PLAYWRIGHT_DEFAULT_TIMEOUT_MS = 25000
 PLAYWRIGHT_NAV_TIMEOUT_MS = 20000
 # Bail out of keyword search after this many consecutive empty queries (login wall / block).
 SEARCH_ZERO_HIT_ABORT = 4
+# Headless Chromium on datacenter IPs gets an authenticated empty shell unless we look less like a bot.
+PLAYWRIGHT_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36"
+)
+PLAYWRIGHT_STEALTH_INIT = "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
 
 _diagnostics_lock = threading.Lock()
 _last_diagnostics: dict = {}
@@ -113,12 +119,28 @@ els => els.map(a => {
 """
 
 
+def _launch_threads_browser(playwright):
+    """Launch Chromium with the minimum anti-bot flags that keep Threads hydrated on DO."""
+    return playwright.chromium.launch(
+        headless=True,
+        args=["--disable-blink-features=AutomationControlled", "--no-sandbox"],
+    )
+
+
 def _new_threads_context(browser):
-    options = {"viewport": {"width": 1280, "height": 2200}}
+    options = {
+        "viewport": {"width": 1280, "height": 900},
+        "user_agent": PLAYWRIGHT_USER_AGENT,
+        "locale": "en-US",
+    }
     state = load_storage_state()
     if state:
         options["storage_state"] = state
     context = browser.new_context(**options)
+    try:
+        context.add_init_script(PLAYWRIGHT_STEALTH_INIT)
+    except Exception:
+        pass
     context.set_default_timeout(PLAYWRIGHT_DEFAULT_TIMEOUT_MS)
     context.set_default_navigation_timeout(PLAYWRIGHT_NAV_TIMEOUT_MS)
     return context, state is not None
@@ -398,13 +420,20 @@ def _is_search_result_candidate(text: str, category: str) -> bool:
     return is_complaint_signal(text) or bool(classify_category(text))
 
 
+def _goto_threads(page, url: str) -> None:
+    """Navigate and wait long enough for client-rendered Threads cards to hydrate."""
+    try:
+        page.goto(url, wait_until="networkidle", timeout=max(PLAYWRIGHT_NAV_TIMEOUT_MS, 45000))
+    except Exception:
+        page.goto(url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
+    page.wait_for_timeout(3500)
+
+
 def _scrape_threads_search_page(page, query: str, limit: int = SEARCH_RESULT_LIMIT) -> list[dict[str, str]]:
     rows: list[dict[str, str]] = []
     search_url = f"https://www.threads.com/search?q={quote_plus(query)}&filter=recent"
     try:
-        page.goto(search_url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
-        # Threads search is client-rendered; short waits look like "no results".
-        page.wait_for_timeout(2500)
+        _goto_threads(page, search_url)
         for _ in range(SEARCH_SCROLL_ROUNDS):
             batch = page.locator(SEARCH_POST_SELECTOR).evaluate_all(SEARCH_POST_JS)
             if not batch:
@@ -454,7 +483,7 @@ def _scrape_threads_search_page(page, query: str, limit: int = SEARCH_RESULT_LIM
             if len({item["url"] for item in rows}) >= limit:
                 break
             page.mouse.wheel(0, 2800)
-            page.wait_for_timeout(700)
+            page.wait_for_timeout(1200)
     except Exception:
         return []
 
@@ -477,7 +506,7 @@ def _playwright_threads_search_results(query: str, limit: int = SEARCH_RESULT_LI
     try:
         with _PLAYWRIGHT_LOCK:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                browser = _launch_threads_browser(p)
                 context, _authenticated = _new_threads_context(browser)
                 page = context.new_page()
                 return _scrape_threads_search_page(page, query, limit=limit)
@@ -496,7 +525,7 @@ def _playwright_post_timestamps(urls: list[str]) -> dict[str, str]:
     try:
         with _PLAYWRIGHT_LOCK:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                browser = _launch_threads_browser(p)
                 context, _authenticated = _new_threads_context(browser)
                 page = context.new_page()
                 for url in urls:
@@ -525,11 +554,10 @@ def _playwright_profile_post_previews(profile_url: str, limit: int = PROFILE_POS
     try:
         with _PLAYWRIGHT_LOCK:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                browser = _launch_threads_browser(p)
                 context, _authenticated = _new_threads_context(browser)
                 page = context.new_page()
-                page.goto(profile_url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
-                page.wait_for_timeout(1800)
+                _goto_threads(page, profile_url)
                 for _ in range(4):
                     batch = page.locator("a[href*='/post/'], a[href*='/video/']").evaluate_all(
                         """
@@ -687,7 +715,7 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
     try:
         with _PLAYWRIGHT_LOCK:
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
+                browser = _launch_threads_browser(p)
                 context, session_loaded = _new_threads_context(browser)
                 page = context.new_page()
                 authenticated = False
@@ -732,14 +760,20 @@ def _collect_keyword_search_posts(seen_urls: set[str], *, deadline: float | None
                                 stop_all = True
                                 break
                             past_mandatory = query_index + 1 >= len(MANDATORY_TRANSPORT_QUERIES)
-                            if (
-                                past_mandatory
-                                and consecutive_zeros >= SEARCH_ZERO_HIT_ABORT
-                                and not authenticated
-                            ):
+                            # Abort on empty streak even when authenticated: DO headless
+                            # often gets a valid session chrome with zero hydrated cards.
+                            if past_mandatory and consecutive_zeros >= SEARCH_ZERO_HIT_ABORT:
+                                kind = "authenticated" if authenticated else "unauthenticated"
                                 _note_reason(
-                                    f"keyword_search_aborted_after_{consecutive_zeros}_consecutive_zero_hits_unauthenticated"
+                                    f"keyword_search_aborted_after_{consecutive_zeros}_consecutive_zero_hits_{kind}"
                                 )
+                                stop_all = True
+                                break
+                            if (
+                                query_index + 1 == len(MANDATORY_TRANSPORT_QUERIES)
+                                and queries_with_hits == 0
+                            ):
+                                _note_reason("keyword_search_aborted_mandatory_queries_empty")
                                 stop_all = True
                                 break
                         query_rows = 0

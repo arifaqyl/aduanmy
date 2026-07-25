@@ -148,6 +148,7 @@ def test_scheduler_lock_dev_always_acquires(monkeypatch, tmp_path):
     monkeypatch.setattr("app.core.config.settings.env", "dev")
     monkeypatch.setattr("app.core.config.settings.data_dir", str(tmp_path))
     sched._scheduler_lock_owner = False
+    sched._scheduler_lock_fd = None
     assert sched._try_acquire_scheduler_lock() is True
     # Dev short-circuits and must not create a lockfile.
     assert not (tmp_path / ".scheduler.lock").exists()
@@ -160,11 +161,18 @@ def test_scheduler_lock_prod_second_worker_defers(monkeypatch, tmp_path):
     monkeypatch.setattr("app.core.config.settings.data_dir", str(tmp_path))
     monkeypatch.setattr("app.core.config.settings.full_refresh_interval_seconds", 900)
     sched._scheduler_lock_owner = False
+    sched._scheduler_lock_fd = None
     assert sched._try_acquire_scheduler_lock() is True
     assert sched._scheduler_lock_owner is True
-    # A second worker (same dir, lock fresh) must defer.
+    # A second worker (same dir, lock held) must defer.
+    held_fd = sched._scheduler_lock_fd
     sched._scheduler_lock_owner = False
+    sched._scheduler_lock_fd = None
     assert sched._try_acquire_scheduler_lock() is False
+    if held_fd is not None:
+        import os
+
+        os.close(held_fd)
 
 
 def test_scheduler_lock_prod_steals_stale_lock(monkeypatch, tmp_path):
@@ -175,9 +183,15 @@ def test_scheduler_lock_prod_steals_stale_lock(monkeypatch, tmp_path):
     monkeypatch.setattr("app.core.config.settings.full_refresh_interval_seconds", 900)
     lock = tmp_path / ".scheduler.lock"
     lock.write_text("99999\n0\n")
-    # Backdate the lock well beyond the staleness window.
-    stale = time.time() - (900 * 3 + 3600)
+    # Backdate beyond the fallback age window (fcntl path does not need this;
+    # fallback steals after 120s with no live flock holder).
+    stale = time.time() - 180
     import os
+
     os.utime(str(lock), (stale, stale))
     sched._scheduler_lock_owner = False
+    sched._scheduler_lock_fd = None
     assert sched._try_acquire_scheduler_lock() is True
+    if sched._scheduler_lock_fd is not None:
+        os.close(sched._scheduler_lock_fd)
+        sched._scheduler_lock_fd = None

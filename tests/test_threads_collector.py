@@ -74,6 +74,9 @@ def test_threads_search_uses_recent_results_tab():
         def locator(self, _selector):
             return EmptyLocator()
 
+        def eval_on_selector_all(self, _selector, _script):
+            return []
+
     page = Page()
     _scrape_threads_search_page(page, "lrt3 shah alam")
 
