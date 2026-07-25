@@ -421,11 +421,12 @@ def _is_search_result_candidate(text: str, category: str) -> bool:
 
 
 def _goto_threads(page, url: str) -> None:
-    """Navigate and wait long enough for client-rendered Threads cards to hydrate."""
-    try:
-        page.goto(url, wait_until="networkidle", timeout=max(PLAYWRIGHT_NAV_TIMEOUT_MS, 45000))
-    except Exception:
-        page.goto(url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
+    """Navigate and wait long enough for client-rendered Threads cards to hydrate.
+
+    Keep this under ~12s/query — the threads collector hard-timeout is 240s and
+    networkidle on DO routinely burns the whole budget for zero extra posts.
+    """
+    page.goto(url, wait_until="domcontentloaded", timeout=PLAYWRIGHT_NAV_TIMEOUT_MS)
     page.wait_for_timeout(3500)
 
 
