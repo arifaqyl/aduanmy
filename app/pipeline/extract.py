@@ -774,6 +774,51 @@ def detect_severity(text: str) -> str:
     return "low"
 
 
+PAST_TALK_PATTERNS = [
+    r"\byesterday\b",
+    r"\bsemalam\b",
+    r"\bkelmarin\b",
+    r"\blast week\b",
+    r"\bminggu lepas\b",
+    r"\bminggu lalu\b",
+    r"\bhari tu\b",
+    r"\bhari itu\b",
+    r"\bfew days ago\b",
+    r"\bberapa hari (lepas|lalu)\b",
+    r"\btwo days ago\b",
+    r"\b3 days ago\b",
+    r"\blast month\b",
+    r"\bbulan lepas\b",
+    r"\bbulan lalu\b",
+    r"\baritu\b",
+    r"\btadik\b",
+]
+
+NOW_SIGNALS = [
+    "now",
+    "sekarang",
+    "just",
+    "baru je",
+    "baru sahaja",
+    "tadi",
+    "still",
+    "masih",
+    "currently",
+    "sejak tadi",
+]
+
+
+def is_stale_talk(text: str) -> bool:
+    """True when the message recounts a PAST event with no present-ongoing signal.
+
+    'Train broke down yesterday at Kelana Jaya' -> stale talk.
+    'Still stuck since 8am' mentions nothing past-tense -> not stale talk."""
+    low = (text or "").lower()
+    if not any(re.search(p, low) for p in PAST_TALK_PATTERNS):
+        return False
+    return not any(sig in low for sig in NOW_SIGNALS)
+
+
 def is_complaint_signal(text: str) -> bool:
     low = text.lower()
     complaint_terms = [
@@ -798,6 +843,13 @@ def is_complaint_signal(text: str) -> bool:
         "kesulitan",
         "apologies for the inconvenience",
         "fire alarm",
+        "stuck",
+        "not moving",
+        "halted",
+        "broken down",
+        "berhenti",
+        "tersekat",
+        "evacuated",
     ]
     promo_terms = [
         "world cup",

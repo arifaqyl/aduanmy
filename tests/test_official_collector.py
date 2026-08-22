@@ -98,7 +98,7 @@ def test_myrapid_recent_filter_rejects_old_alert_dates():
 
 
 def test_myrapid_recent_filter_accepts_recent_alert_dates():
-    recent = (datetime.now(UTC) - timedelta(days=7)).date().isoformat()
+    recent = (datetime.now(UTC) - timedelta(days=2)).date().isoformat()
     assert _is_recent_enough(recent) is True
 
 

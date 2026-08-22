@@ -8,7 +8,7 @@ def test_empty_source_is_checked_quiet_not_degraded():
 def test_trafficmy_config_includes_source_lanes():
     payload = get_trafficmy_config()
     assert payload["product"] == "TrafficMY"
-    assert payload["live_window_days"] == 21
+    assert payload["live_window_days"] == 7
     assert payload["poll_interval_seconds"] >= 60
     assert payload["ingest_interval_seconds"] >= 60
     assert payload["gtfs_ingest_interval_seconds"] >= 60

@@ -14,7 +14,7 @@ from app.collectors.threads.client import collect_threads_sample
 from app.collectors.x.client import collect_x_sample, collect_x_trusted_sample
 from app.core.config import settings
 from app.core.files import raw_path, report_path, write_json_atomic
-from app.core.freshness import is_myt_peak_hour, parse_dt
+from app.core.freshness import is_fresh_for_source, is_myt_peak_hour, parse_dt
 from app.db.session import (
     connect,
     init_db,
@@ -33,6 +33,7 @@ from app.pipeline.extract import (
     extract_issue_key,
     extract_stub,
     is_complaint_signal,
+    is_stale_talk,
     transport_incident_signal_ok,
     transport_line_info_signal_ok,
     transport_rider_signal_worthwhile,
@@ -375,6 +376,11 @@ def transform_rows(collected: dict[str, list[dict]]) -> list[ComplaintSchema]:
             seen.add(key)
             normalized_text = normalize_text(row["raw_text"])
             platform = row["source_platform"]
+            created_at = row.get("created_at", "")
+            if platform not in {"official", "gtfs_rt"} and not is_fresh_for_source(platform, created_at):
+                continue
+            if platform not in {"official", "rss", "gtfs_rt"} and is_stale_talk(normalized_text):
+                continue
             if platform not in {"official", "rss", "gtfs_rt"} and not is_complaint_signal(normalized_text):
                 if not transport_line_info_signal_ok(normalized_text):
                     continue

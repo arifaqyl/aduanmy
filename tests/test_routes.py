@@ -30,7 +30,7 @@ def test_methodology_page_and_api():
     payload = api.json()
     assert payload["product"] == "TrafficMY"
     assert payload["not_official"] is True
-    assert payload["windows"]["live_window_days"] == 21
+    assert payload["windows"]["live_window_days"] == 7
     assert payload["windows"]["status_window_hours"] == 24
     assert any(s["id"] == "threads" for s in payload["sources"])
 
@@ -253,7 +253,7 @@ def test_trafficmy_config_route():
     response = client.get("/api/trafficmy/config")
     assert response.status_code == 200
     payload = response.json()
-    assert payload["live_window_days"] == 21
+    assert payload["live_window_days"] == 7
     assert len(payload["source_lanes"]) == 6
 
 

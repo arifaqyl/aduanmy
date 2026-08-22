@@ -21,10 +21,10 @@
   --stitch-board-dim: #777777;
 
   /* Primary green (Duolingo-like) */
-  --stitch-green: #58cc02;
+  --stitch-green: #2f9e6e;
   --stitch-green-dark: #2b6c00;
   --stitch-green-soft: #D7FFB8;
-  --stitch-primary: #58cc02;
+  --stitch-primary: #2f9e6e;
   --stitch-primary-dark: #2b6c00;
 
   /* Secondary blue (nav / active) */

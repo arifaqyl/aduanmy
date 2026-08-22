@@ -295,7 +295,7 @@ def test_transform_rows_uses_transport_source_fallback_entity_for_rapidkl_handle
                     "post_id": "x1",
                     "url": "https://x.com/askrapidkl/status/1",
                     "author_handle": "askrapidkl",
-                    "created_at": "",
+                    "created_at": _today_iso(hours=2),
                     "raw_text": "Maaf atas kelewatan. Next bas akan gerak jam 2040. Pada masa ini hanya sebuah bas beroperasi.",
                     "query": "seed_status",
                     "seed_category": "transport",
@@ -368,3 +368,48 @@ def test_transform_rows_keeps_source_timestamps_from_threads_and_reddit():
         threads_ts,
         reddit_ts,
     }
+
+
+def _social_row(**overrides):
+    row = {
+        "source_platform": "threads",
+        "post_id": "t-old",
+        "url": "https://threads.com/p/old",
+        "author_handle": "rider",
+        "created_at": _today_iso(hours=2),
+        "raw_text": "Kelana Jaya line stuck, train not moving for 20 minutes",
+        "query": "seed_status",
+        "seed_category": "transport",
+    }
+    row.update(overrides)
+    return row
+
+
+def test_transform_rows_rejects_social_post_older_than_36h():
+    stale_ts = (myt_day_start() - timedelta(days=3)).isoformat().replace("+00:00", "Z")
+    rows = transform_rows({"threads": [_social_row(post_id="t-3d", created_at=stale_ts)]})
+    assert rows == []
+
+
+def test_transform_rows_rejects_social_post_without_timestamp():
+    rows = transform_rows({"x": [_social_row(source_platform="x", post_id="x-nodate", created_at="")]})
+    assert rows == []
+
+
+def test_transform_rows_accepts_fresh_social_incident():
+    rows = transform_rows({"threads": [_social_row(post_id="t-fresh")]})
+    assert len(rows) == 1
+
+
+def test_transform_rows_rejects_past_talk_without_now_signal():
+    rows = transform_rows(
+        {"threads": [_social_row(post_id="t-past", raw_text="Train broke down yesterday at Kelana Jaya, everyone had to walk")]}
+    )
+    assert rows == []
+
+
+def test_transform_rows_keeps_past_mention_with_ongoing_signal():
+    rows = transform_rows(
+        {"threads": [_social_row(post_id="t-still", raw_text="Still stuck now at Kelana Jaya after the morning breakdown, train rosak")]}
+    )
+    assert len(rows) == 1

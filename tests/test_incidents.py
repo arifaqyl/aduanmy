@@ -585,7 +585,7 @@ def test_cluster_timestamps_prefer_source_created_at_over_inserted_at():
 def test_clusters_expose_freshness_bucket_and_age_days():
     now = datetime.now(UTC)
     recent_at = (now - timedelta(days=1)).isoformat().replace("+00:00", "Z")
-    aging_at = (now - timedelta(days=10)).isoformat().replace("+00:00", "Z")
+    aging_at = (now - timedelta(days=5)).isoformat().replace("+00:00", "Z")
     stale_at = (now - timedelta(days=45)).isoformat().replace("+00:00", "Z")
 
     reset_complaints()

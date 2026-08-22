@@ -224,7 +224,7 @@ def test_overview_can_include_stale_when_requested():
 
 def test_default_live_surface_keeps_aging_transport_incidents_inside_window():
     reset_complaints()
-    aging = (datetime.now(UTC) - timedelta(days=18)).isoformat().replace("+00:00", "Z")
+    aging = (datetime.now(UTC) - timedelta(days=5)).isoformat().replace("+00:00", "Z")
     stale = (datetime.now(UTC) - timedelta(days=30)).isoformat().replace("+00:00", "Z")
     upsert_complaints(
         [

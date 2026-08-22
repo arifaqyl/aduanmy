@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta, timezone
 
-RECENT_DAYS = 3
-LIVE_WINDOW_DAYS = 21
+RECENT_DAYS = 2
+LIVE_WINDOW_DAYS = 7
+SOCIAL_MAX_AGE_HOURS = 36
+OFFICIAL_MAX_AGE_HOURS = 96
 MYT = timezone(timedelta(hours=8))
 
 
@@ -97,3 +99,30 @@ def is_inside_live_window(
         return False
     current = now or datetime.now(UTC)
     return parsed >= current - timedelta(days=live_window_days)
+
+
+def age_hours(value: str | None, *, now: datetime | None = None) -> float | None:
+    """Age of a timestamp in hours; None when missing/unparseable."""
+    parsed = parse_dt(value)
+    if parsed is None:
+        return None
+    current = now or datetime.now(UTC)
+    return max(0.0, (current - parsed).total_seconds() / 3600)
+
+
+def is_fresh_for_source(
+    platform: str,
+    created_at: str | None,
+    *,
+    now: datetime | None = None,
+) -> bool:
+    """Hard recency gate per source class.
+
+    Social platforms must carry a parseable timestamp within SOCIAL_MAX_AGE_HOURS.
+    Official/RSS/GTFS get OFFICIAL_MAX_AGE_HOURS (they legitimately report slower).
+    Unknown-timestamp social rows are rejected: unverifiable age = not live."""
+    hours = age_hours(created_at, now=now)
+    if hours is None:
+        return platform in {"official", "rss", "gtfs_rt"} and created_at is not None and created_at != ""
+    limit = OFFICIAL_MAX_AGE_HOURS if platform in {"official", "rss", "gtfs_rt"} else SOCIAL_MAX_AGE_HOURS
+    return hours <= limit
