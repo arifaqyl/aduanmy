@@ -118,6 +118,38 @@ STRICT_MALAYSIA_TRANSPORT_SIGNALS.extend(
     ]
 )
 
+# Malaysian newsroom bylines. Google News titles carry the outlet
+# ("Rush hour chaos: LRT fault sparks outrage - NST Online"), so provenance is
+# already in the text. Without these, every Malaysian headline that names a
+# line but no station was dropped: "LRT" alone is correctly generic, since LRT
+# systems exist worldwide, and the row had nothing else to anchor it.
+#
+# Only unambiguous mastheads belong here. "The Star" is deliberately absent —
+# it collides with foreign outlets of the same name.
+MALAYSIAN_NEWS_OUTLETS = [
+    "nst online",
+    "new straits times",
+    "bernama",
+    "malay mail",
+    "malaymail",
+    "free malaysia today",
+    "malaysiakini",
+    "berita harian",
+    "harian metro",
+    "utusan malaysia",
+    "kosmo digital",
+    "sinar harian",
+    "malaysiagazette",
+    "the edge malaysia",
+    "the sun malaysia",
+    "thesundaily",
+    "astro awani",
+    "the vibes",
+    "says.com",
+    "soyacincau",
+]
+STRICT_MALAYSIA_TRANSPORT_SIGNALS.extend(MALAYSIAN_NEWS_OUTLETS)
+
 MALAYSIAN_STATES = {
     "johor",
     "kedah",
