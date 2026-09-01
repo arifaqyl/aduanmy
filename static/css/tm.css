@@ -539,6 +539,10 @@ img, svg { display: block; max-width: 100%; }
 }
 .ledger b { color: var(--ink); font-weight: 500; }
 .ledger u { color: var(--ink-3); text-decoration: none; }
+.ledger .dev { font-size: var(--fs-md); font-weight: 600; letter-spacing: -.01em; }
+.ledger .dev[data-s="delay"]      { color: var(--amber); }
+.ledger .dev[data-s="disruption"] { color: var(--red); }
+.ledger .dev[data-s="ok"]         { color: var(--jade); }
 
 /* --- Sheet: history sparkline ------------------------------------------- */
 /* "Is today unusual for this line?" — no other transit app answers this. */

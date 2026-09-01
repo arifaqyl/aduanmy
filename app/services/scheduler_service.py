@@ -178,6 +178,15 @@ def run_full_now(*, respect_cadence: bool = True) -> dict | None:
             check_source_health_and_alert()
         except Exception:  # pragma: no cover - alerts must never break ingest
             logger.exception("source health alert failed after ingest")
+        try:
+            # Keeps frequencies.txt warm so board renders never touch the
+            # network. download_static() is a no-op while the cache is <24h,
+            # so this costs one HTTP call a day, not one per ingest.
+            from app.services.headway_service import warm_headways
+
+            warm_headways()
+        except Exception:  # pragma: no cover - a cold headway cache degrades to None, never breaks ingest
+            logger.exception("headway warm-up failed after ingest")
         return report
     except Exception as exc:  # pragma: no cover
         _last_error = str(exc)

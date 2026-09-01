@@ -1,10 +1,10 @@
-const CACHE = 'trafficmy-shell-v58';
+const CACHE = 'trafficmy-shell-v59';
 const scopeUrl = new URL(self.registration.scope);
 const base = scopeUrl.pathname.replace(/\/$/, '');
 const shell = [
   `${base}/`,
-  `${base}/static/css/tm.css?v=58`,
-  `${base}/static/js/board.js?v=58`,
+  `${base}/static/css/tm.css?v=59`,
+  `${base}/static/js/board.js?v=59`,
   `${base}/static/brand/trafficmy-mark.png`,
   `${base}/static/og-image.png`,
 ];

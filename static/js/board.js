@@ -67,6 +67,11 @@
       nothing:    'Nothing captured for this line today',
       nothingSub: 'That is an absence of data, not a confirmation of normal service.',
       timetable:  'Official timetable and route',
+      sched:      'Scheduled vs reported',
+      schedEvery: n => `scheduled every ${n} min`,
+      schedWait:  n => `riders report ~${n} min waits`,
+      schedOk:    'within schedule',
+      schedNoWait:'no measured wait reported today',
       staleWarn:  'Feed has not refreshed in over 20 minutes. Treat this board as out of date.',
       mapEmpty:   'Official route geometry. No geolocated reports today.',
       mapNote:    n => `Official route geometry. ${n} rider report${n === 1 ? '' : 's'} placed by mentioned station — not live vehicle tracking.`,
@@ -107,6 +112,11 @@
       nothing:    'Tiada rekod untuk laluan ini hari ini',
       nothingSub: 'Itu ketiadaan data, bukan pengesahan perkhidmatan normal.',
       timetable:  'Jadual dan laluan rasmi',
+      sched:      'Jadual vs laporan',
+      schedEvery: n => `jadual setiap ${n} min`,
+      schedWait:  n => `penumpang lapor tunggu ~${n} min`,
+      schedOk:    'dalam jadual',
+      schedNoWait:'tiada tempoh tunggu diukur dalam laporan hari ini',
       staleWarn:  'Suapan tidak dikemas kini lebih 20 minit. Anggap papan ini lapuk.',
       mapEmpty:   'Geometri laluan rasmi. Tiada laporan berlokasi hari ini.',
       mapNote:    n => `Geometri laluan rasmi. ${n} laporan penumpang diletak ikut stesen disebut — bukan pengesanan kenderaan langsung.`,
@@ -447,6 +457,24 @@
         if (l.sources) h += `${esc(t('srcs'))} <u>${esc(l.sources)}</u>`;
       } else {
         h += `<u>${esc(t('nothing'))}</u>`;
+      }
+      h += `</div></div>`;
+    }
+
+    /* Scheduled vs reported — the operator's own headway as the ruler.
+       Only shown when the line is running and has a scheduled band. The
+       ratio only appears when a rider actually wrote a wait down. */
+    if (!dead && l.headway) {
+      const d = l.deviation;
+      h += `<div class="blk"><p class="blk-l">${esc(t('sched'))}</p><div class="ledger">`;
+      h += `<b>${esc(t('schedEvery')(l.headway.headway_min))}</b> · <u>${esc(l.headway.band)} · ${esc(l.headway.service)}</u><br>`;
+      if (d) {
+        h += `${esc(t('schedWait')(d.reported_min))}<br>`;
+        const tone = d.ratio >= 3 ? 'disruption' : d.ratio >= 1.5 ? 'delay' : 'ok';
+        const label = d.ratio < 1.5 ? t('schedOk') : `≈ ${esc(d.label)}`;
+        h += `<b class="dev" data-s="${tone}">${label}</b>`;
+      } else if (n) {
+        h += `<u>${esc(t('schedNoWait'))}</u>`;
       }
       h += `</div></div>`;
     }

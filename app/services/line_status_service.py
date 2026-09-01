@@ -14,6 +14,7 @@ from app.services.overview_service import (
 from app.services.incident_service import list_clusters
 from app.services.malaysia_journey_hints import operator_commuter_note
 from app.services.public_incident_service import detect_facility_alert, public_incident_copy
+from app.services.headway_service import deviation as headway_deviation, extract_wait_minutes, scheduled_headway
 
 def _severity_level(cluster: dict) -> str:
     text = (cluster.get("example_text") or "").lower()
@@ -233,11 +234,18 @@ def get_line_status_board(
             report_count = 0
             last_seen = None
             top_cluster = None
+            reported_wait = None
         else:
             levels = [_severity_level(c) for c in items]
             level = max(levels, key=lambda x: _SEVERITY_RANK[x])
             top = items[0]
             top_cluster = top.get("cluster_id")
+            # Largest measured platform wait across today's reports for this
+            # line. None unless a rider actually wrote a number down.
+            reported_wait = max(
+                (extract_wait_minutes(c.get("example_text") or "") or 0 for c in items),
+                default=0,
+            ) or None
             reason = public_incident_copy(top)["summary"]
             report_count = sum(c.get("volume", 1) for c in items)
             last_seen = top.get("last_seen_at")
@@ -263,6 +271,16 @@ def get_line_status_board(
             top_cluster = None
             report_count = 0
             facility_alert = None
+            reported_wait = None
+
+        # Scheduled headway and deviation only when the line is running and
+        # actually has reports. Keeps the quiet-board path free of GTFS work.
+        headway = scheduled_headway(spec["id"], last_seen) if items and in_service is not False else None
+        deviation = (
+            headway_deviation(spec["id"], reported_wait, last_seen)
+            if reported_wait and in_service is not False
+            else None
+        )
 
         lines_out.append(
             {
@@ -290,6 +308,9 @@ def get_line_status_board(
                 "facility_alert": facility_alert,
                 "in_service": in_service,
                 "service_status": service_phase,
+                "reported_wait_min": reported_wait,
+                "headway": headway,
+                "deviation": deviation,
                 "service_label": service_label,
             }
         )
