@@ -71,6 +71,13 @@ class Settings(BaseSettings):
     # subscriptions: riders should never receive "the scraper is broken".
     telegram_ops_chat_id: str = ""
 
+    # Reddit application-only OAuth. old.reddit.com HTML scraping now returns a
+    # login interstitial (HTTP 200, zero results) and the .json endpoints 403,
+    # so the supported API is the only working read path.
+    # Register at https://www.reddit.com/prefs/apps (type: script).
+    reddit_client_id: str = ""
+    reddit_client_secret: str = ""
+
     @property
     def db_file(self) -> Path:
         return Path(self.db_path)

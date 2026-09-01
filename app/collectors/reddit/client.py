@@ -206,6 +206,31 @@ def _curated_seed_rows() -> list[dict]:
 def collect_reddit_sample() -> list[dict]:
     rows: list[dict] = []
     seen_post_ids: set[str] = set()
+
+    # Preferred path. The HTML scrape below is kept only because it costs
+    # nothing to leave, not because it works: old.reddit.com answers scrapes
+    # with a login interstitial that yields zero rows without raising.
+    from app.collectors.reddit import oauth
+
+    if oauth.configured():
+        for category in load_yaml("queries.yaml").get("query_groups", {}):
+            for subreddit in (reddit_subreddits(category) or SUBREDDITS.get(category, ["malaysia"])):
+                for query in (reddit_queries(category)
+                              or REDDIT_DISCOVERY_QUERIES.get(category)
+                              or [])[:3]:
+                    for row in oauth.search(subreddit, query):
+                        pid = row.get("post_id")
+                        if not pid or pid in seen_post_ids:
+                            continue
+                        if not _category_prefilter(row["raw_text"], category):
+                            continue
+                        if not _is_recent_enough(row.get("created_at", "")):
+                            continue
+                        seen_post_ids.add(pid)
+                        row["seed_category"] = category
+                        rows.append(row)
+        if rows:
+            return rows
     query_groups = load_yaml("queries.yaml").get("query_groups", {})
     for category in query_groups:
         search_queries = reddit_queries(category) or REDDIT_DISCOVERY_QUERIES.get(category) or query_groups.get(category, [])[:2]
