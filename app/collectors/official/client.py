@@ -16,36 +16,20 @@ except Exception:  # pragma: no cover - optional runtime dependency
     sync_playwright = None
 
 
-OFFICIAL_SOURCES = [
-    {
-        "source_platform": "official",
-        "url": "https://www.met.gov.my/en/info/data-terbuka/",
-        "category": "flood_weather",
-        "selectors": ["h1", "p"],
-        "keywords": ["open data", "met api", "weather", "flood", "warning"],
-    },
-    {
-        "source_platform": "official",
-        "url": "https://data.gov.my/",
-        "category": "gov_portals",
-        "selectors": ["h1", "p"],
-        "keywords": ["open data", "government", "dataset", "api"],
-    },
-    {
-        "source_platform": "official",
-        "url": "https://www.mot.gov.my/en/media/publication/open-data",
-        "category": "transport",
-        "selectors": ["h1", "p", "li"],
-        "keywords": ["open data", "transport", "rail", "bus"],
-    },
-    {
-        "source_platform": "official",
-        "url": "https://easyfix.unifi.com.my/service-outage/",
-        "category": "telco_internet",
-        "selectors": ["h1", "h2", "h3", "p", "li"],
-        "keywords": ["service outage", "interruption", "planned maintenance", "faulty network", "cable cuts"],
-    },
-]
+# Generic page scrapes were removed 2026-09-02.
+#
+# The four entries here (met.gov.my weather, the data.gov.my portal homepage,
+# a MOT publications page, and easyfix.unifi.com.my) were leftovers from when
+# this was a multi-category complaints aggregator. None was a live transit
+# source, and one put a home-broadband outage page into a transit database.
+#
+# They were also written with created_at="" — no timestamp — so the freshness
+# gate could never judge them, which is precisely how stale content reaches a
+# board that claims to show today.
+#
+# Live transit notices come from _collect_ktmb_alerts() and
+# _collect_myrapid_alerts() below, which carry real dates.
+OFFICIAL_SOURCES: list[dict] = []
 
 MYRAPID_HOME = "https://myrapid.com.my/"
 KTMB_HOME = "https://www.ktmb.com.my/"
