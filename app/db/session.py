@@ -64,6 +64,15 @@ CREATE TABLE IF NOT EXISTS line_status_snapshots (
     status TEXT NOT NULL,
     updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Last alerted health state per collector. Exists so ops alerts fire on a
+-- transition (healthy -> broken, broken -> recovered) instead of once per
+-- ingest. Without this a dead Threads session would page every 15 minutes.
+CREATE TABLE IF NOT EXISTS source_health_alerts (
+    source TEXT PRIMARY KEY,
+    needs_attention INTEGER NOT NULL,
+    alerted_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 """
 
 

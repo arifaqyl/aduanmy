@@ -172,6 +172,12 @@ def run_full_now(*, respect_cadence: bool = True) -> dict | None:
             check_and_notify()
         except Exception:  # pragma: no cover - alerts must never break ingest
             logger.exception("telegram check_and_notify failed after ingest")
+        try:
+            from app.services.telegram_alerts import check_source_health_and_alert
+
+            check_source_health_and_alert()
+        except Exception:  # pragma: no cover - alerts must never break ingest
+            logger.exception("source health alert failed after ingest")
         return report
     except Exception as exc:  # pragma: no cover
         _last_error = str(exc)

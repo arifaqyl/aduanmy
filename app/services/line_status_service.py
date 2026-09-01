@@ -56,23 +56,28 @@ _SEVERITY_LABEL = {
 }
 
 LINE_COLORS: dict[str, str] = {
-    "kelana-jaya": "#e31837",
-    "ampang-sri-petaling": "#f7941d",
-    "kajang": "#007a33",
-    "putrajaya": "#f4c300",
+    # Official operator colours, taken from `route_color` in the GTFS static
+    # feeds published at api.data.gov.my (Prasarana rapid-rail-kl, KTMB).
+    # Verified 2026-09-01. Every value here was previously an approximation —
+    # BRT Sunway was rendered purple when the operator's colour is dark green.
+    # These are wayfinding, not decoration: they must match station signage.
+    "kelana-jaya": "#d50032",  # GTFS KJ  — LRT Kelana Jaya Line
+    "ampang-sri-petaling": "#e57200",  # GTFS AG  — LRT Ampang Line (Sri Petaling is #76232f, see note)
+    "kajang": "#047940",  # GTFS KGL — MRT Kajang Line
+    "putrajaya": "#ffcd00",  # GTFS PYL — MRT Putrajaya Line
     "kajang-putrajaya": "#00a651",
-    "monorail": "#8dc63f",
-    "brt-sunway": "#5c2d91",
-    "ktm-komuter": "#0066b3",
-    "ktm-north": "#2b6cb0",
-    "ets-intercity": "#b8860b",
+    "monorail": "#84bd00",  # GTFS MR  — KL Monorail Line
+    "brt-sunway": "#115740",  # GTFS BRT — BRT Sunway Line (was purple, actually dark green)
+    "ktm-komuter": "#dc2420",  # GTFS KA15_KD19 — Tanjung Malim/Port Klang
+    "ktm-north": "#018000",  # GTFS 100_47300 — Butterworth/Padang Besar
+    "ets-intercity": "#ffc72c",  # GTFS ETS — Electric Train Service
     "klia-rail": "#7f1734",
     "sabah-railway": "#9b6a31",
     "rapid-bus": "#e21836",
     "penang": "#00843d",
     "kuantan": "#008b8b",
     "mybas": "#0f766e",
-    "lrt3": "#7b2d8e",
+    "lrt3": "#00a9e0",  # GTFS SA  — LRT Shah Alam Line
     "ecrl": "#003d7a",
     "rts-johor": "#c41230",
     "mrt3": "#2563eb",

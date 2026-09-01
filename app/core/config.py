@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     # Saved-commute Telegram alerts. Leave token empty to disable.
     telegram_bot_token: str = ""
     telegram_webhook_secret: str = ""
+    # Owner/ops chat for collector-health pages. Distinct from rider
+    # subscriptions: riders should never receive "the scraper is broken".
+    telegram_ops_chat_id: str = ""
 
     @property
     def db_file(self) -> Path:

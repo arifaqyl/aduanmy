@@ -1,47 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Method · TrafficMY Pulse</title>
-  <meta name="description" content="How TrafficMY collects and presents Malaysia transport signals." />
-  <meta name="theme-color" content="#121212" />
-  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="static/css/app.css" />
-  <link rel="stylesheet" href="static/css/components.css" />
-  <style>
-    .tm-doc { max-width: 640px; margin: 0 auto; padding: 24px 16px 48px; }
-    .tm-doc h1 { font-family: var(--font-mono); font-size: 22px; margin-bottom: 8px; letter-spacing: -0.02em; }
-    .tm-doc p, .tm-doc li { font-size: 15px; color: var(--text-secondary); line-height: 1.55; margin-bottom: 12px; }
-    .tm-doc h2 { font-family: var(--font-mono); font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; margin: 24px 0 8px; color: var(--accent-red); }
-    .tm-doc a.back { font-size: 14px; font-weight: 600; font-family: var(--font-mono); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Method &amp; scope · TrafficMY</title>
+<meta name="description" content="How TrafficMY collects rider signals, what its status rules mean, and what it deliberately does not claim.">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="static/brand/trafficmy-mark.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="static/css/tm.css?v=58">
 </head>
-<body class="tm-app">
-  <div class="tm-doc">
-    <p><a class="back" href="/">← TrafficMY Pulse</a></p>
-    <h1>Method &amp; scope</h1>
-    <p>TrafficMY is not an official RapidKL, Prasarana, or KTMB site. It aggregates recent public signals and presents cautious summaries with evidence links.</p>
-    <h2>Not ridership analytics</h2>
-    <p>TrafficMY answers <strong>what riders are reporting on the network today</strong> — delays, crowding, stuck trains (MYT calendar day). Historical passenger-count dashboards answer how many people rode yesterday. Different products, different questions.</p>
-    <p><a href="/developers">Signals API &amp; embed for teams →</a></p>
-    <h2>How it works</h2>
-    <p>Recent public rider signals are filtered for Malaysia transport relevance, current observable impact, and duplicate reports before they become incident summaries.</p>
-    <h2>Sources</h2>
-    <ul>
-      <li>Threads (primary rider lane when session available)</li>
-      <li>Reddit, news RSS, operator notices</li>
-      <li>GTFS for map reference and journey planning</li>
-    </ul>
-    <h2>Status rules</h2>
-    <ul>
-      <li>24-hour window for line status; longer history for evidence only</li>
-      <li>Quiet means no qualifying recent signal, not confirmed normal service</li>
-      <li>Raw posts and usernames are not republished</li>
-    </ul>
+<body>
+
+<main class="doc prose">
+  <a class="doc-back" href="/">← TrafficMY</a>
+
+  <h1>Method &amp; scope</h1>
+  <p class="doc-lede">TrafficMY is not an official Rapid KL, Prasarana, or KTMB service. It aggregates recent public rider signals and presents cautious summaries with the evidence attached.</p>
+
+  <h2>The one rule that matters</h2>
+  <p><strong>A quiet line is not an all-clear.</strong> It means no qualifying signal was captured in the status window. Operators do not feed this board. Absence of a report is absence of data — never treat it as confirmation that service is normal.</p>
+
+  <h2>Not ridership analytics</h2>
+  <p>TrafficMY answers <strong>what riders are reporting on the network today</strong> — delays, crowding, stuck trains, on the Malaysia calendar day. Passenger-count dashboards answer how many people rode yesterday. Different questions, different products.</p>
+
+  <h2>How a signal becomes a board entry</h2>
+  <ul>
+    <li>Public rider posts are collected from the sources below</li>
+    <li>Each is filtered for Malaysian transport relevance and current observable impact</li>
+    <li>Near-duplicates are grouped into a single incident rather than counted repeatedly</li>
+    <li>The incident is matched to a line and summarised — raw wording is not republished</li>
+    <li>Where an official notice covers the same incident, it is marked as corroborated</li>
+  </ul>
+
+  <h2>Reading the evidence meter</h2>
+  <div class="prose-key">
+    <b>████</b> <span>rider reports matched by an official notice</span><br>
+    <b>███</b><i>░</i> <span>four or more independent reports</span><br>
+    <b>██</b><i>░░</i> <span>two or three reports</span><br>
+    <b>█</b><i>░░░</i> <span>a single unverified report</span><br>
+    <b>────</b> <span>nothing captured today</span>
   </div>
+
+  <h2>Sources</h2>
+  <ul>
+    <li>Threads — primary rider lane when a session is available</li>
+    <li>Reddit, news RSS, and operator notices</li>
+    <li>GTFS for map and station reference only, never as incident truth</li>
+  </ul>
+
+  <h2>Status rules</h2>
+  <ul>
+    <li>Line status uses the Malaysia calendar day and resets at midnight MYT</li>
+    <li>Longer history is retained for the 14-day baseline, not for live status</li>
+    <li>After the last service of the day a line reads as ended, not as normal</li>
+    <li>Raw posts and usernames are never republished</li>
+  </ul>
+
+  <h2>Known limits</h2>
+  <ul>
+    <li>Coverage follows where riders post. Quiet lines and off-peak hours are under-observed</li>
+    <li>Report locations are placed by the station mentioned in the post, not by GPS</li>
+    <li>There is no routing engine here — use the official planners for trip planning</li>
+  </ul>
+
+  <p><a class="lnk" href="/developers">Signals API and embed for teams →</a></p>
+</main>
+
 </body>
 </html>

@@ -98,6 +98,82 @@ def _subscribers_for_line(conn, line_id: str) -> list[str]:
     return [row["chat_id"] for row in rows]
 
 
+def check_source_health_and_alert() -> dict:
+    """Page the owner when a collector goes quiet, and again when it recovers.
+
+    This exists because TrafficMY can fail silently in the worst possible way:
+    every collector returns zero rows, no exception is raised, and the board
+    renders a clean "no rider reports today" that is indistinguishable from a
+    genuinely quiet day. That state went unnoticed for two months.
+
+    Fires only on a transition, using source_health_alerts as the last-known
+    state, so a collector that stays broken pages once rather than every
+    15-minute ingest. Never raises: an alerting failure must not break ingest.
+    """
+    if not _enabled() or not settings.telegram_ops_chat_id:
+        return {"sent": 0, "skipped": "no_token_or_ops_chat"}
+
+    from app.services.source_health_service import get_source_health
+
+    chat = settings.telegram_ops_chat_id
+    sent = 0
+    transitions: list[dict] = []
+    try:
+        health = get_source_health()
+        init_db()
+        with connect() as conn:
+            previous = {
+                row["source"]: bool(row["needs_attention"])
+                for row in conn.execute(
+                    "SELECT source, needs_attention FROM source_health_alerts"
+                ).fetchall()
+            }
+            for item in health:
+                source = item.get("source")
+                if not source:
+                    continue
+                now_bad = bool(item.get("needs_attention"))
+                was_bad = previous.get(source)
+
+                if was_bad is not None and now_bad == was_bad:
+                    continue  # no change — stay quiet
+
+                if now_bad:
+                    empties = item.get("consecutive_empty_runs", 0)
+                    last_ok = item.get("last_nonempty_at") or "never"
+                    text = (
+                        f"⚠️ <b>TrafficMY collector down</b>\n\n"
+                        f"<b>{source}</b> has returned nothing for "
+                        f"<b>{empties}</b> consecutive runs.\n"
+                        f"Last row: {last_ok}\n\n"
+                        f"The board is showing 'no rider reports' — which right now "
+                        f"means the collector is broken, not that lines are quiet."
+                    )
+                elif was_bad:
+                    text = f"✅ <b>TrafficMY</b>: <b>{source}</b> is returning rows again."
+                else:
+                    text = ""
+
+                if text and send_message(chat, text):
+                    sent += 1
+                transitions.append({"source": source, "needs_attention": now_bad})
+
+                conn.execute(
+                    """
+                    INSERT INTO source_health_alerts (source, needs_attention, alerted_at)
+                    VALUES (?, ?, CURRENT_TIMESTAMP)
+                    ON CONFLICT(source) DO UPDATE SET
+                        needs_attention = excluded.needs_attention,
+                        alerted_at = excluded.alerted_at
+                    """,
+                    (source, 1 if now_bad else 0),
+                )
+    except Exception:  # pragma: no cover - defensive, never break ingest
+        logger.exception("source health alert failed")
+        return {"sent": sent, "error": True}
+    return {"sent": sent, "transitions": transitions}
+
+
 def check_and_notify() -> dict:
     """Diff current line statuses against the last snapshot and notify
     subscribers of any line that just transitioned into delay/disruption.

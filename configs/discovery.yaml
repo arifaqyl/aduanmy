@@ -169,33 +169,28 @@ x_queries:
     - banjir kl
 
 rss_feeds:
-  - url: "https://news.google.com/rss/search?q=rapid+kl+OR+kelana+jaya+line+OR+lrt+gangguan+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
+  # Recency is enforced with Google News' `when:` operator. Without it the
+  # search defaults to relevance and returns years-old articles (measured:
+  # median 190 days, max 1497 days) into a feed that claims to show today.
+  # Disruption verbs keep this to live incidents, not retrospective features.
+  - url: "https://news.google.com/rss/search?q=%28LRT%20OR%20MRT%20OR%20monorail%20OR%20%22Rapid%20KL%22%20OR%20%22Kelana%20Jaya%22%20OR%20Ampang%20OR%20Kajang%20OR%20Putrajaya%29%20%28disruption%20OR%20delay%20OR%20delays%20OR%20breakdown%20OR%20fault%20OR%20suspended%20OR%20evacuated%20OR%20stalled%29%20Malaysia%20when%3A2d&hl=en-MY&gl=MY&ceid=MY:en"
     category: transport
     author_handle: google-news:kv-en
-  - url: "https://news.google.com/rss/search?q=mrt+kelewatan+OR+gangguan+tren+kuala+lumpur&hl=ms-MY&gl=MY&ceid=MY:ms"
+  - url: "https://news.google.com/rss/search?q=%28LRT%20OR%20MRT%20OR%20monorel%20OR%20tren%20OR%20%22Kelana%20Jaya%22%29%20%28gangguan%20OR%20kelewatan%20OR%20rosak%20OR%20tergendala%20OR%20terhenti%20OR%20lewat%29%20%28Malaysia%20OR%20%22Kuala%20Lumpur%22%20OR%20Selangor%20OR%20RapidKL%20OR%20KTMB%20OR%20Prasarana%29%20when%3A2d&hl=ms-MY&gl=MY&ceid=MY:ms"
     category: transport
     author_handle: google-news:kv-ms
-  - url: "https://news.google.com/rss/search?q=ktm+OR+ktmb+OR+komuter+delay+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
+  - url: "https://news.google.com/rss/search?q=%28KTM%20OR%20KTMB%20OR%20Komuter%20OR%20ETS%29%20%28disruption%20OR%20delay%20OR%20delays%20OR%20breakdown%20OR%20fault%20OR%20suspended%20OR%20evacuated%20OR%20stalled%29%20Malaysia%20when%3A2d&hl=en-MY&gl=MY&ceid=MY:en"
     category: transport
     author_handle: google-news:ktm-en
-  - url: "https://news.google.com/rss/search?q=ktm+kelewatan+OR+gangguan+tren+johor&hl=ms-MY&gl=MY&ceid=MY:ms"
+  - url: "https://news.google.com/rss/search?q=%28KTM%20OR%20KTMB%20OR%20Komuter%20OR%20ETS%29%20%28gangguan%20OR%20kelewatan%20OR%20rosak%20OR%20tergendala%20OR%20terhenti%20OR%20lewat%29%20%28Malaysia%20OR%20%22Kuala%20Lumpur%22%20OR%20Selangor%20OR%20RapidKL%20OR%20KTMB%20OR%20Prasarana%29%20when%3A2d&hl=ms-MY&gl=MY&ceid=MY:ms"
     category: transport
     author_handle: google-news:ktm-ms
-  - url: "https://news.google.com/rss/search?q=penang+rapid+OR+ferry+gangguan+penang&hl=en-MY&gl=MY&ceid=MY:en"
+  - url: "https://news.google.com/rss/search?q=%28%22Rapid%20Penang%22%20OR%20%22Penang%20ferry%22%20OR%20%22Penang%20bus%22%29%20%28disruption%20OR%20delay%20OR%20delays%20OR%20breakdown%20OR%20fault%20OR%20suspended%20OR%20evacuated%20OR%20stalled%29%20when%3A3d&hl=en-MY&gl=MY&ceid=MY:en"
     category: transport
     author_handle: google-news:penang-en
-  - url: "https://news.google.com/rss/search?q=jb+sentral+OR+RTS+link+johor&hl=en-MY&gl=MY&ceid=MY:en"
+  - url: "https://news.google.com/rss/search?q=%28%22RTS%20Link%22%20OR%20%22JB%20Sentral%22%20OR%20%22Johor%20Bahru%22%20transport%29%20%28disruption%20OR%20delay%20OR%20delays%20OR%20breakdown%20OR%20fault%20OR%20suspended%20OR%20evacuated%20OR%20stalled%29%20when%3A3d&hl=en-MY&gl=MY&ceid=MY:en"
     category: transport
     author_handle: google-news:johor-en
-  - url: "https://news.google.com/rss/search?q=east+coast+rail+link+OR+ecrl+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
+  - url: "https://news.google.com/rss/search?q=%28%22Rapid%20Rail%22%20OR%20Prasarana%20OR%20%22Rapid%20KL%22%20OR%20KTMB%29%20%28statement%20OR%20apologise%20OR%20apologises%20OR%20restored%20OR%20%22service%20recovery%22%20OR%20%28disruption%20OR%20delay%20OR%20delays%20OR%20breakdown%20OR%20fault%20OR%20suspended%20OR%20evacuated%20OR%20stalled%29%29%20when%3A2d&hl=en-MY&gl=MY&ceid=MY:en"
     category: transport
-    author_handle: google-news:ecrl-en
-  - url: "https://news.google.com/rss/search?q=ktm+ipoh+OR+ktm+seremban+delay&hl=en-MY&gl=MY&ceid=MY:en"
-    category: transport
-    author_handle: google-news:central-en
-  - url: "https://news.google.com/rss/search?q=sabah+bas+OR+kuching+transport+gangguan&hl=en-MY&gl=MY&ceid=MY:en"
-    category: transport
-    author_handle: google-news:east-my-en
-  - url: "https://news.google.com/rss/search?q=unifi+outage+OR+maxis+down+malaysia&hl=en-MY&gl=MY&ceid=MY:en"
-    category: telco_internet
-    author_handle: google-news:telco-en
+    author_handle: google-news:operator-en

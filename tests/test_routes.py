@@ -24,7 +24,11 @@ def test_methodology_page_and_api():
     client = TestClient(create_app())
     page = client.get("/methodology")
     assert page.status_code == 200
-    assert "How it works" in page.text
+    # Assert the durable trust claim rather than a heading string. This page may
+    # be reworded, but it must always state that silence is not an all-clear —
+    # that is the product's core promise, not a copy detail.
+    assert "all-clear" in page.text.lower()
+    assert "sources" in page.text.lower()
     api = client.get("/api/trafficmy/methodology")
     assert api.status_code == 200
     payload = api.json()

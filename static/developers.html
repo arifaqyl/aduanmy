@@ -1,174 +1,122 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Developers · TrafficMY Signals API</title>
-  <meta name="description" content="Live Malaysia transit rider signals API — today MYT, not ridership stats." />
-  <meta name="theme-color" content="#0f766e" />
-  <link rel="icon" href="static/mascots/trafficmy-mascot.png" type="image/png" />
-  <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="static/css/components.css" />
-  <style>
-    :root {
-      --bg: #0b1220;
-      --card: #141f33;
-      --text: #e8eef7;
-      --muted: #94a3b8;
-      --accent: #2dd4bf;
-      --border: #243047;
-      --mono: "IBM Plex Mono", ui-monospace, monospace;
-      --sans: "Nunito Sans", system-ui, sans-serif;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.55; }
-    .wrap { max-width: 720px; margin: 0 auto; padding: 28px 18px 64px; }
-    a { color: var(--accent); font-weight: 700; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .hero { margin-bottom: 32px; }
-    .kicker { font-size: 12px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
-    h1 { font-size: clamp(28px, 6vw, 38px); line-height: 1.15; margin: 8px 0 12px; }
-    .lead { color: var(--muted); font-size: 16px; max-width: 56ch; }
-    .pill-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
-    .pill { font-size: 12px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: var(--card); border: 1px solid var(--border); }
-    h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--accent); margin: 32px 0 10px; }
-    p, li { color: var(--muted); font-size: 15px; }
-    ul { padding-left: 18px; }
-    pre {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 16px;
-      overflow-x: auto;
-      font-family: var(--mono);
-      font-size: 12px;
-      line-height: 1.5;
-      color: #cbd5e1;
-    }
-    .card {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px 18px;
-      margin: 12px 0;
-    }
-    .card strong { display: block; font-size: 15px; margin-bottom: 4px; color: var(--text); }
-    .compare { display: grid; gap: 10px; }
-    @media (min-width: 560px) { .compare { grid-template-columns: 1fr 1fr; } }
-    .cta { margin-top: 28px; }
-    .btn {
-      display: inline-block;
-      background: var(--accent);
-      color: #042f2e;
-      font-weight: 900;
-      padding: 12px 18px;
-      border-radius: 12px;
-      margin-right: 10px;
-    }
-    #livePreview { margin-top: 12px; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-word; max-height: 280px; overflow: auto; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Signals API · TrafficMY</title>
+<meta name="description" content="Live Malaysian rider transit signals as JSON. Today MYT, no sign-in to read, embed-ready.">
+<meta name="theme-color" content="#0a0a0b">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="static/brand/trafficmy-mark.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="static/css/tm.css?v=58">
 </head>
 <body>
-  <div class="wrap">
-    <p><a href="./">← TrafficMY app</a></p>
-    <div class="hero">
-      <div class="kicker">Signals API · Prototype</div>
-      <h1>Live rider intelligence,<br>not ridership charts.</h1>
-      <p class="lead">
-        TrafficMY answers a different question than ridership analytics dashboards:
-        <strong style="color:var(--text)">what are Malaysian riders reporting on the network today?</strong>
-        Delays, crowding, stuck trains — filtered, summarized, MYT calendar day.
-      </p>
-      <div class="pill-row">
-        <span class="pill">Today MYT window</span>
-        <span class="pill">No sign-in (read)</span>
-        <span class="pill">JSON · embed-ready</span>
-        <span class="pill">CC-BY attribution</span>
-      </div>
+
+<main class="doc prose">
+  <a class="doc-back" href="./">← TrafficMY</a>
+
+  <h1>Live rider intelligence, not ridership charts</h1>
+  <p class="doc-lede">TrafficMY answers a different question than an analytics dashboard: <strong>what are Malaysian riders reporting on the network right now?</strong> Delays, crowding, stuck trains — filtered, summarised, on the Malaysia calendar day.</p>
+
+  <div class="pill-row" style="margin-top:20px">
+    <span class="pill">Today MYT window</span>
+    <span class="pill">No sign-in to read</span>
+    <span class="pill">JSON · embed-ready</span>
+    <span class="pill">CC-BY attribution</span>
+  </div>
+
+  <h2>Not the same as a stats dashboard</h2>
+  <div class="cards">
+    <div class="card">
+      <strong>Ridership analytics</strong>
+      Official DOSM and operator counts. T-1 days. Trends and z-scores. How many people rode yesterday.
     </div>
-
-    <h2>Not the same as stats dashboards</h2>
-    <div class="compare">
-      <div class="card">
-        <strong>Ridership analytics</strong>
-        Official DOSM / operator counts · T-1 days · trends &amp; z-scores · how many rode yesterday.
-      </div>
-      <div class="card">
-        <strong>TrafficMY signals</strong>
-        Live rider posts · today MYT · delays &amp; disruptions · what riders say is happening now.
-      </div>
+    <div class="card">
+      <strong>TrafficMY signals</strong>
+      Live rider posts. Today MYT. Delays and disruptions. What riders say is happening now.
     </div>
+  </div>
 
-    <h2>Primary endpoint</h2>
-    <pre>GET /api/trafficmy/signals/today?limit=25</pre>
-    <p>Returns line board status + today’s rider signals with <code>glance_line</code> summaries (time · line · place · issue).</p>
-    <pre id="curlExample">curl -s "<span id="apiBase"></span>/api/trafficmy/signals/today?limit=5" | jq .summary,.signals[0]</pre>
-    <button type="button" id="tryBtn" class="btn" style="border:0;cursor:pointer;margin-top:8px">Try live →</button>
-    <pre id="livePreview">Click “Try live” to fetch production data.</pre>
+  <h2>Primary endpoint</h2>
+  <pre><code>GET /api/trafficmy/signals/today?limit=25</code></pre>
+  <p>Returns the line board plus today's rider signals, each with a <code>glance_line</code> summary in the form time · line · place · issue.</p>
 
-    <h2>Response shape (v1)</h2>
-    <pre>{
+  <pre id="curlExample"><code>curl -s "<span id="apiBase"></span>/api/trafficmy/signals/today?limit=5"</code></pre>
+  <button type="button" id="tryBtn" class="btn">Try live →</button>
+  <pre id="livePreview" style="margin-top:12px"><code>Press “Try live” to fetch production data.</code></pre>
+
+  <h2>Response shape (v1)</h2>
+  <pre><code>{
   "schema_version": "1",
   "kind": "live_rider_signals_today",
-  "status_date_myt": "2026-07-04",
+  "status_date_myt": "2026-09-01",
   "summary": { "active_lines": 2, "reports_today": 5, "quiet_is_not_all_clear": true },
   "lines": [{ "id": "kelana-jaya", "status": "delay", "report_count": 3 }],
   "signals": [{
-    "glance_line": "10h ago · Kelana Jaya Line · Bangsar · ~25 min wait",
+    "glance_line": "18m ago · Kelana Jaya Line · Bangsar · ~25 min wait",
     "entity": "Kelana Jaya Line",
     "location": "Bangsar",
     "sources": ["threads"],
     "corroborated_by_official": false
   }]
-}</pre>
+}</code></pre>
 
-    <h2>Embed widget</h2>
-    <p>Add a compact live strip to your site (newsroom, property portal, internal ops dashboard):</p>
-    <pre>&lt;iframe src="<span class="embedBase"></span>/embed" title="TrafficMY live signals"
-  width="100%" height="120" style="border:0;border-radius:12px"&gt;&lt;/iframe&gt;</pre>
-    <p><a href="embed">Preview embed →</a></p>
+  <h2>Embed widget</h2>
+  <p>A compact live strip for a newsroom, property portal, or internal ops dashboard:</p>
+  <pre><code>&lt;iframe src="<span class="embedBase"></span>/embed" title="TrafficMY live signals"
+  width="100%" height="120" style="border:0;border-radius:12px"&gt;&lt;/iframe&gt;</code></pre>
+  <p><a class="lnk" href="embed">Preview the embed →</a></p>
 
-    <h2>Use cases (B2B direction)</h2>
-    <ul>
-      <li><strong>Property &amp; HR portals</strong> — “Any delays on lines near our offices today?”</li>
-      <li><strong>Newsrooms &amp; civic tech</strong> — early rider-ground signal before operator posts</li>
-      <li><strong>Logistics &amp; field teams</strong> — commute risk for Klang Valley dispatch windows</li>
-      <li><strong>Research APIs</strong> — structured today-only social transport corpus with trust metadata</li>
-    </ul>
+  <h2>Where this is useful</h2>
+  <ul>
+    <li><strong>Property and HR portals</strong> — are there delays on the lines near our offices today?</li>
+    <li><strong>Newsrooms and civic tech</strong> — rider-ground signal ahead of the operator notice</li>
+    <li><strong>Logistics and field teams</strong> — commute risk for Klang Valley dispatch windows</li>
+    <li><strong>Research</strong> — a structured, today-only transport corpus with trust metadata attached</li>
+  </ul>
 
-    <h2>Trust &amp; limits</h2>
-    <ul>
-      <li>Rider signal ≠ confirmed disruption. <code>quiet_is_not_all_clear: true</code> always applies.</li>
-      <li>Raw posts and handles are never returned — synthesized summaries + source links only.</li>
-      <li>Write access (<code>POST /api/refresh</code>) requires API key in production.</li>
-      <li>Commercial SLA / webhooks — contact maintainer (prototype tier is free read).</li>
-    </ul>
+  <h2>Trust and limits</h2>
+  <ul>
+    <li>A rider signal is not a confirmed disruption. <code>quiet_is_not_all_clear: true</code> always applies.</li>
+    <li>Raw posts and handles are never returned — summaries and source labels only.</li>
+    <li>Write access via <code>POST /api/refresh</code> requires an API key in production.</li>
+    <li>This is a free prototype read tier. There is no SLA and no webhooks yet.</li>
+  </ul>
 
-    <div class="cta">
-      <a class="btn" href="./">Open app</a>
-      <a class="btn" href="methodology" style="background:transparent;color:var(--accent);border:2px solid var(--accent)">Methodology</a>
-    </div>
+  <div class="btn-row">
+    <a class="btn btn-primary" href="./">Open the board</a>
+    <a class="btn" href="methodology">Methodology</a>
   </div>
-  <script>
-    (function () {
-      const base = location.pathname.replace(/\/?developers\/?$/, '') || '';
-      const api = base + '/api/trafficmy/signals/today?limit=5';
-      document.getElementById('apiBase').textContent = location.origin + base;
-      document.querySelectorAll('.embedBase').forEach(el => { el.textContent = location.origin + base; });
-      document.getElementById('curlExample').innerHTML =
-        'curl -s "' + location.origin + api + '"';
-      document.getElementById('tryBtn').addEventListener('click', async () => {
-        const el = document.getElementById('livePreview');
-        el.textContent = 'Loading…';
-        try {
-          const res = await fetch(api);
-          const data = await res.json();
-          el.textContent = JSON.stringify({ summary: data.summary, signals: (data.signals || []).slice(0, 3) }, null, 2);
-        } catch (e) {
-          el.textContent = 'Failed: ' + e.message;
-        }
-      });
-    })();
-  </script>
+</main>
+
+<script>
+(function () {
+  const base = location.pathname.replace(/\/?developers\/?$/, '') || '';
+  const path = base + '/api/trafficmy/signals/today?limit=5';
+  const origin = location.origin;
+
+  const apiBase = document.getElementById('apiBase');
+  if (apiBase) apiBase.textContent = origin + base;
+  document.querySelectorAll('.embedBase').forEach(el => { el.textContent = origin + base; });
+
+  document.getElementById('tryBtn').addEventListener('click', async () => {
+    const el = document.querySelector('#livePreview code');
+    el.textContent = 'Loading…';
+    try {
+      const res = await fetch(path);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      el.textContent = JSON.stringify(
+        { summary: data.summary, signals: (data.signals || []).slice(0, 3) }, null, 2);
+    } catch (e) {
+      el.textContent = 'Failed: ' + e.message;
+    }
+  });
+})();
+</script>
+
 </body>
 </html>

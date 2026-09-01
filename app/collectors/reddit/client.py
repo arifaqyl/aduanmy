@@ -10,30 +10,15 @@ from app.core.files import load_yaml
 from app.collectors.discovery import reddit_queries, reddit_subreddits
 from app.pipeline.extract import category_signal_ok, extract_entity
 
-CURATED_SEED_POSTS = [
-    {
-        "category": "transport",
-        "url": "https://old.reddit.com/r/malaysia/comments/1ue2exe/commuters_on_kelana_jaya_line_can_expect_delays/",
-        "fallback_text": "Commuters on the Kelana Jaya Line can expect delays.",
-        "fallback_created_at": "2026-06-24T03:35:05+00:00",
-        "fallback_author_handle": "MajlisPerbandaranKL",
-    },
-    {
-        "category": "transport",
-        "url": "https://old.reddit.com/r/malaysia/comments/1qv8f5x/lrt_kelana_jaya_line_having_problems_again_this/",
-        "fallback_text": "LRT Kelana Jaya line having problems again this morning. This is getting too frequent.",
-    },
-    {
-        "category": "telco_internet",
-        "url": "https://old.reddit.com/r/malaysia/comments/1pahpti/unifi_down_all_week_why/",
-        "fallback_text": "UNIFI down all week. Anyone in Kelantan experiencing problems with Unifi home internet? It keeps shutting off for 1-2 hours.",
-    },
-    {
-        "category": "telco_internet",
-        "url": "https://old.reddit.com/r/Bolehland/comments/1qd67kk/unifi_down_almost_24_hour_already_also_a_cat_tax/",
-        "fallback_text": "Unifi down almost 24 hours already. Houses on the same road lost internet access and reports were already made.",
-    },
-]
+# Curated seed posts were removed 2026-09-01.
+#
+# They injected a fixed list of hardcoded posts into every ingest run, using a
+# pre-written `fallback_text` whenever the live fetch failed. Two were about
+# home broadband, in a transit product. The effect was a board that reported
+# stale, unrelated incidents as if they were happening today.
+#
+# A feed whose entire premise is "here is the evidence, judge it yourself"
+# cannot manufacture its own evidence. Collectors return live rows or nothing.
 
 SUBREDDITS = {
     "transport": ["malaysia"],
@@ -213,45 +198,14 @@ def _extract_reddit_post_payload(post_url: str) -> dict[str, str]:
 
 
 def _curated_seed_rows() -> list[dict]:
-    rows: list[dict] = []
-    for seed in CURATED_SEED_POSTS:
-        text = seed["fallback_text"]
-        created_at = seed.get("fallback_created_at", "")
-        author_handle = seed.get("fallback_author_handle", "reddit:seed")
-        payload = _extract_reddit_post_payload(seed["url"])
-        if payload:
-            created_at = payload.get("created_at", "")
-            author_handle = payload.get("author_handle") or author_handle
-            body = payload.get("body", "")
-            if seed["category"] == "transport" and not _category_prefilter(body, seed["category"]):
-                body = _extract_external_article_excerpt(payload.get("linked_url", ""))
-            if body and not _category_prefilter(body, seed["category"]):
-                body = ""
-            combined = clean_text(f"{payload.get('title', '')} {body}").strip()
-            if combined:
-                text = combined
-        if not _category_prefilter(text, seed["category"]):
-            continue
-        if not _is_recent_enough(created_at):
-            continue
-        rows.append(
-            {
-                "source_platform": "reddit",
-                "post_id": make_post_id(seed["url"]),
-                "url": seed["url"],
-                "author_handle": author_handle,
-                "created_at": created_at,
-                "raw_text": text,
-                "query": "seed_url",
-                "seed_category": seed["category"],
-            }
-        )
-    return rows
+    """Retained as a no-op so nothing downstream breaks. Seeds are gone for good;
+    see the note above CURATED_SEED_POSTS' removal."""
+    return []
 
 
 def collect_reddit_sample() -> list[dict]:
-    rows: list[dict] = _curated_seed_rows()
-    seen_post_ids = {row["post_id"] for row in rows}
+    rows: list[dict] = []
+    seen_post_ids: set[str] = set()
     query_groups = load_yaml("queries.yaml").get("query_groups", {})
     for category in query_groups:
         search_queries = reddit_queries(category) or REDDIT_DISCOVERY_QUERIES.get(category) or query_groups.get(category, [])[:2]
