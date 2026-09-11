@@ -1,42 +1,35 @@
 {
-  "status": "ok",
-  "run_id": "2026-07-01T09:41:02.928561Z",
-  "started_at": "2026-07-01T09:41:02.928561Z",
-  "finished_at": "2026-07-01T09:44:19.548041Z",
-  "duration_seconds": 196.62,
-  "written": 8,
+  "status": "degraded",
+  "run_id": "2026-09-01T15:10:14.043384Z",
+  "started_at": "2026-09-01T15:10:14.043384Z",
+  "finished_at": "2026-09-01T15:11:25.377448Z",
+  "duration_seconds": 71.33,
+  "written": 0,
   "pruned": 0,
-  "threads_pruned_rejected": 0,
-  "threads": 3,
-  "reddit": 1,
+  "gtfs_pruned": 0,
+  "threads_pruned_rejected": 1,
+  "threads": 0,
+  "reddit": 0,
   "x": 0,
-  "official": 13,
-  "rss": 1,
+  "official": 0,
+  "rss": 0,
   "gtfs": 0,
   "timings": {
-    "x": 0.0,
     "gtfs": 0.0,
-    "rss": 7.98,
-    "official": 43.71,
-    "reddit": 63.62,
-    "threads": 196.23
+    "official": 3.32,
+    "x": 7.05,
+    "rss": 8.93,
+    "threads": 16.38,
+    "reddit": 71.22
   },
-  "categories": {
-    "transport": 7,
-    "telco_internet": 1
-  },
-  "states": {
-    "Selangor": 1,
-    "Wilayah Persekutuan": 4
-  },
-  "modes": {
-    "rail": 5
-  },
+  "categories": {},
+  "states": {},
+  "modes": {},
   "sources": {
     "gtfs": {
       "source": "gtfs",
-      "started_at": "2026-07-01T09:41:02.931743Z",
-      "finished_at": "2026-07-01T09:41:02.931743Z",
+      "started_at": "2026-09-01T15:10:14.069684Z",
+      "finished_at": "2026-09-01T15:10:14.069684Z",
       "status": "paused",
       "row_count": 0,
       "duration_seconds": 0,
@@ -44,48 +37,48 @@
     },
     "official": {
       "source": "official",
-      "started_at": "2026-07-01T09:41:02.929597Z",
-      "finished_at": "2026-07-01T09:41:46.641543Z",
-      "status": "healthy",
-      "row_count": 13,
-      "duration_seconds": 43.71,
-      "error": ""
+      "started_at": "2026-09-01T15:10:14.068116Z",
+      "finished_at": "2026-09-01T15:10:17.384487Z",
+      "status": "failed",
+      "row_count": 0,
+      "duration_seconds": 3.32,
+      "error": "Error: BrowserType.launch: Executable doesn't exist at C:\\Users\\askkr\\AppData\\Local\\ms-playwright\\chromium_headless_shell-1223\\chrome-headless-shell-win64\\chrome-headless-shell.exe\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     playwright install                                     ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝"
     },
     "reddit": {
       "source": "reddit",
-      "started_at": "2026-07-01T09:41:02.929079Z",
-      "finished_at": "2026-07-01T09:42:06.551937Z",
-      "status": "healthy",
-      "row_count": 1,
-      "duration_seconds": 63.62,
+      "started_at": "2026-09-01T15:10:14.067588Z",
+      "finished_at": "2026-09-01T15:11:25.287853Z",
+      "status": "empty",
+      "row_count": 0,
+      "duration_seconds": 71.22,
       "error": ""
     },
     "rss": {
       "source": "rss",
-      "started_at": "2026-07-01T09:41:02.930710Z",
-      "finished_at": "2026-07-01T09:41:10.907803Z",
-      "status": "healthy",
-      "row_count": 1,
-      "duration_seconds": 7.98,
+      "started_at": "2026-09-01T15:10:14.068641Z",
+      "finished_at": "2026-09-01T15:10:22.996834Z",
+      "status": "empty",
+      "row_count": 0,
+      "duration_seconds": 8.93,
       "error": ""
     },
     "threads": {
       "source": "threads",
-      "started_at": "2026-07-01T09:41:02.928561Z",
-      "finished_at": "2026-07-01T09:44:19.157076Z",
-      "status": "healthy",
-      "row_count": 3,
-      "duration_seconds": 196.23,
-      "error": ""
+      "started_at": "2026-09-01T15:10:14.044955Z",
+      "finished_at": "2026-09-01T15:10:30.420635Z",
+      "status": "empty",
+      "row_count": 0,
+      "duration_seconds": 16.38,
+      "error": "threads_session_stale; keyword_search_exception:Error; no_posts_discovered_today"
     },
     "x": {
       "source": "x",
-      "started_at": "2026-07-01T09:41:02.929597Z",
-      "finished_at": "2026-07-01T09:41:02.929597Z",
-      "status": "paused",
+      "started_at": "2026-09-01T15:10:14.071785Z",
+      "finished_at": "2026-09-01T15:10:21.117188Z",
+      "status": "empty",
       "row_count": 0,
-      "duration_seconds": 0,
-      "error": "disabled_until_authenticated"
+      "duration_seconds": 7.05,
+      "error": ""
     }
   }
 }
