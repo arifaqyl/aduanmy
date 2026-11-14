@@ -1,26 +1,26 @@
 {
   "status": "degraded",
-  "run_id": "2026-09-01T15:10:14.043384Z",
-  "started_at": "2026-09-01T15:10:14.043384Z",
-  "finished_at": "2026-09-01T15:11:25.377448Z",
-  "duration_seconds": 71.33,
+  "run_id": "2026-11-14T13:16:27.251272Z",
+  "started_at": "2026-11-14T13:16:27.251272Z",
+  "finished_at": "2026-11-14T13:16:32.687516Z",
+  "duration_seconds": 5.44,
   "written": 0,
   "pruned": 0,
   "gtfs_pruned": 0,
-  "threads_pruned_rejected": 1,
+  "threads_pruned_rejected": 0,
   "threads": 0,
   "reddit": 0,
   "x": 0,
   "official": 0,
-  "rss": 0,
+  "rss": 1,
   "gtfs": 0,
   "timings": {
     "gtfs": 0.0,
-    "official": 3.32,
-    "x": 7.05,
-    "rss": 8.93,
-    "threads": 16.38,
-    "reddit": 71.22
+    "x": 1.15,
+    "official": 1.49,
+    "reddit": 2.12,
+    "rss": 2.78,
+    "threads": 5.39
   },
   "categories": {},
   "states": {},
@@ -28,8 +28,8 @@
   "sources": {
     "gtfs": {
       "source": "gtfs",
-      "started_at": "2026-09-01T15:10:14.069684Z",
-      "finished_at": "2026-09-01T15:10:14.069684Z",
+      "started_at": "2026-11-14T13:16:27.252806Z",
+      "finished_at": "2026-11-14T13:16:27.252806Z",
       "status": "paused",
       "row_count": 0,
       "duration_seconds": 0,
@@ -37,47 +37,47 @@
     },
     "official": {
       "source": "official",
-      "started_at": "2026-09-01T15:10:14.068116Z",
-      "finished_at": "2026-09-01T15:10:17.384487Z",
+      "started_at": "2026-11-14T13:16:27.252070Z",
+      "finished_at": "2026-11-14T13:16:28.740341Z",
       "status": "failed",
       "row_count": 0,
-      "duration_seconds": 3.32,
-      "error": "Error: BrowserType.launch: Executable doesn't exist at C:\\Users\\askkr\\AppData\\Local\\ms-playwright\\chromium_headless_shell-1223\\chrome-headless-shell-win64\\chrome-headless-shell.exe\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     playwright install                                     ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝"
+      "duration_seconds": 1.49,
+      "error": "Error: BrowserType.launch: Executable doesn't exist at /home/runner/.cache/ms-playwright/chromium_headless_shell-1148/chrome-linux/headless_shell\n╔════════════════════════════════════════════════════════════╗\n║ Looks like Playwright was just installed or updated.       ║\n║ Please run the following command to download new browsers: ║\n║                                                            ║\n║     playwright install                                     ║\n║                                                            ║\n║ <3 Playwright Team                                         ║\n╚════════════════════════════════════════════════════════════╝"
     },
     "reddit": {
       "source": "reddit",
-      "started_at": "2026-09-01T15:10:14.067588Z",
-      "finished_at": "2026-09-01T15:11:25.287853Z",
+      "started_at": "2026-11-14T13:16:27.251790Z",
+      "finished_at": "2026-11-14T13:16:29.375937Z",
       "status": "empty",
       "row_count": 0,
-      "duration_seconds": 71.22,
+      "duration_seconds": 2.12,
       "error": ""
     },
     "rss": {
       "source": "rss",
-      "started_at": "2026-09-01T15:10:14.068641Z",
-      "finished_at": "2026-09-01T15:10:22.996834Z",
-      "status": "empty",
-      "row_count": 0,
-      "duration_seconds": 8.93,
+      "started_at": "2026-11-14T13:16:27.252582Z",
+      "finished_at": "2026-11-14T13:16:30.031668Z",
+      "status": "healthy",
+      "row_count": 1,
+      "duration_seconds": 2.78,
       "error": ""
     },
     "threads": {
       "source": "threads",
-      "started_at": "2026-09-01T15:10:14.044955Z",
-      "finished_at": "2026-09-01T15:10:30.420635Z",
+      "started_at": "2026-11-14T13:16:27.251336Z",
+      "finished_at": "2026-11-14T13:16:32.643017Z",
       "status": "empty",
       "row_count": 0,
-      "duration_seconds": 16.38,
-      "error": "threads_session_stale; keyword_search_exception:Error; no_posts_discovered_today"
+      "duration_seconds": 5.39,
+      "error": "threads_session_missing; keyword_search_exception:Error; no_posts_discovered_today"
     },
     "x": {
       "source": "x",
-      "started_at": "2026-09-01T15:10:14.071785Z",
-      "finished_at": "2026-09-01T15:10:21.117188Z",
+      "started_at": "2026-11-14T13:16:27.252818Z",
+      "finished_at": "2026-11-14T13:16:28.404539Z",
       "status": "empty",
       "row_count": 0,
-      "duration_seconds": 7.05,
+      "duration_seconds": 1.15,
       "error": ""
     }
   }
